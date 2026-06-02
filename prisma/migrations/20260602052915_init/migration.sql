@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "Post" (
+CREATE TABLE "Feed" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -11,4 +11,4 @@ CREATE TABLE "Post" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Post_slug_key" ON "Post"("slug");
+CREATE UNIQUE INDEX "Feed_slug_key" ON "Feed"("slug");
