@@ -19,7 +19,7 @@ export default async function FeedDetailPage({ params }: { params: Promise<{ slu
       <article>
         <header className="mb-8 border-b border-black/[.06] pb-6 dark:border-white/[.1]">
           <h1 className="text-3xl font-semibold tracking-tight">{feed.title}</h1>
-          <time className="mt-2 block text-sm text-zinc-500">
+          <time dateTime={feed.createdAt.toISOString()} className="mt-2 block text-sm text-zinc-500">
             {feed.createdAt.toLocaleDateString("ko-KR")}
           </time>
         </header>
