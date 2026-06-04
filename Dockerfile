@@ -29,12 +29,11 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 # 런타임 prisma migrate deploy에 필요한 파일/모듈
+# prisma CLI는 npm으로 flat 설치한다. pnpm은 @prisma/engines를 .pnpm 안에 두고
+# node_modules/@prisma엔 심볼릭만 남겨서, runner로 @prisma만 복사하면 엔진이 누락된다.
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+RUN npm install --no-save --omit=dev prisma@7.8.0 dotenv@17.4.2
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && mkdir -p /data && chown -R nextjs:nodejs /data /app
