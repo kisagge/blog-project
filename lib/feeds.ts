@@ -22,3 +22,16 @@ export const getFeedBySlug = cache(async (slug: string) => {
     where: { slug, published: true },
   });
 });
+
+// 관리자용: 초안 포함 전체, 최신순
+export async function getAllFeeds() {
+  return prisma.feed.findMany({
+    orderBy: { createdAt: "desc" },
+    select: { id: true, slug: true, title: true, published: true, createdAt: true },
+  });
+}
+
+// 관리자용: 공개 여부 무관 단건(id)
+export async function getFeedById(id: string) {
+  return prisma.feed.findUnique({ where: { id } });
+}
