@@ -8,7 +8,7 @@ WORKDIR /app
 
 # 1) 의존성 설치 (better-sqlite3 네이티브 컴파일)
 FROM base AS deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 
 # 2) 빌드 (prisma generate → next build)
