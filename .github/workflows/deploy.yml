@@ -62,6 +62,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
+          command_timeout: 20m
           script: |
             cd /srv/byjang
             docker compose pull

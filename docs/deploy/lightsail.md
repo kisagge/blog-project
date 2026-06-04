@@ -3,7 +3,7 @@
 Next.js 16 + Prisma 7(SQLite) 앱을 AWS Lightsail VPS에 Docker로 배포하고, `main` push 시 GitHub Actions로 자동 배포한다.
 
 - 인스턴스: **Ubuntu 24.04, x86_64**
-- 고정 IP(public): **3.34.132.108** (SSH·도메인·외부 접속 대상)
+- 고정 IP(public): **3.34.242.252** (SSH·도메인·외부 접속 대상)
 - private IP: 172.26.15.33 (AWS 내부용, 이번 경로 미사용)
 - 이미지: `ghcr.io/kisagge/blog-project` (**public**)
 - 앱 포트: 3010 (loopback 바인딩, nginx만 접근)
@@ -13,9 +13,9 @@ Next.js 16 + Prisma 7(SQLite) 앱을 AWS Lightsail VPS에 Docker로 배포하고
 ## 1. Lightsail 인스턴스 준비 (1회)
 
 1. Lightsail에서 Ubuntu 24.04 인스턴스 생성(2GB RAM 이상 권장).
-2. **고정 IP** 생성 후 인스턴스에 연결 → `3.34.132.108`.
+2. **고정 IP** 생성 후 인스턴스에 연결 → `3.34.242.252`.
 3. 방화벽(Networking): TCP **22, 80, 443** 허용.
-4. 도메인 DNS의 A 레코드 → `3.34.132.108`.
+4. 도메인 DNS의 A 레코드 → `3.34.242.252`.
 
 ## 2. 서버 패키지 설치 (SSH 접속 후)
 
@@ -32,7 +32,7 @@ sudo apt install -y certbot python3-certbot-nginx
 sudo mkdir -p /srv/byjang/data && sudo chown -R $USER:$USER /srv/byjang
 cd /srv/byjang
 # 레포의 compose.yaml 내용을 이 위치에 복사 (scp 또는 붙여넣기)
-#   scp compose.yaml ubuntu@3.34.132.108:/srv/byjang/
+#   scp compose.yaml ubuntu@3.34.242.252:/srv/byjang/
 
 # 중요: 컨테이너는 비루트 유저(nextjs, uid 999)로 돈다. SQLite 파일(/data/prod.db)을
 # 쓰려면 호스트 data 디렉토리를 그 uid로 넘겨야 한다(안 하면 migrate가
@@ -60,7 +60,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions에 등록:
 
 | Secret     | 값                                         |
 | ---------- | ------------------------------------------ |
-| `SSH_HOST` | `3.34.132.108`                             |
+| `SSH_HOST` | `3.34.242.252`                             |
 | `SSH_USER` | `ubuntu`                                   |
 | `SSH_KEY`  | `deploy_key` 개인키 전체(`-----BEGIN ...`) |
 
