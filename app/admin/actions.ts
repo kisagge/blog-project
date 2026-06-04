@@ -22,7 +22,7 @@ export async function createFeed(_state: FeedFormState, formData: FormData): Pro
   }
   try {
     await prisma.feed.create({ data: parsed.data });
-  } catch (e) {
+  } catch {
     return { message: "이미 사용 중인 slug일 수 있습니다.", errors: { slug: ["중복되었거나 저장에 실패했습니다."] } };
   }
   revalidateFeed();
@@ -37,7 +37,7 @@ export async function updateFeed(id: string, _state: FeedFormState, formData: Fo
   }
   try {
     await prisma.feed.update({ where: { id }, data: parsed.data });
-  } catch (e) {
+  } catch {
     return { message: "저장 실패(중복 slug 등).", errors: { slug: ["중복되었거나 저장에 실패했습니다."] } };
   }
   revalidateFeed();
