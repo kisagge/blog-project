@@ -3,6 +3,9 @@ import { getPublishedFeeds } from "@/lib/feeds";
 
 export const metadata = { title: "Feed · BY Playground" };
 
+// 런타임에 DB를 조회한다(빌드 타임 prerender 시 DB가 없으므로 동적 렌더).
+export const dynamic = "force-dynamic";
+
 export default async function FeedListPage() {
   const feeds = await getPublishedFeeds();
 
