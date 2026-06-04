@@ -1,0 +1,12 @@
+services:
+  web:
+    image: ghcr.io/kisagge/blog-project:latest
+    env_file: .env
+    environment:
+      DATABASE_URL: "file:/data/prod.db"
+      NODE_ENV: "production"
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:3010:3010"
+    restart: unless-stopped
