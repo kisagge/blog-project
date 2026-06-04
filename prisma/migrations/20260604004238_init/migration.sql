@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Feed" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "summary" TEXT,

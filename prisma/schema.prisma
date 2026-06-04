@@ -13,8 +13,8 @@ datasource db {
 }
 
 model Feed {
-  id        Int      @id @default(autoincrement())
-  slug      String   @unique
+  id        String   @id @default(uuid())
+  slug      String   @unique   // URL 식별자: 소문자/숫자/하이픈 (검증은 작성 폼에서)
   title     String
   summary   String?
   content   String              // 본문 (마크다운/HTML 문자열로 저장)

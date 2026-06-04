@@ -17,8 +17,13 @@
 
 ## 데이터 모델 변경 (1단계 보정)
 
-- `model Post` → `model Feed`로 이름 변경. 필드는 그대로:
-  `id, slug(unique), title, summary?, content, published(default false), createdAt, updatedAt`
+- `model Post` → `model Feed`로 이름 변경.
+- 식별자 (둘 다 보유, 역할 분리):
+  - `id String @id @default(uuid())` — **PK(UUID)**. 작성 시 자동 생성, 내부 식별 및 3단계(수정/삭제)용.
+  - `slug String @unique` — 사람이 입력하는 **고유** URL 식별자. 형태는 소문자/숫자/하이픈(`^[a-z0-9-]+$`)이며, DB가 아니라 작성 폼(3단계)에서 검증한다.
+  - PK는 하나만 둘 수 있으므로 id가 PK, slug는 UNIQUE. 둘 다 고유라 둘 다로 단건 조회 가능.
+- 나머지 필드: `title, summary?, content, published(default false), createdAt, updatedAt`.
+- 공개 상세 URL은 **slug** 기준(`/feed/[slug]`). id(UUID)는 URL에 노출하지 않는다.
 - 테이블명도 `Feed` (별도 `@@map` 없음).
 - 데이터 0건이므로 기존 `init` 마이그레이션을 제거하고 새 `init` 마이그레이션을 재생성한다.
   `dev.db`와 생성 클라이언트(`app/generated/prisma`)도 재생성.
