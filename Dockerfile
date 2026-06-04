@@ -18,23 +18,20 @@ COPY . .
 RUN pnpm prisma generate
 RUN pnpm build
 
-# 3) 런너 (standalone + 런타임 prisma migrate deploy)
+# 3) 런너 — pnpm node_modules 전체를 그대로 사용(심볼릭/네이티브/엔진 온전).
+#    next start로 기동하고, entrypoint에서 prisma migrate deploy를 먼저 실행한다.
 FROM base AS runner
 ENV NODE_ENV=production PORT=3010 HOSTNAME=0.0.0.0
 RUN groupadd -r nodejs && useradd -r -g nodejs -m nextjs
 
-# standalone 산출물
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-
-# 런타임 prisma migrate deploy에 필요한 파일/모듈
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder /app/app/generated ./app/generated
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && mkdir -p /data && chown -R nextjs:nodejs /data /app
