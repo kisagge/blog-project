@@ -1,4 +1,4 @@
-# 설계: 3단계 — 관리자 + 인증 (+ Jest 테스트 도입)
+# 설계: 3단계 — 관리자 + 인증 (+ Vitest 테스트 도입)
 
 - 작성일: 2026-06-04
 - 단계: 로드맵 4단계 중 **3단계** (① DB+모델 → ② 공개 페이지 → ③ 관리자+인증 → ④ Lightsail 배포)
@@ -6,7 +6,7 @@
 
 ## 목표
 
-단일 관리자가 로그인해 글(Feed)을 **작성·수정·삭제·공개토글**한다. 구현 완료 후 **Jest로 단위 테스트**를 도입한다.
+단일 관리자가 로그인해 글(Feed)을 **작성·수정·삭제·공개토글**한다. 구현 완료 후 **Vitest로 단위 테스트**를 도입한다.
 
 ## 결정 사항 (브레인스토밍 합의)
 
@@ -18,7 +18,7 @@
 
 - Next.js 16 App Router (서버 컴포넌트, `params` Promise, Server Actions)
 - Prisma 7 + SQLite, `lib/prisma.ts` 싱글톤
-- 신규 의존성: `jose`(세션 서명), `zod`(검증). 테스트: `jest`, `jest-environment-jsdom`, `@testing-library/react`, `@testing-library/dom`, `@testing-library/jest-dom`, `ts-node`, `@types/jest`
+- 신규 의존성: `jose`(세션 서명), `zod`(검증). 테스트: `vitest`, `@vitejs/plugin-react`, `jsdom`, `@testing-library/react`, `@testing-library/dom`, `@testing-library/jest-dom`, `vite-tsconfig-paths`
 
 ## 1. 인증 / 세션
 
@@ -85,11 +85,11 @@ FeedFormSchema = z.object({
 - `proxy.ts`는 optimistic(쿠키만), 실제 방어는 DAL/액션에서.
 - 쿠키는 서버에서만 설정, httpOnly로 JS 접근 차단.
 
-## 8. Jest 테스트 도입 (구현 완료 후)
+## 8. Vitest 테스트 도입 (구현 완료 후)
 
-> **제약:** `async` 서버 컴포넌트는 Jest 미지원(Next 공식). 페이지·Server Action은 단위 테스트 대상에서 제외하고, prod 빌드 + 수동 시나리오로 검증한다.
+> **제약:** `async` 서버 컴포넌트는 Vitest 미지원(Next 공식). 페이지·Server Action은 단위 테스트 대상에서 제외하고, prod 빌드 + 수동 시나리오로 검증한다.
 
-- 설정: `next/jest`(`jest.config.ts`) + `jest.setup.ts`(`@testing-library/jest-dom`). `package.json`에 `"test": "jest"`.
+- 설정: `vitest.config.mts`(`@vitejs/plugin-react` + `vite-tsconfig-paths`, jsdom) + `vitest.setup.ts`(`@testing-library/jest-dom/vitest`). `package.json`에 `"test": "vitest run"`.
 - **단위 테스트 대상(순수 로직 위주):**
   - `lib/validation.ts` — zod 스키마: 유효/무효 slug(대문자·공백·언더스코어 거부), 필수 필드 누락, published 불리언.
   - `lib/session.ts` — `encrypt`→`decrypt` 라운드트립(같은 payload 복원), 잘못된/만료 토큰은 undefined.
@@ -98,7 +98,7 @@ FeedFormSchema = z.object({
 
 ## 9. 검증 (게이트)
 
-- `npx tsc --noEmit` + `npx next build` + `eslint .` + `jest` 모두 통과.
+- `npx tsc --noEmit` + `npx next build` + `eslint .` + `vitest run` 모두 통과.
 - prod 수동 시나리오: 로그인/로그아웃, 작성→공개→공개페이지 노출, 수정, 비공개 토글→공개페이지 404, 삭제, 미로그인 `/admin`→`/login` 리다이렉트.
 
 ## 범위 제외 (YAGNI)

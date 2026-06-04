@@ -2,16 +2,16 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 단일 관리자가 로그인해 `/admin`에서 글(Feed)을 작성·수정·삭제·공개토글하고, 구현 완료 후 Jest로 순수 로직 단위 테스트를 추가한다.
+**Goal:** 단일 관리자가 로그인해 `/admin`에서 글(Feed)을 작성·수정·삭제·공개토글하고, 구현 완료 후 Vitest로 순수 로직 단위 테스트를 추가한다.
 
 **Architecture:** `jose` JWT를 httpOnly 쿠키로 발급하는 stateless 세션. 순수 JWT(`lib/jwt.ts`)와 쿠키 바인딩(`lib/session.ts`)을 분리해 테스트 가능성을 확보. 보호는 `proxy.ts`(optimistic) + `lib/dal.ts`의 `verifySession()`(페이지/Server Action 재검증) 다층. 글 변경은 Server Actions + zod 검증.
 
-**Tech Stack:** Next.js 16, React 19, Prisma 7(SQLite), jose, zod, Jest + React Testing Library
+**Tech Stack:** Next.js 16, React 19, Prisma 7(SQLite), jose, zod, Vitest + React Testing Library
 
-> **검증:** 구현 단계는 `tsc`/`build`/`eslint` + prod 수동 시나리오. 테스트 단계에서 Jest 도입. `async` 서버 컴포넌트·Server Action은 Jest 미지원이라 단위 테스트 제외(prod 수동으로 커버).
+> **검증:** 구현 단계는 `tsc`/`build`/`eslint` + prod 수동 시나리오. 테스트 단계에서 Vitest 도입. `async` 서버 컴포넌트·Server Action은 Vitest 미지원이라 단위 테스트 제외(prod 수동으로 커버).
 
 > **설계 문서:** `docs/plans/2026-06-04-admin-auth-design.md`
-> **사용자 요구:** 기능을 먼저 전부 구현하고, 그 다음 Jest 테스트 코드를 작성한다(TDD 아님, 사후 테스트).
+> **사용자 요구:** 기능을 먼저 전부 구현하고, 그 다음 Vitest 테스트 코드를 작성한다(TDD 아님, 사후 테스트).
 
 ---
 
@@ -57,7 +57,7 @@ git commit -m "build: jose, zod 추가 + .env.example(ADMIN_PASSWORD, SESSION_SE
 ## Task 2: 세션 레이어 (jwt / session / dal)
 
 **Files:**
-- Create: `lib/jwt.ts` (순수 JWT — server-only 없음, Jest 대상)
+- Create: `lib/jwt.ts` (순수 JWT — server-only 없음, Vitest 대상)
 - Create: `lib/session.ts` (쿠키 바인딩, server-only)
 - Create: `lib/dal.ts` (verifySession)
 
@@ -702,62 +702,67 @@ curl -s -o /dev/null -w "admin 미인증=%{http_code}\n" http://localhost:3010/a
 
 ---
 
-## Part B — Jest 단위 테스트
+## Part B — Vitest 단위 테스트 (+ React Testing Library)
 
-## Task 12: Jest 셋업
+## Task 12: Vitest 셋업
 
 **Files:**
-- Modify: `package.json`
-- Create: `jest.config.ts`, `jest.setup.ts`
+- Modify: `package.json`, `tsconfig.json`
+- Create: `vitest.config.mts`, `vitest.setup.ts`
 - Modify: `.gitignore` (coverage)
 
 **Step 1: 설치**
 ```bash
-pnpm add -D jest jest-environment-jsdom @testing-library/react @testing-library/dom @testing-library/jest-dom ts-node @types/jest
+pnpm add -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom @testing-library/jest-dom vite-tsconfig-paths
 ```
 
-**Step 2: `jest.config.ts`**
+**Step 2: `vitest.config.mts`** (tsconfigPaths로 `@/*` 별칭 해결, jsdom 환경, globals)
 ```ts
-import nextJest from "next/jest.js";
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import tsconfigPaths from "vite-tsconfig-paths";
 
-const createJestConfig = nextJest({ dir: "./" });
-
-const config = {
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-  testEnvironment: "jest-environment-jsdom",
-  moduleNameMapper: { "^@/(.*)$": "<rootDir>/$1" },
-};
-
-export default createJestConfig(config);
+export default defineConfig({
+  plugins: [tsconfigPaths(), react()],
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
+  },
+});
 ```
 
-**Step 3: `jest.setup.ts`**
+**Step 3: `vitest.setup.ts`** (jest-dom matchers + 테스트용 세션 키)
 ```ts
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
-// 테스트용 세션 서명 키
 process.env.SESSION_SECRET ||= "test-session-secret-please-change";
 ```
 
-**Step 4: `package.json` 스크립트에 추가**
-```json
-"test": "jest",
-"test:watch": "jest --watch"
+**Step 4: `tsconfig.json` compilerOptions.types에 vitest globals 추가** (없으면 추가)
+```jsonc
+"types": ["vitest/globals"]
 ```
 
-**Step 5: `.gitignore`에 `/coverage` 추가**
+**Step 5: `package.json` 스크립트에 추가** (CI는 단발 실행 `vitest run`)
+```json
+"test": "vitest run",
+"test:watch": "vitest"
+```
 
-**Step 6: 동작 확인용 임시 테스트** — `__tests__/smoke.test.ts`:
+**Step 6: `.gitignore`에 `/coverage` 추가**
+
+**Step 7: 동작 확인용 임시 테스트** — `__tests__/smoke.test.ts`:
 ```ts
-test("jest 동작", () => { expect(1 + 1).toBe(2); });
+test("vitest 동작", () => { expect(1 + 1).toBe(2); });
 ```
 Run: `pnpm test`
 Expected: 1 passed. 확인 후 `rm __tests__/smoke.test.ts`.
 
-**Step 7: Commit**
+**Step 8: Commit**
 ```bash
-git add package.json pnpm-lock.yaml jest.config.ts jest.setup.ts .gitignore
-git commit -m "test: Jest + React Testing Library 셋업(next/jest)"
+git add package.json pnpm-lock.yaml tsconfig.json vitest.config.mts vitest.setup.ts .gitignore
+git commit -m "test: Vitest + React Testing Library 셋업"
 ```
 
 ---
@@ -812,7 +817,8 @@ describe("feedFormToObject", () => {
 
 **Step 2: `lib/jwt.test.ts`** (node 환경 — web crypto)
 ```ts
-/** @jest-environment node */
+// @vitest-environment node
+import { describe, test, expect } from "vitest";
 import { encrypt, decrypt } from "@/lib/jwt";
 
 describe("jwt encrypt/decrypt", () => {
@@ -891,7 +897,7 @@ Expected: 타입·lint·테스트·빌드 모두 통과.
 **Step 3: 푸시 + PR** (사용자 승인 후)
 ```bash
 git push -u origin feature/admin-auth
-gh pr create --base main --head feature/admin-auth --title "관리자 + 인증 (3단계) + Jest 테스트" --body "..."
+gh pr create --base main --head feature/admin-auth --title "관리자 + 인증 (3단계) + Vitest 테스트" --body "..."
 ```
 
 ---
@@ -899,4 +905,4 @@ gh pr create --base main --head feature/admin-auth --title "관리자 + 인증 (
 ## 작업 순서 요약
 
 **Part A (구현):** 1 의존성·env → 2 세션레이어 → 3 zod → 4 헬퍼확장 → 5 로그인 → 6 proxy → 7 admin레이아웃 → 8 admin액션 → 9 폼·new·edit → 10 목록 → 11 수동검증
-**Part B (테스트):** 12 Jest셋업 → 13 validation·jwt → 14 컴포넌트 → 15 최종검증·PR
+**Part B (테스트):** 12 Vitest셋업 → 13 validation·jwt → 14 컴포넌트 → 15 최종검증·PR
