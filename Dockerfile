@@ -18,6 +18,11 @@ COPY . .
 RUN pnpm prisma generate
 RUN pnpm build
 
+# 2.5) prisma CLI를 격리 설치(standalone의 pnpm node_modules와 섞이지 않게 npm flat)
+FROM base AS prisma-cli
+WORKDIR /prisma-cli
+RUN npm init -y >/dev/null 2>&1 && npm install --omit=dev prisma@7.8.0 dotenv@17.4.2
+
 # 3) 런너 (standalone + 런타임 prisma migrate deploy)
 FROM base AS runner
 ENV NODE_ENV=production PORT=3010 HOSTNAME=0.0.0.0
@@ -29,11 +34,10 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 # 런타임 prisma migrate deploy에 필요한 파일/모듈
-# prisma CLI는 npm으로 flat 설치한다. pnpm은 @prisma/engines를 .pnpm 안에 두고
-# node_modules/@prisma엔 심볼릭만 남겨서, runner로 @prisma만 복사하면 엔진이 누락된다.
+# prisma CLI는 격리 스테이지에서 npm flat 설치한 것을 병합 복사한다(@prisma/engines·dotenv 포함).
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
-RUN npm install --no-save --omit=dev prisma@7.8.0 dotenv@17.4.2
+COPY --from=prisma-cli /prisma-cli/node_modules ./node_modules
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && mkdir -p /data && chown -R nextjs:nodejs /data /app
