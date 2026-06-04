@@ -34,6 +34,11 @@ cd /srv/byjang
 # 레포의 compose.yaml 내용을 이 위치에 복사 (scp 또는 붙여넣기)
 #   scp compose.yaml ubuntu@3.34.132.108:/srv/byjang/
 
+# 중요: 컨테이너는 비루트 유저(nextjs, uid 999)로 돈다. SQLite 파일(/data/prod.db)을
+# 쓰려면 호스트 data 디렉토리를 그 uid로 넘겨야 한다(안 하면 migrate가
+# "unable to open database file: /data/prod.db"로 실패).
+sudo chown -R 999:999 /srv/byjang/data
+
 # 런타임 시크릿(.env) — DATABASE_URL/NODE_ENV는 compose가 지정하므로 여기엔 둘만
 cat > .env <<EOF
 ADMIN_PASSWORD=원하는_관리자_비밀번호
@@ -53,11 +58,11 @@ cat ~/deploy_key            # 이 개인키 전체를 복사해 GitHub Secret SS
 
 GitHub 저장소 → Settings → Secrets and variables → Actions에 등록:
 
-| Secret | 값 |
-| --- | --- |
-| `SSH_HOST` | `3.34.132.108` |
-| `SSH_USER` | `ubuntu` |
-| `SSH_KEY` | `deploy_key` 개인키 전체(`-----BEGIN ...`) |
+| Secret     | 값                                         |
+| ---------- | ------------------------------------------ |
+| `SSH_HOST` | `3.34.132.108`                             |
+| `SSH_USER` | `ubuntu`                                   |
+| `SSH_KEY`  | `deploy_key` 개인키 전체(`-----BEGIN ...`) |
 
 > GHCR 이미지가 public이라 서버 레지스트리 로그인은 불필요하다.
 
@@ -76,6 +81,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions에 등록:
 ## 6. nginx 리버스 프록시 + HTTPS
 
 `/etc/nginx/sites-available/byjang`:
+
 ```nginx
 server {
   server_name your-domain.com;
@@ -90,6 +96,7 @@ server {
   }
 }
 ```
+
 ```bash
 sudo ln -s /etc/nginx/sites-available/byjang /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
