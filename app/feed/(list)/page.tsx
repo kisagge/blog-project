@@ -27,7 +27,7 @@ export default async function FeedListPage() {
                   <p className="mt-1 text-zinc-600 dark:text-zinc-400">{feed.summary}</p>
                 )}
                 <time dateTime={feed.createdAt.toISOString()} className="mt-2 block text-sm text-zinc-500">
-                  {feed.createdAt.toLocaleDateString("ko-KR")}
+                  {feed.createdAt.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
                 </time>
               </Link>
             </li>
