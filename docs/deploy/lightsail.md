@@ -85,6 +85,12 @@ GitHub 저장소 → Settings → Secrets and variables → Actions에 등록:
 ```nginx
 server {
   server_name your-domain.com;
+  # 업로드 이미지는 볼륨에서 직접 서빙 (앱을 거치지 않음)
+  location /uploads/ {
+    alias /srv/byjang/data/uploads/;
+    expires 30d;
+    access_log off;
+  }
   location / {
     proxy_pass http://127.0.0.1:3010;
     proxy_http_version 1.1;
@@ -98,10 +104,16 @@ server {
 ```
 
 ```bash
+# 최초 1회: 업로드 디렉토리 생성 + 컨테이너 uid(999=nextjs)에 소유권 부여
+sudo mkdir -p /srv/byjang/data/uploads
+sudo chown -R 999:999 /srv/byjang/data/uploads
+
 sudo ln -s /etc/nginx/sites-available/byjang /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d your-domain.com    # Let's Encrypt 발급 + 자동 갱신(systemd timer)
 ```
+
+> `/uploads` location을 추가했다면 **반드시 `nginx -t && systemctl reload nginx`**. 빠지면 업로드 이미지가 404.
 
 확인: `https://your-domain.com/feed` 200, `https://your-domain.com/admin` 로그인 동작
 (HTTPS 종단이라 세션 쿠키 `secure:true` 정상).

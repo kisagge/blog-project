@@ -1,6 +1,7 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import type { FeedFormState } from "@/app/admin/actions";
+import { uploadImage } from "@/app/admin/upload-action";
 
 type Props = {
   action: (state: FeedFormState, formData: FormData) => Promise<FeedFormState>;
@@ -19,6 +20,38 @@ export default function FeedForm({ action, defaultValues, submitLabel }: Props) 
   const d = defaultValues ?? {};
   const err = state?.errors ?? {};
 
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  function insertAtCursor(text: string) {
+    const ta = contentRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? ta.value.length;
+    ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
+    const pos = start + text.length;
+    ta.selectionStart = ta.selectionEnd = pos;
+    ta.focus();
+  }
+
+  async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 같은 파일 재선택 허용
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    const fd = new FormData();
+    fd.set("file", file);
+    const res = await uploadImage(fd);
+    setUploading(false);
+    if ("error" in res) {
+      setUploadError(res.error);
+      return;
+    }
+    insertAtCursor(`![](${res.url})\n`);
+  }
+
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <Field label="제목" error={err.title}>
@@ -31,7 +64,21 @@ export default function FeedForm({ action, defaultValues, submitLabel }: Props) 
         <input name="summary" defaultValue={d.summary ?? ""} className={inputCls} />
       </Field>
       <Field label="본문 (마크다운)" error={err.content}>
-        <textarea name="content" defaultValue={d.content} rows={12} className={inputCls} />
+        <textarea ref={contentRef} name="content" defaultValue={d.content} rows={12} className={inputCls} />
+        <div className="mt-2 flex items-center gap-3 text-sm">
+          <label className="cursor-pointer rounded border border-black/15 px-2 py-1 dark:border-white/20">
+            이미지 첨부
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImage}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
+          {uploading && <span className="text-zinc-500">업로드 중…</span>}
+          {uploadError && <span className="text-red-600">{uploadError}</span>}
+        </div>
       </Field>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="published" defaultChecked={d.published} />
