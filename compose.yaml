@@ -5,6 +5,7 @@ services:
     environment:
       DATABASE_URL: "file:/data/prod.db"
       NODE_ENV: "production"
+      UPLOAD_DIR: "/data/uploads"
     volumes:
       - ./data:/data
     ports:
