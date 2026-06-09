@@ -64,7 +64,11 @@ jobs:
           script_stop: true
           command_timeout: 20m
           script: |
+            set -e
             cd /srv/byjang
-            docker compose pull
-            docker compose up -d
-            docker image prune -f
+            echo "== disk before =="; df -h /; docker system df
+            # pull 전에 미사용 이미지(과거 :latest 레이어 등) 정리 — 디스크 확보
+            docker image prune -af
+            echo "== pull =="; time docker compose pull
+            echo "== up =="; time docker compose up -d
+            echo "== disk after =="; df -h /
