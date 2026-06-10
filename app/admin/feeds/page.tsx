@@ -58,6 +58,12 @@ export default async function AdminFeedsPage({
                   </button>
                 </form>
                 <Link
+                  href={`/admin/${feed.id}/preview`}
+                  className="rounded border border-black/15 px-2 py-1 dark:border-white/20"
+                >
+                  미리보기
+                </Link>
+                <Link
                   href={`/admin/${feed.id}/edit`}
                   className="rounded border border-black/15 px-2 py-1 dark:border-white/20"
                 >
