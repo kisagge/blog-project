@@ -3,7 +3,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { getSession } from "@/lib/dal";
 import { logout } from "@/app/actions/auth";
+import ThemeToggle from "@/app/theme-toggle";
 import "./globals.css";
+
+// 페인트 전에 data-theme를 확정해 깜빡임 방지 (localStorage 선택 + system은 OS 추종).
+const THEME_SCRIPT = `(function(){try{var c=localStorage.getItem('theme')||'system';var d=c==='dark'||(c==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,9 +33,11 @@ export default async function RootLayout({
   return (
     <html
       lang="ko"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <header className="border-b border-black/[.08] dark:border-white/[.145]">
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-4">
             <Link href="/" className="text-lg font-semibold tracking-tight">
@@ -79,6 +85,7 @@ export default async function RootLayout({
                   </Link>
                 </>
               )}
+              <ThemeToggle />
             </nav>
           </div>
         </header>
