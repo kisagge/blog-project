@@ -2,6 +2,8 @@
 
 생각과 기록을 남기는 개인 블로그. 공개 피드(목록·상세)와 관리자 화면을 갖춘 Next.js 앱이며, Docker로 AWS Lightsail에 배포되고 `main` push 시 GitHub Actions로 자동 배포된다.
 
+> 아키텍처·엔지니어링 결정·성과는 **[기술 개요(docs/tech-spec.md)](docs/tech-spec.md)** · [English](docs/tech-spec.en.md) 참고.
+
 ## 주요 기능
 
 - **공개 피드**: 글 목록 + 상세(마크다운 렌더), **제목·내용·요약 검색**, **무한스크롤(10개 단위)**
