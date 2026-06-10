@@ -23,6 +23,16 @@ const SCHEMA = [
     "publicEnabled" BOOLEAN NOT NULL DEFAULT true,
     "updatedAt" DATETIME NOT NULL
   )`,
+  `CREATE TABLE "User" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "email" TEXT NOT NULL,
+    "nickname" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+  )`,
+  `CREATE UNIQUE INDEX "User_email_key" ON "User"("email")`,
 ];
 
 export async function setupTestDb() {
