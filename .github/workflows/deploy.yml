@@ -53,7 +53,8 @@ jobs:
 
   deploy:
     needs: build-and-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # main에 push될 때, 또는 main에서 수동 실행(workflow_dispatch)할 때 배포.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - uses: appleboy/ssh-action@v1
