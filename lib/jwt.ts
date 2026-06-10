@@ -1,6 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 
-export type SessionPayload = { admin: true; expiresAt: string };
+export type SessionPayload =
+  | { role: "admin"; expiresAt: string }
+  | { role: "member"; userId: string; nickname: string; expiresAt: string };
 
 const encodedKey = () => new TextEncoder().encode(process.env.SESSION_SECRET);
 

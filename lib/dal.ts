@@ -13,6 +13,6 @@ export const getSession = cache(async () => {
 // 보호용: 세션 없으면 /login로 redirect
 export const verifySession = cache(async () => {
   const session = await getSession();
-  if (!session?.admin) redirect("/login");
+  if (session?.role !== "admin") redirect("/login");
   return session;
 });
