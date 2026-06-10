@@ -3,7 +3,11 @@ import FeedForm from "@/app/admin/feed-form";
 import { updateFeed } from "@/app/admin/actions";
 import { getFeedById } from "@/lib/feeds";
 
-export default async function EditFeedPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditFeedPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const feed = await getFeedById(id);
   if (!feed) notFound();
