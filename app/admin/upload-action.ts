@@ -19,6 +19,9 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
 
   const name = `${randomUUID()}.${check.ext}`;
   await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(join(UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
+  await writeFile(
+    join(UPLOAD_DIR, name),
+    Buffer.from(await file.arrayBuffer()),
+  );
   return { url: `/uploads/${name}` };
 }

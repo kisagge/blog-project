@@ -28,6 +28,6 @@ export async function setPublicEnabled(enabled: boolean) {
 export async function guardPublicAccess() {
   if (await getPublicEnabled()) return;
   const session = await getSession();
-  if (session?.admin) return; // 어드민은 점검 중에도 정상 이용
+  if (session?.role === "admin") return; // 어드민은 점검 중에도 정상 이용
   redirect("/maintenance");
 }

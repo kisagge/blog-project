@@ -4,7 +4,7 @@ import { decrypt } from "@/lib/jwt";
 export async function proxy(req: NextRequest) {
   const token = req.cookies.get("session")?.value;
   const session = await decrypt(token);
-  if (!session?.admin) {
+  if (session?.role !== "admin") {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
   return NextResponse.next();

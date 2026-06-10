@@ -29,3 +29,14 @@ model SiteConfig {
   publicEnabled Boolean  @default(true)   // false면 비어드민의 공개 사이트 접근 차단(점검 모드)
   updatedAt     DateTime @updatedAt
 }
+
+// 외부 회원(관리자 아님). status로 승인 흐름 관리.
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  nickname     String
+  passwordHash String              // "saltHex:hashHex" (scrypt)
+  status       String   @default("pending")   // "pending" | "approved"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

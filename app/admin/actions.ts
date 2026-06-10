@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { setPublicEnabled } from "@/lib/site-config";
+import { approveUser, deleteUser } from "@/lib/users";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
 
 export type FeedFormState =
@@ -86,5 +87,17 @@ export async function setSitePublic(formData: FormData) {
   const enabled = formData.get("enabled") === "true";
   await setPublicEnabled(enabled);
   revalidatePath("/", "layout"); // 홈·피드·점검 페이지 모두 갱신
+  revalidatePath("/admin");
+}
+
+export async function approveUserAction(formData: FormData) {
+  await verifySession();
+  await approveUser(String(formData.get("id") ?? ""));
+  revalidatePath("/admin");
+}
+
+export async function removeUserAction(formData: FormData) {
+  await verifySession();
+  await deleteUser(String(formData.get("id") ?? ""));
   revalidatePath("/admin");
 }

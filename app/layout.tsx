@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { getSession } from "@/lib/dal";
+import { logout } from "@/app/actions/auth";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,11 +20,12 @@ export const metadata: Metadata = {
   description: "BY Playground — 개인 기록 공간",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
   return (
     <html
       lang="ko"
@@ -34,10 +37,48 @@ export default function RootLayout({
             <Link href="/" className="text-lg font-semibold tracking-tight">
               BY Playground
             </Link>
-            <nav className="text-sm">
-              <Link href="/feed" className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50">
+            <nav className="flex items-center gap-4 text-sm">
+              <Link
+                href="/feed"
+                className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+              >
                 Feed
               </Link>
+              {session?.role === "member" ? (
+                <>
+                  <span className="text-zinc-500">{session.nickname}</span>
+                  <form action={logout}>
+                    <button
+                      type="submit"
+                      className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                    >
+                      로그아웃
+                    </button>
+                  </form>
+                </>
+              ) : session?.role === "admin" ? (
+                <Link
+                  href="/admin"
+                  className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                >
+                  관리자
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/signin"
+                    className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                  >
+                    로그인
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                  >
+                    가입
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         </header>

@@ -23,3 +23,10 @@ export function feedFormToObject(formData: FormData) {
     published: formData.get("published") === "on" || formData.get("published") === "true",
   };
 }
+
+export const SignupSchema = z.object({
+  email: z.string().trim().toLowerCase().email("올바른 이메일을 입력하세요."),
+  nickname: z.string().trim().min(1, "닉네임을 입력하세요.").max(20, "닉네임은 20자 이하."),
+  password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다."),
+});
+export type SignupValues = z.infer<typeof SignupSchema>;
