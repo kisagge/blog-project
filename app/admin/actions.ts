@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
+import { setPublicEnabled } from "@/lib/site-config";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
 
 export type FeedFormState =
@@ -14,7 +15,10 @@ function revalidateFeed() {
   revalidatePath("/admin");
 }
 
-export async function createFeed(_state: FeedFormState, formData: FormData): Promise<FeedFormState> {
+export async function createFeed(
+  _state: FeedFormState,
+  formData: FormData,
+): Promise<FeedFormState> {
   await verifySession();
   const parsed = FeedFormSchema.safeParse(feedFormToObject(formData));
   if (!parsed.success) {
@@ -23,13 +27,20 @@ export async function createFeed(_state: FeedFormState, formData: FormData): Pro
   try {
     await prisma.feed.create({ data: parsed.data });
   } catch {
-    return { message: "이미 사용 중인 slug일 수 있습니다.", errors: { slug: ["중복되었거나 저장에 실패했습니다."] } };
+    return {
+      message: "이미 사용 중인 slug일 수 있습니다.",
+      errors: { slug: ["중복되었거나 저장에 실패했습니다."] },
+    };
   }
   revalidateFeed();
   redirect("/admin");
 }
 
-export async function updateFeed(id: string, _state: FeedFormState, formData: FormData): Promise<FeedFormState> {
+export async function updateFeed(
+  id: string,
+  _state: FeedFormState,
+  formData: FormData,
+): Promise<FeedFormState> {
   await verifySession();
   const parsed = FeedFormSchema.safeParse(feedFormToObject(formData));
   if (!parsed.success) {
@@ -38,7 +49,10 @@ export async function updateFeed(id: string, _state: FeedFormState, formData: Fo
   try {
     await prisma.feed.update({ where: { id }, data: parsed.data });
   } catch {
-    return { message: "저장 실패(중복 slug 등).", errors: { slug: ["중복되었거나 저장에 실패했습니다."] } };
+    return {
+      message: "저장 실패(중복 slug 등).",
+      errors: { slug: ["중복되었거나 저장에 실패했습니다."] },
+    };
   }
   revalidateFeed();
   redirect("/admin");
@@ -54,8 +68,23 @@ export async function deleteFeed(formData: FormData) {
 export async function togglePublished(formData: FormData) {
   await verifySession();
   const id = String(formData.get("id") ?? "");
-  const feed = await prisma.feed.findUnique({ where: { id }, select: { published: true } });
+  const feed = await prisma.feed.findUnique({
+    where: { id },
+    select: { published: true },
+  });
   if (!feed) return;
-  await prisma.feed.update({ where: { id }, data: { published: !feed.published } });
+  await prisma.feed.update({
+    where: { id },
+    data: { published: !feed.published },
+  });
   revalidateFeed();
+}
+
+// 사이트 점검 토글: 공개 사이트(홈+피드)를 비어드민에게 열고/닫는다.
+export async function setSitePublic(formData: FormData) {
+  await verifySession();
+  const enabled = formData.get("enabled") === "true";
+  await setPublicEnabled(enabled);
+  revalidatePath("/", "layout"); // 홈·피드·점검 페이지 모두 갱신
+  revalidatePath("/admin");
 }

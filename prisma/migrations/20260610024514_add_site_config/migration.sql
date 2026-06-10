@@ -1,0 +1,6 @@
+-- CreateTable
+CREATE TABLE "SiteConfig" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
+    "publicEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "updatedAt" DATETIME NOT NULL
+);

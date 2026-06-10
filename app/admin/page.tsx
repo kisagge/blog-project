@@ -1,13 +1,45 @@
 import Link from "next/link";
 import { getAllFeeds } from "@/lib/feeds";
-import { togglePublished } from "@/app/admin/actions";
+import { getPublicEnabled } from "@/lib/site-config";
+import { setSitePublic, togglePublished } from "@/app/admin/actions";
 import { DeleteFeedButton } from "@/app/admin/delete-feed-button";
 
 export default async function AdminListPage() {
-  const feeds = await getAllFeeds();
+  const [feeds, publicEnabled] = await Promise.all([
+    getAllFeeds(),
+    getPublicEnabled(),
+  ]);
 
   return (
     <section>
+      <div className="mb-8 flex items-center justify-between gap-3 rounded-lg border border-black/[.08] p-4 dark:border-white/[.145]">
+        <div className="min-w-0">
+          <p className="font-medium">사이트 공개 상태</p>
+          <p className="mt-0.5 text-sm text-zinc-500">
+            {publicEnabled
+              ? "공개 중 — 누구나 홈·피드를 볼 수 있습니다."
+              : "점검 중 — 비로그인 방문자는 점검 안내만 보이고, 관리자만 이용할 수 있습니다."}
+          </p>
+        </div>
+        <form action={setSitePublic} className="shrink-0">
+          <input
+            type="hidden"
+            name="enabled"
+            value={publicEnabled ? "false" : "true"}
+          />
+          <button
+            type="submit"
+            className={
+              publicEnabled
+                ? "rounded border border-red-300 px-3 py-1.5 text-sm text-red-600"
+                : "bg-foreground text-background rounded px-3 py-1.5 text-sm font-medium"
+            }
+          >
+            {publicEnabled ? "점검 모드로 전환" : "사이트 공개로 전환"}
+          </button>
+        </form>
+      </div>
+
       <h1 className="mb-6 text-xl font-semibold tracking-tight">글 목록</h1>
       {feeds.length === 0 ? (
         <p className="text-zinc-500">
