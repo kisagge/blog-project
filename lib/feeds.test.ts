@@ -3,6 +3,7 @@ import { setupTestDb } from "@/lib/test-db";
 
 type Feeds = typeof import("@/lib/feeds");
 let searchPublishedFeeds: Feeds["searchPublishedFeeds"];
+let countFeeds: Feeds["countFeeds"];
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
@@ -39,7 +40,7 @@ beforeAll(async () => {
     },
   });
 
-  ({ searchPublishedFeeds } = await import("@/lib/feeds"));
+  ({ searchPublishedFeeds, countFeeds } = await import("@/lib/feeds"));
 });
 
 afterAll(async () => {
@@ -94,5 +95,9 @@ describe("searchPublishedFeeds", () => {
     });
     expect(items).toHaveLength(1);
     expect(hasMore).toBe(false);
+  });
+
+  test("countFeeds: 전체/공개/초안 집계 (공개12 + 초안1)", async () => {
+    expect(await countFeeds()).toEqual({ total: 13, published: 12, draft: 1 });
   });
 });

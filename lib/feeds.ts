@@ -61,3 +61,12 @@ export async function getAllFeeds() {
 export async function getFeedById(id: string) {
   return prisma.feed.findUnique({ where: { id } });
 }
+
+// 관리자 대시보드용: 목록을 다 불러오지 않고 count로 요약.
+export async function countFeeds() {
+  const [total, published] = await Promise.all([
+    prisma.feed.count(),
+    prisma.feed.count({ where: { published: true } }),
+  ]);
+  return { total, published, draft: total - published };
+}
