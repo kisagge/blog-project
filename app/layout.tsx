@@ -64,12 +64,20 @@ export default async function RootLayout({
                   관리자
                 </Link>
               ) : (
-                <Link
-                  href="/signin"
-                  className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-                >
-                  로그인
-                </Link>
+                <>
+                  <Link
+                    href="/signin"
+                    className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                  >
+                    로그인
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                  >
+                    가입
+                  </Link>
+                </>
               )}
             </nav>
           </div>
