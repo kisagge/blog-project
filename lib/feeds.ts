@@ -43,18 +43,31 @@ export const getFeedBySlug = cache(async (slug: string) => {
   });
 });
 
-// 관리자용: 초안 포함 전체, 최신순
-export async function getAllFeeds() {
-  return prisma.feed.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      published: true,
-      createdAt: true,
-    },
-  });
+export const ADMIN_PAGE_SIZE = 20;
+
+// 관리자용: 초안 포함, 최신순, 페이지 단위(기본 20). 목록 + 전체 개수 반환.
+export async function getAdminFeedsPage(
+  page: number,
+  pageSize = ADMIN_PAGE_SIZE,
+) {
+  const take = pageSize;
+  const skip = (Math.max(1, page) - 1) * take;
+  const [items, total] = await Promise.all([
+    prisma.feed.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        published: true,
+        createdAt: true,
+      },
+      skip,
+      take,
+    }),
+    prisma.feed.count(),
+  ]);
+  return { items, total, pageSize: take };
 }
 
 // 관리자용: 공개 여부 무관 단건(id)

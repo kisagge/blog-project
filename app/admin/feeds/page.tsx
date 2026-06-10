@@ -1,17 +1,25 @@
 import Link from "next/link";
-import { getAllFeeds } from "@/lib/feeds";
+import { getAdminFeedsPage } from "@/lib/feeds";
 import { togglePublished } from "@/app/admin/actions";
 import { DeleteFeedButton } from "@/app/admin/delete-feed-button";
+import Pager, { parsePage } from "@/app/admin/pager";
 
 export const metadata = { title: "글 목록 · 관리자" };
 
-export default async function AdminFeedsPage() {
-  const feeds = await getAllFeeds();
+export default async function AdminFeedsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
+  const { items: feeds, total, pageSize } = await getAdminFeedsPage(page);
 
   return (
     <section>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">글 목록</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          글 목록 ({total})
+        </h1>
         <Link
           href="/admin/new"
           className="bg-foreground text-background rounded-full px-4 py-1.5 text-sm font-medium"
@@ -61,6 +69,12 @@ export default async function AdminFeedsPage() {
           ))}
         </ul>
       )}
+      <Pager
+        page={page}
+        total={total}
+        pageSize={pageSize}
+        basePath="/admin/feeds"
+      />
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { setupTestDb } from "@/lib/test-db";
 type Feeds = typeof import("@/lib/feeds");
 let searchPublishedFeeds: Feeds["searchPublishedFeeds"];
 let countFeeds: Feeds["countFeeds"];
+let getAdminFeedsPage: Feeds["getAdminFeedsPage"];
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
@@ -40,7 +41,8 @@ beforeAll(async () => {
     },
   });
 
-  ({ searchPublishedFeeds, countFeeds } = await import("@/lib/feeds"));
+  ({ searchPublishedFeeds, countFeeds, getAdminFeedsPage } =
+    await import("@/lib/feeds"));
 });
 
 afterAll(async () => {
@@ -99,5 +101,14 @@ describe("searchPublishedFeeds", () => {
 
   test("countFeeds: 전체/공개/초안 집계 (공개12 + 초안1)", async () => {
     expect(await countFeeds()).toEqual({ total: 13, published: 12, draft: 1 });
+  });
+
+  test("getAdminFeedsPage: 초안 포함 페이지네이션 (총13, size10)", async () => {
+    const p1 = await getAdminFeedsPage(1, 10);
+    expect(p1.items).toHaveLength(10);
+    expect(p1.total).toBe(13);
+    const p2 = await getAdminFeedsPage(2, 10);
+    expect(p2.items).toHaveLength(3);
+    expect(p2.total).toBe(13);
   });
 });

@@ -1,12 +1,18 @@
-import { listUsersByStatus } from "@/lib/users";
+import { listUsersByStatus, listUsersPage } from "@/lib/users";
 import { approveUserAction, removeUserAction } from "@/app/admin/actions";
+import Pager, { parsePage } from "@/app/admin/pager";
 
 export const metadata = { title: "회원 관리 · 관리자" };
 
-export default async function AdminMembersPage() {
+export default async function AdminMembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
   const [pending, members] = await Promise.all([
     listUsersByStatus("pending"),
-    listUsersByStatus("approved"),
+    listUsersPage("approved", page),
   ]);
 
   return (
@@ -48,13 +54,13 @@ export default async function AdminMembersPage() {
       )}
 
       <h2 className="mt-8 mb-3 text-lg font-semibold tracking-tight">
-        회원 ({members.length})
+        회원 ({members.total})
       </h2>
-      {members.length === 0 ? (
+      {members.items.length === 0 ? (
         <p className="text-sm text-zinc-500">승인된 회원이 없습니다.</p>
       ) : (
         <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
-          {members.map((u) => (
+          {members.items.map((u) => (
             <li
               key={u.id}
               className="flex items-center justify-between gap-3 py-2 text-sm"
@@ -72,6 +78,12 @@ export default async function AdminMembersPage() {
           ))}
         </ul>
       )}
+      <Pager
+        page={page}
+        total={members.total}
+        pageSize={members.pageSize}
+        basePath="/admin/members"
+      />
     </section>
   );
 }

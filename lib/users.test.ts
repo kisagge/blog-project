@@ -55,4 +55,21 @@ describe("users", () => {
     expect(await m.countUsersByStatus("approved")).toBe(1);
     expect(await m.countUsersByStatus("pending")).toBe(0);
   });
+
+  test("listUsersPage: 상태별 페이지네이션 (승인 25명, size20)", async () => {
+    for (let i = 0; i < 25; i++) {
+      await m.createPendingUser({
+        email: `p${i}@x.com`,
+        nickname: `n${i}`,
+        password: "password1",
+      });
+      const u = await m.findUserByEmail(`p${i}@x.com`);
+      await m.approveUser(u!.id);
+    }
+    const p1 = await m.listUsersPage("approved", 1, 20);
+    expect(p1.items).toHaveLength(20);
+    expect(p1.total).toBe(26); // 기존 a@x.com 1명 + 25명
+    const p2 = await m.listUsersPage("approved", 2, 20);
+    expect(p2.items).toHaveLength(6);
+  });
 });

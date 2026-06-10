@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ADMIN_PAGE_SIZE } from "@/lib/feeds";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
 type Result<T = undefined> =
@@ -67,4 +68,25 @@ export async function listUsersByStatus(status: "pending" | "approved") {
 // 관리자 대시보드용 카운트.
 export async function countUsersByStatus(status: "pending" | "approved") {
   return prisma.user.count({ where: { status } });
+}
+
+// 관리자용: 상태별 페이지 단위(기본 20). 목록 + 전체 개수 반환.
+export async function listUsersPage(
+  status: "pending" | "approved",
+  page: number,
+  pageSize = ADMIN_PAGE_SIZE,
+) {
+  const take = pageSize;
+  const skip = (Math.max(1, page) - 1) * take;
+  const [items, total] = await Promise.all([
+    prisma.user.findMany({
+      where: { status },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, email: true, nickname: true, createdAt: true },
+      skip,
+      take,
+    }),
+    prisma.user.count({ where: { status } }),
+  ]);
+  return { items, total, pageSize: take };
 }
