@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE } from "@/lib/feeds";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { ADMIN_EMAIL } from "@/lib/comment-actor";
 
 type Result<T = undefined> =
   | { ok: true; value?: T }
@@ -59,7 +60,7 @@ export async function deleteUser(id: string) {
 
 export async function listUsersByStatus(status: "pending" | "approved") {
   return prisma.user.findMany({
-    where: { status },
+    where: { status, email: { not: ADMIN_EMAIL } },
     orderBy: { createdAt: "desc" },
     select: { id: true, email: true, nickname: true, createdAt: true },
   });
@@ -67,7 +68,7 @@ export async function listUsersByStatus(status: "pending" | "approved") {
 
 // 관리자 대시보드용 카운트.
 export async function countUsersByStatus(status: "pending" | "approved") {
-  return prisma.user.count({ where: { status } });
+  return prisma.user.count({ where: { status, email: { not: ADMIN_EMAIL } } });
 }
 
 // 관리자용: 상태별 페이지 단위(기본 20). 목록 + 전체 개수 반환.
@@ -78,15 +79,16 @@ export async function listUsersPage(
 ) {
   const take = pageSize;
   const skip = (Math.max(1, page) - 1) * take;
+  const where = { status, email: { not: ADMIN_EMAIL } };
   const [items, total] = await Promise.all([
     prisma.user.findMany({
-      where: { status },
+      where,
       orderBy: { createdAt: "desc" },
       select: { id: true, email: true, nickname: true, createdAt: true },
       skip,
       take,
     }),
-    prisma.user.count({ where: { status } }),
+    prisma.user.count({ where }),
   ]);
   return { items, total, pageSize: take };
 }
