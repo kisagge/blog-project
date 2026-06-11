@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import CommentBody from "./comment-body";
 import CommentForm from "./comment-form";
+import CommentLikeButton from "./comment-like-button";
 import { deleteCommentAction } from "./comment-actions";
 import type { CommentNode } from "@/lib/comments";
 
@@ -51,16 +52,28 @@ export default function CommentItem({
           <CommentBody content={node.content} />
         </div>
       )}
-      <div className="mt-1 flex gap-3 text-xs text-zinc-500">
-        {!isReply && !node.deleted && (
-          <button
-            type="button"
-            onClick={() => setReplying((v) => !v)}
-            className="hover:text-zinc-800 dark:hover:text-zinc-200"
-          >
-            답글
-          </button>
+      <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
+        {!node.deleted && (
+          <CommentLikeButton
+            commentId={node.id}
+            slug={slug}
+            initialCount={node.likeCount}
+            initialLiked={node.liked}
+            canParticipate={canParticipate}
+          />
         )}
+        {!isReply &&
+          (node.deleted ? (
+            node.replies.length > 0 && <span>답글 {node.replies.length}</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setReplying((v) => !v)}
+              className="hover:text-zinc-800 dark:hover:text-zinc-200"
+            >
+              답글{node.replies.length > 0 ? ` ${node.replies.length}` : ""}
+            </button>
+          ))}
         {canDelete && (
           <button
             type="button"

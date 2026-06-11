@@ -43,6 +43,7 @@ model User {
   updatedAt    DateTime @updatedAt
   comments  Comment[]
   likes     Like[]
+  commentLikes CommentLike[]
 }
 
 model Comment {
@@ -57,9 +58,21 @@ model Comment {
   user      User      @relation(fields: [userId], references: [id])
   parent    Comment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("replies")
+  commentLikes CommentLike[]
 
   @@index([feedId])
   @@index([parentId])
+}
+
+model CommentLike {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([commentId, userId])
 }
 
 model Like {

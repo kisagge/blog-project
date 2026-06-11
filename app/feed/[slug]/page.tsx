@@ -17,17 +17,21 @@ export async function generateMetadata({
 
 export default async function FeedDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ sort?: string }>;
 }) {
   const { slug } = await params;
   const feed = await getFeedBySlug(slug);
   if (!feed) notFound();
 
+  const sort = (await searchParams).sort === "newest" ? "newest" : "popular";
+
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <FeedArticle feed={feed} />
-      <FeedEngagement feedId={feed.id} slug={feed.slug} />
+      <FeedEngagement feedId={feed.id} slug={feed.slug} sort={sort} />
     </main>
   );
 }
