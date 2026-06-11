@@ -36,8 +36,12 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <head>
+        {/* 페인트 전에 data-theme 확정 → 다크모드 새로고침 깜빡임(FOUC) 방지.
+            head에서 실행돼 body 도착·렌더보다 먼저 적용된다. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
+      <body className="flex min-h-full flex-col">
         <header className="border-b border-black/[.08] dark:border-white/[.145]">
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-4">
             <Link href="/" className="text-lg font-semibold tracking-tight">
