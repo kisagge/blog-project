@@ -79,15 +79,16 @@ export async function listUsersPage(
 ) {
   const take = pageSize;
   const skip = (Math.max(1, page) - 1) * take;
+  const where = { status, email: { not: ADMIN_EMAIL } };
   const [items, total] = await Promise.all([
     prisma.user.findMany({
-      where: { status },
+      where,
       orderBy: { createdAt: "desc" },
       select: { id: true, email: true, nickname: true, createdAt: true },
       skip,
       take,
     }),
-    prisma.user.count({ where: { status } }),
+    prisma.user.count({ where }),
   ]);
   return { items, total, pageSize: take };
 }
