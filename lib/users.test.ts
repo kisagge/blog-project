@@ -1,5 +1,7 @@
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
+
+vi.mock("server-only", () => ({}));
 
 type Users = typeof import("@/lib/users");
 let m: Users;
@@ -71,5 +73,14 @@ describe("users", () => {
     expect(p1.total).toBe(26); // 기존 a@x.com 1명 + 25명
     const p2 = await m.listUsersPage("approved", 2, 20);
     expect(p2.items).toHaveLength(6);
+  });
+
+  test("예약 admin User는 회원 목록/카운트에서 제외", async () => {
+    const { ensureAdminUser } = await import("@/lib/comment-actor");
+    await ensureAdminUser();
+    const before = await m.countUsersByStatus("approved");
+    const list = await m.listUsersByStatus("approved");
+    expect(list.some((u) => u.email === "admin@byjang.local")).toBe(false);
+    expect(before).toBe(list.length);
   });
 });
