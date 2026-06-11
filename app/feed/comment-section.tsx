@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { CommentNode, CommentSort } from "@/lib/comments";
+import { ToastViewport, useToast } from "@/app/toast";
 import CommentForm from "./comment-form";
 import CommentItem from "./comment-item";
-import { loadMoreCommentsAction } from "./comment-actions";
+import { deleteCommentAction, loadMoreCommentsAction } from "./comment-actions";
 
 export default function CommentSection({
   feedId,
@@ -29,11 +30,15 @@ export default function CommentSection({
   const [total, setTotal] = useState(initialTotal);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [loadingMore, startMore] = useTransition();
+  const [, startDelete] = useTransition();
   const pendingScroll = useRef<string | null>(null);
+  const { toasts, show } = useToast();
+
+  const confirmRef = useRef<HTMLDialogElement>(null);
+  const deleteIdRef = useRef<string | null>(null);
 
   const hasMore = items.length < total;
 
-  // 새로 추가/이동된 댓글로 스크롤 + 잠깐 하이라이트.
   useEffect(() => {
     const id = pendingScroll.current;
     if (!id) return;
@@ -67,9 +72,19 @@ export default function CommentSection({
     focusAfterRender(reply.id);
   }
 
-  function onDeleted(id: string) {
+  function requestDelete(id: string) {
+    deleteIdRef.current = id;
+    confirmRef.current?.showModal();
+  }
+
+  function confirmDelete() {
+    const id = deleteIdRef.current;
+    confirmRef.current?.close();
+    if (!id) return;
+    deleteIdRef.current = null;
+
     const top = items.find((t) => t.id === id);
-    if (top && top.replies.length === 0) setTotal((t) => t - 1); // 대댓글 없는 상위 → 완전 삭제
+    if (top && top.replies.length === 0) setTotal((t) => t - 1);
     setItems((prev) =>
       prev.flatMap((t) => {
         if (t.id === id)
@@ -81,6 +96,8 @@ export default function CommentSection({
         return [t];
       }),
     );
+    startDelete(() => deleteCommentAction(id, slug));
+    show("댓글이 삭제되었습니다.", "success");
   }
 
   function loadMore() {
@@ -124,7 +141,7 @@ export default function CommentSection({
               actorUserId={actorUserId}
               isAdmin={isAdmin}
               highlightId={highlightId}
-              onDeleted={onDeleted}
+              onRequestDelete={requestDelete}
               onCreatedReply={onCreatedReply}
             />
           ))}
@@ -143,6 +160,34 @@ export default function CommentSection({
           </button>
         </div>
       )}
+
+      <dialog
+        ref={confirmRef}
+        className="bg-background text-foreground m-auto w-[min(90vw,22rem)] rounded-lg border border-black/15 p-5 shadow-xl backdrop:bg-black/40 dark:border-white/20"
+      >
+        <h2 className="text-base font-semibold">댓글을 삭제할까요?</h2>
+        <p className="mt-2 text-sm text-zinc-500">
+          삭제한 댓글은 되돌릴 수 없습니다.
+        </p>
+        <div className="mt-5 flex justify-end gap-2 text-sm">
+          <button
+            type="button"
+            onClick={() => confirmRef.current?.close()}
+            className="rounded border border-black/15 px-3 py-1.5 dark:border-white/20"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={confirmDelete}
+            className="rounded bg-red-600 px-3 py-1.5 font-medium text-white"
+          >
+            삭제
+          </button>
+        </div>
+      </dialog>
+
+      <ToastViewport toasts={toasts} />
     </>
   );
 }

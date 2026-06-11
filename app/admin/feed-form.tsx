@@ -2,7 +2,7 @@
 import { useActionState, useRef, useState } from "react";
 import type { FeedFormState } from "@/app/admin/actions";
 import { uploadImage } from "@/app/admin/upload-action";
-import { ToastViewport, useToast } from "@/app/admin/toast";
+import { ToastViewport, useToast } from "@/app/toast";
 import { checkImage } from "@/lib/upload";
 
 type Props = {

@@ -1,9 +1,8 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import CommentBody from "./comment-body";
 import CommentForm from "./comment-form";
 import CommentLikeButton from "./comment-like-button";
-import { deleteCommentAction } from "./comment-actions";
 import type { CommentNode } from "@/lib/comments";
 
 export default function CommentItem({
@@ -15,7 +14,7 @@ export default function CommentItem({
   isAdmin,
   isReply = false,
   highlightId,
-  onDeleted,
+  onRequestDelete,
   onCreatedReply,
 }: {
   node: CommentNode;
@@ -26,19 +25,15 @@ export default function CommentItem({
   isAdmin: boolean;
   isReply?: boolean;
   highlightId?: string | null;
-  onDeleted: (id: string) => void;
+  onRequestDelete: (id: string) => void;
   onCreatedReply: (parentId: string, comment: CommentNode) => void;
 }) {
   const [replying, setReplying] = useState(false);
-  const [, start] = useTransition();
+  const [repliesOpen, setRepliesOpen] = useState(false);
   const canDelete =
     !node.deleted &&
     (isAdmin || (!!actorUserId && actorUserId === node.userId));
-
-  function handleDelete() {
-    onDeleted(node.id); // 낙관적 갱신(부모 상태에서 제거/툼스톤)
-    start(() => deleteCommentAction(node.id, slug));
-  }
+  const replyCount = node.replies.length;
 
   return (
     <li
@@ -76,28 +71,26 @@ export default function CommentItem({
             canParticipate={canParticipate}
           />
         )}
-        {!isReply &&
-          (node.deleted ? (
-            node.replies.length > 0 && <span>답글 {node.replies.length}</span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setReplying((v) => !v)}
-              className="hover:text-zinc-800 dark:hover:text-zinc-200"
-            >
-              답글{node.replies.length > 0 ? ` ${node.replies.length}` : ""}
-            </button>
-          ))}
+        {!isReply && !node.deleted && (
+          <button
+            type="button"
+            onClick={() => setReplying((v) => !v)}
+            className="hover:text-zinc-800 dark:hover:text-zinc-200"
+          >
+            답글
+          </button>
+        )}
         {canDelete && (
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => onRequestDelete(node.id)}
             className="hover:text-red-600"
           >
             삭제
           </button>
         )}
       </div>
+
       {replying && (
         <div className="mt-2">
           <CommentForm
@@ -107,13 +100,24 @@ export default function CommentItem({
             canParticipate={canParticipate}
             placeholder="답글을 입력하세요"
             onCreated={(reply) => {
+              setRepliesOpen(true); // 답글 달면 펼쳐서 보이게
               onCreatedReply(node.id, reply);
               setReplying(false);
             }}
           />
         </div>
       )}
-      {node.replies.length > 0 && (
+
+      {!isReply && replyCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setRepliesOpen((v) => !v)}
+          className="mt-2 text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+        >
+          {repliesOpen ? "답글 숨기기" : `답글 ${replyCount}개 보기`}
+        </button>
+      )}
+      {!isReply && repliesOpen && replyCount > 0 && (
         <ul className="mt-3 flex flex-col gap-3 border-l border-black/[.06] pl-4 dark:border-white/[.1]">
           {node.replies.map((r) => (
             <CommentItem
@@ -126,7 +130,7 @@ export default function CommentItem({
               isAdmin={isAdmin}
               isReply
               highlightId={highlightId}
-              onDeleted={onDeleted}
+              onRequestDelete={onRequestDelete}
               onCreatedReply={onCreatedReply}
             />
           ))}
