@@ -1,11 +1,9 @@
-import Link from "next/link";
 import { getSession } from "@/lib/dal";
 import { getCommentActor } from "@/lib/comment-actor";
 import { getFeedComments, type CommentSort } from "@/lib/comments";
 import { getLikeSummary } from "@/lib/likes";
 import LikeButton from "./like-button";
-import CommentForm from "./comment-form";
-import CommentList from "./comment-list";
+import CommentSection from "./comment-section";
 
 export default async function FeedEngagement({
   feedId,
@@ -20,7 +18,7 @@ export default async function FeedEngagement({
   const actor = await getCommentActor();
   const isAdmin = session?.role === "admin";
   const canParticipate = !!actor;
-  const [comments, like] = await Promise.all([
+  const [page, like] = await Promise.all([
     getFeedComments(feedId, { sort, viewerUserId: actor?.userId }),
     getLikeSummary(feedId, actor?.userId),
   ]);
@@ -34,57 +32,18 @@ export default async function FeedEngagement({
         initialLiked={like.liked}
         canParticipate={canParticipate}
       />
-      <div className="mt-8 mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">
-          댓글 {comments.length}
-        </h2>
-        <nav className="flex gap-3 text-sm">
-          <SortLink slug={slug} value="popular" current={sort} label="인기순" />
-          <SortLink slug={slug} value="newest" current={sort} label="최신순" />
-        </nav>
-      </div>
-      <div className="mb-6">
-        <CommentForm
-          feedId={feedId}
-          slug={slug}
-          canParticipate={canParticipate}
-        />
-      </div>
-      <CommentList
-        comments={comments}
+      {/* 정렬 변경(URL) 시 새 초기 데이터로 다시 마운트 */}
+      <CommentSection
+        key={sort}
         feedId={feedId}
         slug={slug}
+        sort={sort}
         canParticipate={canParticipate}
         actorUserId={actor?.userId}
         isAdmin={isAdmin}
+        initialItems={page.items}
+        initialTotal={page.total}
       />
     </section>
-  );
-}
-
-function SortLink({
-  slug,
-  value,
-  current,
-  label,
-}: {
-  slug: string;
-  value: CommentSort;
-  current: CommentSort;
-  label: string;
-}) {
-  const active = current === value;
-  return (
-    <Link
-      href={`/feed/${slug}?sort=${value}`}
-      scroll={false}
-      className={
-        active
-          ? "font-semibold"
-          : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-      }
-    >
-      {label}
-    </Link>
   );
 }
