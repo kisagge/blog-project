@@ -1,7 +1,9 @@
 "use client";
-import { useActionState, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import LoginRequiredModal from "./login-required-modal";
 import { addCommentAction, type ActionState } from "./comment-actions";
+
+const MAX = 2000;
 
 export default function CommentForm({
   feedId,
@@ -19,16 +21,28 @@ export default function CommentForm({
   onDone?: () => void;
 }) {
   const action = addCommentAction.bind(null, { feedId, slug, parentId });
+  const [content, setContent] = useState("");
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     async (s, fd) => {
       const r = await action(s, fd);
-      if (!r?.error) onDone?.();
+      if (!r?.error) {
+        setContent("");
+        onDone?.();
+      }
       return r;
     },
     undefined,
   );
+  const taRef = useRef<HTMLTextAreaElement>(null);
   const modal = useRef<HTMLDialogElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
+
+  // 입력에 맞춰 높이 자동 확장. 최대 5줄(max-height)까지 늘고 그 이상은 스크롤.
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${ta.scrollHeight}px`;
+  }, [content]);
 
   if (!canParticipate) {
     return (
@@ -36,7 +50,7 @@ export default function CommentForm({
         <button
           type="button"
           onClick={() => modal.current?.showModal()}
-          className="w-full rounded border border-black/15 px-3 py-2 text-left text-sm text-zinc-500 dark:border-white/20"
+          className="w-full rounded-lg border border-black/15 p-3 text-left text-sm text-zinc-500 dark:border-white/20"
         >
           {placeholder}
         </button>
@@ -45,30 +59,40 @@ export default function CommentForm({
     );
   }
 
+  const tooLong = content.length > MAX;
+  const empty = content.trim().length === 0;
+  const disabled = pending || empty || tooLong;
+
   return (
-    <form
-      ref={formRef}
-      action={(fd) => {
-        formAction(fd);
-        formRef.current?.reset();
-      }}
-      className="flex flex-col gap-2"
-    >
+    <form action={formAction} className="flex flex-col gap-2">
       <textarea
+        ref={taRef}
         name="content"
-        rows={parentId ? 2 : 3}
-        maxLength={2000}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        maxLength={MAX}
+        rows={1}
         placeholder={placeholder}
-        className="rounded border border-black/15 bg-transparent px-3 py-2 text-sm dark:border-white/20"
+        className="max-h-[7.75rem] min-h-[2.75rem] w-full resize-none overflow-y-auto rounded-lg border border-black/15 bg-transparent p-3 text-sm outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
       />
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="bg-foreground text-background w-fit rounded-full px-4 py-1.5 text-sm font-medium disabled:opacity-50"
-      >
-        {pending ? "등록 중…" : parentId ? "답글" : "댓글 등록"}
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        {state?.error ? (
+          <p className="text-sm text-red-600">{state.error}</p>
+        ) : (
+          <span
+            className={`text-xs ${tooLong ? "text-red-600" : "text-zinc-400"}`}
+          >
+            {content.length}/{MAX}
+          </span>
+        )}
+        <button
+          type="submit"
+          disabled={disabled}
+          className="bg-foreground text-background shrink-0 rounded-full px-4 py-1.5 text-sm font-medium disabled:opacity-40"
+        >
+          {pending ? "등록 중…" : parentId ? "답글" : "댓글 등록"}
+        </button>
+      </div>
     </form>
   );
 }

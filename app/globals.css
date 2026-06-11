@@ -49,4 +49,25 @@ body {
   summary {
     cursor: pointer;
   }
+
+  /* 얇고 은은한 테마 대응 스크롤바(페이지·댓글 입력 등). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, currentColor 25%, transparent)
+      transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, currentColor 22%, transparent);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, currentColor 38%, transparent);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
