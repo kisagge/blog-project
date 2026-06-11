@@ -51,13 +51,13 @@ describe("comment likes", () => {
     expect(await cl.toggleCommentLike(commentId, u1)).toBe(true);
     expect(await cl.toggleCommentLike(commentId, u2)).toBe(true);
     const tree = await c.getFeedComments(feedId, { viewerUserId: u1 });
-    expect(tree[0].likeCount).toBe(2);
-    expect(tree[0].liked).toBe(true);
+    expect(tree.items[0].likeCount).toBe(2);
+    expect(tree.items[0].liked).toBe(true);
     // 안 누른 뷰어
     const tree2 = await c.getFeedComments(feedId, { viewerUserId: undefined });
-    expect(tree2[0].liked).toBe(false);
+    expect(tree2.items[0].liked).toBe(false);
     // 취소
     expect(await cl.toggleCommentLike(commentId, u1)).toBe(false);
-    expect((await c.getFeedComments(feedId))[0].likeCount).toBe(1);
+    expect((await c.getFeedComments(feedId)).items[0].likeCount).toBe(1);
   });
 });

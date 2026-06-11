@@ -1,7 +1,8 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
+import type { CommentNode } from "@/lib/comments";
 import LoginRequiredModal from "./login-required-modal";
-import { addCommentAction, type ActionState } from "./comment-actions";
+import { addCommentAction, type AddCommentResult } from "./comment-actions";
 
 const MAX = 2000;
 
@@ -11,28 +12,28 @@ export default function CommentForm({
   parentId,
   canParticipate,
   placeholder = "댓글을 입력하세요",
-  onDone,
+  onCreated,
 }: {
   feedId: string;
   slug: string;
   parentId?: string;
   canParticipate: boolean;
   placeholder?: string;
-  onDone?: () => void;
+  onCreated?: (comment: CommentNode) => void;
 }) {
   const action = addCommentAction.bind(null, { feedId, slug, parentId });
   const [content, setContent] = useState("");
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    async (s, fd) => {
-      const r = await action(s, fd);
-      if (!r?.error) {
-        setContent("");
-        onDone?.();
-      }
-      return r;
-    },
-    undefined,
-  );
+  const [state, formAction, pending] = useActionState<
+    AddCommentResult | undefined,
+    FormData
+  >(async (s, fd) => {
+    const r = await action(s, fd);
+    if (r && "comment" in r) {
+      setContent("");
+      onCreated?.(r.comment);
+    }
+    return r;
+  }, undefined);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const modal = useRef<HTMLDialogElement>(null);
 
@@ -62,6 +63,7 @@ export default function CommentForm({
   const tooLong = content.length > MAX;
   const empty = content.trim().length === 0;
   const disabled = pending || empty || tooLong;
+  const error = state && "error" in state ? state.error : undefined;
 
   return (
     <form action={formAction} className="flex flex-col gap-2">
@@ -76,8 +78,8 @@ export default function CommentForm({
         className="max-h-[7.75rem] min-h-[2.75rem] w-full resize-none overflow-y-auto rounded-lg border border-black/15 bg-transparent p-3 text-sm outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
       />
       <div className="flex items-center justify-between gap-3">
-        {state?.error ? (
-          <p className="text-sm text-red-600">{state.error}</p>
+        {error ? (
+          <p className="text-sm text-red-600">{error}</p>
         ) : (
           <span
             className={`text-xs ${tooLong ? "text-red-600" : "text-zinc-400"}`}

@@ -79,54 +79,91 @@ function toNode(
   };
 }
 
-// 댓글 트리. 상위 댓글은 sort(기본 인기순), 대댓글은 항상 시간순(정렬 영향 없음).
+export const COMMENT_PAGE_SIZE = 25;
+
+const NODE_SELECT = {
+  id: true,
+  userId: true,
+  content: true,
+  deletedAt: true,
+  createdAt: true,
+  parentId: true,
+  user: { select: { nickname: true } },
+  _count: { select: { commentLikes: true } },
+} as const;
+
+export type CommentPage = { items: CommentNode[]; total: number };
+
+// 상위 댓글을 sort(기본 인기순) + skip/take로 페이지네이션. 각 상위의 대댓글은 시간순 동봉.
+// total은 상위 댓글 전체 수("더보기" 노출 판단용).
 export async function getFeedComments(
   feedId: string,
-  opts: { sort?: CommentSort; viewerUserId?: string } = {},
-): Promise<CommentNode[]> {
-  const sort = opts.sort ?? "popular";
-  const rows = await prisma.comment.findMany({
-    where: { feedId },
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      userId: true,
-      content: true,
-      deletedAt: true,
-      createdAt: true,
-      parentId: true,
-      user: { select: { nickname: true } },
-      _count: { select: { commentLikes: true } },
-    },
-  });
-  const likedIds = opts.viewerUserId
+  opts: {
+    sort?: CommentSort;
+    skip?: number;
+    take?: number;
+    viewerUserId?: string;
+  } = {},
+): Promise<CommentPage> {
+  const {
+    sort = "popular",
+    skip = 0,
+    take = COMMENT_PAGE_SIZE,
+    viewerUserId,
+  } = opts;
+  const orderBy =
+    sort === "popular"
+      ? [
+          { commentLikes: { _count: "desc" as const } },
+          { createdAt: "desc" as const },
+        ]
+      : [{ createdAt: "desc" as const }];
+
+  const [total, topRows] = await Promise.all([
+    prisma.comment.count({ where: { feedId, parentId: null } }),
+    prisma.comment.findMany({
+      where: { feedId, parentId: null },
+      orderBy,
+      skip,
+      take,
+      select: NODE_SELECT,
+    }),
+  ]);
+
+  const topIds = topRows.map((t) => t.id);
+  const replyRows = topIds.length
+    ? await prisma.comment.findMany({
+        where: { parentId: { in: topIds } },
+        orderBy: { createdAt: "asc" },
+        select: NODE_SELECT,
+      })
+    : [];
+
+  const likedIds = viewerUserId
     ? new Set(
         (
           await prisma.commentLike.findMany({
-            where: { userId: opts.viewerUserId, comment: { feedId } },
+            where: {
+              userId: viewerUserId,
+              commentId: { in: [...topIds, ...replyRows.map((r) => r.id)] },
+            },
             select: { commentId: true },
           })
         ).map((r) => r.commentId),
       )
     : new Set<string>();
 
-  const tops = rows
-    .filter((r) => r.parentId === null)
-    .map((r) => ({ ...toNode(r, likedIds), replies: [] as CommentNode[] }));
-  const byId = new Map(tops.map((t) => [t.id, t]));
-  for (const r of rows) {
-    if (r.parentId && byId.has(r.parentId))
-      byId
-        .get(r.parentId)!
-        .replies.push({ ...toNode(r, likedIds), replies: [] });
+  const items = topRows.map((t) => ({
+    ...toNode(t, likedIds),
+    replies: [] as CommentNode[],
+  }));
+  const byId = new Map(items.map((n) => [n.id, n]));
+  for (const r of replyRows) {
+    byId
+      .get(r.parentId!)
+      ?.replies.push({ ...toNode(r, likedIds), replies: [] });
   }
-  // 대댓글은 시간순(rows가 asc라 push 순서 유지). 상위만 정렬.
-  tops.sort((a, b) => {
-    if (sort === "popular" && a.likeCount !== b.likeCount)
-      return b.likeCount - a.likeCount;
-    return a.createdAt < b.createdAt ? 1 : -1; // 동점/최신순: 최신 먼저
-  });
-  return tops;
+  return { items, total };
 }
 
 type DelResult = { ok: true } | { ok: false; error: string };

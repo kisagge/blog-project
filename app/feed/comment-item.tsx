@@ -14,6 +14,9 @@ export default function CommentItem({
   actorUserId,
   isAdmin,
   isReply = false,
+  highlightId,
+  onDeleted,
+  onCreatedReply,
 }: {
   node: CommentNode;
   feedId: string;
@@ -22,18 +25,29 @@ export default function CommentItem({
   actorUserId?: string;
   isAdmin: boolean;
   isReply?: boolean;
+  highlightId?: string | null;
+  onDeleted: (id: string) => void;
+  onCreatedReply: (parentId: string, comment: CommentNode) => void;
 }) {
   const [replying, setReplying] = useState(false);
-  const [pending, start] = useTransition();
+  const [, start] = useTransition();
   const canDelete =
     !node.deleted &&
     (isAdmin || (!!actorUserId && actorUserId === node.userId));
 
+  function handleDelete() {
+    onDeleted(node.id); // 낙관적 갱신(부모 상태에서 제거/툼스톤)
+    start(() => deleteCommentAction(node.id, slug));
+  }
+
   return (
     <li
-      className={
-        isReply ? "" : "border-b border-black/[.06] pb-3 dark:border-white/[.1]"
-      }
+      id={`comment-${node.id}`}
+      className={`${isReply ? "" : "border-b border-black/[.06] pb-3 dark:border-white/[.1]"} ${
+        highlightId === node.id
+          ? "-mx-2 rounded bg-amber-100/60 px-2 transition-colors dark:bg-amber-400/10"
+          : ""
+      }`}
     >
       <div className="flex items-center gap-2 text-sm">
         <span className="font-medium">
@@ -77,8 +91,7 @@ export default function CommentItem({
         {canDelete && (
           <button
             type="button"
-            disabled={pending}
-            onClick={() => start(() => deleteCommentAction(node.id, slug))}
+            onClick={handleDelete}
             className="hover:text-red-600"
           >
             삭제
@@ -93,7 +106,10 @@ export default function CommentItem({
             parentId={node.id}
             canParticipate={canParticipate}
             placeholder="답글을 입력하세요"
-            onDone={() => setReplying(false)}
+            onCreated={(reply) => {
+              onCreatedReply(node.id, reply);
+              setReplying(false);
+            }}
           />
         </div>
       )}
@@ -109,6 +125,9 @@ export default function CommentItem({
               actorUserId={actorUserId}
               isAdmin={isAdmin}
               isReply
+              highlightId={highlightId}
+              onDeleted={onDeleted}
+              onCreatedReply={onCreatedReply}
             />
           ))}
         </ul>
