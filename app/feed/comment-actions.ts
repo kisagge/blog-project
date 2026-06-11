@@ -4,6 +4,7 @@ import { getCommentActor } from "@/lib/comment-actor";
 import { getSession } from "@/lib/dal";
 import { addComment, deleteComment } from "@/lib/comments";
 import { toggleLike } from "@/lib/likes";
+import { toggleCommentLike } from "@/lib/comment-likes";
 
 export type ActionState = { error?: string } | undefined;
 
@@ -41,5 +42,12 @@ export async function toggleLikeAction(feedId: string, slug: string) {
   const actor = await getCommentActor();
   if (!actor) return;
   await toggleLike(feedId, actor.userId);
+  revalidate(slug);
+}
+
+export async function toggleCommentLikeAction(commentId: string, slug: string) {
+  const actor = await getCommentActor();
+  if (!actor) return;
+  await toggleCommentLike(commentId, actor.userId);
   revalidate(slug);
 }
