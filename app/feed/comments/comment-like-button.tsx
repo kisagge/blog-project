@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, useTransition } from "react";
-import LoginRequiredModal from "./login-required-modal";
+import LoginRequiredModal from "../login-required-modal";
 import { toggleCommentLikeAction } from "./comment-actions";
 
 export default function CommentLikeButton({

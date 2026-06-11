@@ -10,12 +10,20 @@ export async function ensureAdminUser() {
   return prisma.user.upsert({
     where: { email: ADMIN_EMAIL },
     update: {},
-    create: { email: ADMIN_EMAIL, nickname: ADMIN_DEFAULT_NICKNAME, passwordHash: "-", status: "approved" },
+    create: {
+      email: ADMIN_EMAIL,
+      nickname: ADMIN_DEFAULT_NICKNAME,
+      passwordHash: "-",
+      status: "approved",
+    },
   });
 }
 
 export async function getAdminNickname() {
-  const u = await prisma.user.findUnique({ where: { email: ADMIN_EMAIL }, select: { nickname: true } });
+  const u = await prisma.user.findUnique({
+    where: { email: ADMIN_EMAIL },
+    select: { nickname: true },
+  });
   return u?.nickname ?? ADMIN_DEFAULT_NICKNAME;
 }
 
@@ -24,7 +32,12 @@ export async function setAdminNickname(nickname: string) {
   await prisma.user.upsert({
     where: { email: ADMIN_EMAIL },
     update: { nickname: name },
-    create: { email: ADMIN_EMAIL, nickname: name, passwordHash: "-", status: "approved" },
+    create: {
+      email: ADMIN_EMAIL,
+      nickname: name,
+      passwordHash: "-",
+      status: "approved",
+    },
   });
 }
 
@@ -33,7 +46,8 @@ export type CommentActor = { userId: string; nickname: string };
 // 현재 세션의 작성 주체(member|admin). anon이면 null.
 export async function getCommentActor(): Promise<CommentActor | null> {
   const session = await getSession();
-  if (session?.role === "member") return { userId: session.userId, nickname: session.nickname };
+  if (session?.role === "member")
+    return { userId: session.userId, nickname: session.nickname };
   if (session?.role === "admin") {
     const admin = await ensureAdminUser();
     return { userId: admin.id, nickname: admin.nickname };

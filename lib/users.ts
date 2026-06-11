@@ -1,3 +1,4 @@
+import "server-only";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE } from "@/lib/feeds";
 import { hashPassword, verifyPassword } from "@/lib/password";

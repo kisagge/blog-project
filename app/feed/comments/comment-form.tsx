@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { CommentNode } from "@/lib/comments";
-import LoginRequiredModal from "./login-required-modal";
+import LoginRequiredModal from "../login-required-modal";
 import { addCommentAction, type AddCommentResult } from "./comment-actions";
 
 const MAX = 2000;

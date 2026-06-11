@@ -5,7 +5,10 @@ export const FeedFormSchema = z.object({
   slug: z
     .string()
     .trim()
-    .regex(/^[a-z0-9-]+$/, "slug는 소문자·숫자·하이픈(-)만 사용할 수 있습니다."),
+    .regex(
+      /^[a-z0-9-]+$/,
+      "slug는 소문자·숫자·하이픈(-)만 사용할 수 있습니다.",
+    ),
   summary: z.string().trim().optional(),
   content: z.string().min(1, "본문을 입력하세요."),
   published: z.boolean(),
@@ -20,17 +23,27 @@ export function feedFormToObject(formData: FormData) {
     slug: String(formData.get("slug") ?? ""),
     summary: String(formData.get("summary") ?? ""),
     content: String(formData.get("content") ?? ""),
-    published: formData.get("published") === "on" || formData.get("published") === "true",
+    published:
+      formData.get("published") === "on" ||
+      formData.get("published") === "true",
   };
 }
 
 export const CommentSchema = z.object({
-  content: z.string().trim().min(1, "내용을 입력하세요.").max(2000, "댓글은 2000자 이하여야 합니다."),
+  content: z
+    .string()
+    .trim()
+    .min(1, "내용을 입력하세요.")
+    .max(2000, "댓글은 2000자 이하여야 합니다."),
 });
 
 export const SignupSchema = z.object({
   email: z.string().trim().toLowerCase().email("올바른 이메일을 입력하세요."),
-  nickname: z.string().trim().min(1, "닉네임을 입력하세요.").max(20, "닉네임은 20자 이하."),
+  nickname: z
+    .string()
+    .trim()
+    .min(1, "닉네임을 입력하세요.")
+    .max(20, "닉네임은 20자 이하."),
   password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다."),
 });
 export type SignupValues = z.infer<typeof SignupSchema>;
