@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { setPublicEnabled } from "@/lib/site-config";
+import { setAdminNickname } from "@/lib/comment-actor";
 import { approveUser, deleteUser } from "@/lib/users";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
 
@@ -100,4 +101,10 @@ export async function removeUserAction(formData: FormData) {
   await verifySession();
   await deleteUser(String(formData.get("id") ?? ""));
   revalidatePath("/admin");
+}
+
+export async function setAdminNicknameAction(formData: FormData) {
+  await verifySession();
+  await setAdminNickname(String(formData.get("nickname") ?? ""));
+  revalidatePath("/admin/settings");
 }
