@@ -27,11 +27,15 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     // localStorage는 클라이언트에서만 읽을 수 있어 마운트 후 1회 동기화한다.
-    /* eslint-disable react-hooks/set-state-in-effect */
+    // 하이드레이션 과정에서 <html data-theme>가 사라질 수 있으므로 여기서 재적용해
+    // 선택값을 다시 확정한다(라이브 새로고침 시 다크→라이트로 풀리던 문제 방지).
     const stored = localStorage.getItem(
       THEME_STORAGE_KEY,
     ) as ThemeChoice | null;
-    if (stored && THEME_ORDER.includes(stored)) setChoice(stored);
+    const current = stored && THEME_ORDER.includes(stored) ? stored : "system";
+    applyTheme(current);
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setChoice(current);
     setMounted(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
