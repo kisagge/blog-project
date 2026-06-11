@@ -9,11 +9,12 @@ const ADMIN_DEFAULT_NICKNAME = "관리자";
 export async function ensureAdminUser() {
   return prisma.user.upsert({
     where: { email: ADMIN_EMAIL },
-    update: {},
+    update: { role: "admin" },
     create: {
       email: ADMIN_EMAIL,
       nickname: ADMIN_DEFAULT_NICKNAME,
       passwordHash: "-",
+      role: "admin",
       status: "approved",
     },
   });
@@ -36,6 +37,7 @@ export async function setAdminNickname(nickname: string) {
       email: ADMIN_EMAIL,
       nickname: name,
       passwordHash: "-",
+      role: "admin",
       status: "approved",
     },
   });

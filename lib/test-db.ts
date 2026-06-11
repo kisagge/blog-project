@@ -28,6 +28,7 @@ const SCHEMA = [
     "email" TEXT NOT NULL,
     "nickname" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'member',
     "status" TEXT NOT NULL DEFAULT 'pending',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL

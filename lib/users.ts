@@ -2,7 +2,9 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE } from "@/lib/feeds";
 import { hashPassword, verifyPassword } from "@/lib/password";
-import { ADMIN_EMAIL } from "@/lib/comment-actor";
+
+export type UserStatus = "pending" | "approved";
+export type UserRole = "member" | "admin";
 
 type Result<T = undefined> =
   | { ok: true; value?: T }
@@ -59,28 +61,29 @@ export async function deleteUser(id: string) {
   await prisma.user.delete({ where: { id } });
 }
 
-export async function listUsersByStatus(status: "pending" | "approved") {
+// role: "member"로 예약 admin 작성자(role admin)를 회원 목록/카운트에서 제외.
+export async function listUsersByStatus(status: UserStatus) {
   return prisma.user.findMany({
-    where: { status, email: { not: ADMIN_EMAIL } },
+    where: { status, role: "member" },
     orderBy: { createdAt: "desc" },
     select: { id: true, email: true, nickname: true, createdAt: true },
   });
 }
 
 // 관리자 대시보드용 카운트.
-export async function countUsersByStatus(status: "pending" | "approved") {
-  return prisma.user.count({ where: { status, email: { not: ADMIN_EMAIL } } });
+export async function countUsersByStatus(status: UserStatus) {
+  return prisma.user.count({ where: { status, role: "member" } });
 }
 
 // 관리자용: 상태별 페이지 단위(기본 20). 목록 + 전체 개수 반환.
 export async function listUsersPage(
-  status: "pending" | "approved",
+  status: UserStatus,
   page: number,
   pageSize = ADMIN_PAGE_SIZE,
 ) {
   const take = pageSize;
   const skip = (Math.max(1, page) - 1) * take;
-  const where = { status, email: { not: ADMIN_EMAIL } };
+  const where = { status, role: "member" as const };
   const [items, total] = await Promise.all([
     prisma.user.findMany({
       where,
