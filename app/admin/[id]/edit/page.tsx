@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import FeedForm from "@/app/admin/feed-form";
 import { updateFeed } from "@/app/admin/actions";
@@ -15,7 +16,15 @@ export default async function EditFeedPage({
   const action = updateFeed.bind(null, feed.id);
   return (
     <section>
-      <h1 className="mb-6 text-xl font-semibold tracking-tight">글 수정</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold tracking-tight">글 수정</h1>
+        <Link
+          href={`/admin/${feed.id}/preview`}
+          className="rounded border border-black/15 px-3 py-1.5 text-sm dark:border-white/20"
+        >
+          미리보기
+        </Link>
+      </div>
       <FeedForm
         action={action}
         submitLabel="수정"
