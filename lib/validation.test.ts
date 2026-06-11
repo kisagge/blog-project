@@ -24,11 +24,15 @@ describe("FeedFormSchema", () => {
   });
 
   test("title이 비면 거부한다", () => {
-    expect(FeedFormSchema.safeParse({ ...valid, title: "  " }).success).toBe(false);
+    expect(FeedFormSchema.safeParse({ ...valid, title: "  " }).success).toBe(
+      false,
+    );
   });
 
   test("content가 비면 거부한다", () => {
-    expect(FeedFormSchema.safeParse({ ...valid, content: "" }).success).toBe(false);
+    expect(FeedFormSchema.safeParse({ ...valid, content: "" }).success).toBe(
+      false,
+    );
   });
 });
 

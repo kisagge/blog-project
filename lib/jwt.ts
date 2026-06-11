@@ -14,10 +14,14 @@ export async function encrypt(payload: SessionPayload): Promise<string> {
     .sign(encodedKey());
 }
 
-export async function decrypt(token?: string): Promise<SessionPayload | undefined> {
+export async function decrypt(
+  token?: string,
+): Promise<SessionPayload | undefined> {
   if (!token) return undefined;
   try {
-    const { payload } = await jwtVerify(token, encodedKey(), { algorithms: ["HS256"] });
+    const { payload } = await jwtVerify(token, encodedKey(), {
+      algorithms: ["HS256"],
+    });
     return payload as SessionPayload;
   } catch {
     return undefined;

@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState, useTransition } from "react";
 import LoginRequiredModal from "./login-required-modal";
-import { toggleLikeAction } from "./comment-actions";
+import { toggleLikeAction } from "./comments/comment-actions";
 
 export default function LikeButton({
   feedId,

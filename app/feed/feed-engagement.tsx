@@ -3,7 +3,7 @@ import { getCommentActor } from "@/lib/comment-actor";
 import { getFeedComments, type CommentSort } from "@/lib/comments";
 import { getLikeSummary } from "@/lib/likes";
 import LikeButton from "./like-button";
-import CommentSection from "./comment-section";
+import CommentSection from "./comments/comment-section";
 
 export default async function FeedEngagement({
   feedId,
