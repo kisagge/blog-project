@@ -166,6 +166,16 @@ export type DfTimelineRow = {
   data?: { itemName?: string; itemRarity?: string } & Record<string, unknown>;
 };
 
+// 장착 장비의 활성 세트 효과.
+export type DfActiveSet = {
+  setItemName: string;
+  setItemRarityName?: string;
+  active?: {
+    status?: DfStat[];
+    setPoint?: { current?: number; min?: number; max?: number };
+  };
+};
+
 export function getCharacterStatus(serverId: string, characterId: string) {
   return df<DfStatusResponse>(
     `/df/servers/${serverId}/characters/${characterId}/status`,
@@ -175,12 +185,15 @@ export function getCharacterStatus(serverId: string, characterId: string) {
 }
 
 export async function getEquipment(serverId: string, characterId: string) {
-  const r = await df<{ equipment: DfEquipItem[] }>(
+  const r = await df<{
+    equipment?: DfEquipItem[];
+    setItemInfo?: DfActiveSet[];
+  }>(
     `/df/servers/${serverId}/characters/${characterId}/equip/equipment`,
     {},
     600,
   );
-  return r.equipment ?? [];
+  return { items: r.equipment ?? [], sets: r.setItemInfo ?? [] };
 }
 
 export async function getAvatar(serverId: string, characterId: string) {
@@ -212,4 +225,99 @@ export async function getTimeline(
     300,
   );
   return r.timeline?.rows ?? [];
+}
+
+// ----- 스킬 스타일 / 서약 / 안개융화 -----
+
+export type DfSkillEntry = {
+  skillId: string;
+  name?: string;
+  level?: number;
+  requiredLevel?: number;
+};
+
+export type DfSkillStyle = {
+  active?: DfSkillEntry[];
+  passive?: DfSkillEntry[];
+};
+
+export async function getSkillStyle(serverId: string, characterId: string) {
+  const r = await df<{ skill?: { style?: DfSkillStyle } }>(
+    `/df/servers/${serverId}/characters/${characterId}/skill/style`,
+    {},
+    600,
+  );
+  return r.skill?.style ?? null;
+}
+
+export type DfOathCrystal = {
+  slotNo: number;
+  itemId: string;
+  itemName: string;
+  itemRarity?: string;
+};
+
+export type DfOathStat = { key: string; value: number | string };
+
+export type DfOath = {
+  info: {
+    itemId: string;
+    itemName: string;
+    itemRarity?: string;
+    setPoint?: number;
+  };
+  crystal?: DfOathCrystal[];
+  // 활성 세트 효과.
+  setInfo?: {
+    setName?: string;
+    setOptionName?: string;
+    setRarityName?: string;
+    active?: { status?: DfOathStat[] };
+  };
+};
+
+export async function getOath(serverId: string, characterId: string) {
+  const r = await df<{ oath: DfOath | null }>(
+    `/df/servers/${serverId}/characters/${characterId}/equip/oath`,
+    {},
+    600,
+  );
+  return r.oath ?? null;
+}
+
+export type DfMistAssimilation = {
+  level: number;
+  expRate?: string;
+  status: DfStat[];
+};
+
+export async function getMistAssimilation(
+  serverId: string,
+  characterId: string,
+) {
+  const r = await df<{ mistAssimilation: DfMistAssimilation | null }>(
+    `/df/servers/${serverId}/characters/${characterId}/equip/mist-assimilation`,
+    {},
+    600,
+  );
+  return r.mistAssimilation ?? null;
+}
+
+// 버프 스위칭(버프 강화) — 버프 스킬 + 그에 쓰는 장비.
+export type DfBuffSwitching = {
+  skillInfo?: {
+    skillId: string;
+    name: string;
+    option?: { level: number; desc?: string; values?: string[] };
+  };
+  equipment?: DfEquipItem[];
+};
+
+export async function getBuffEquipment(serverId: string, characterId: string) {
+  const r = await df<{ skill?: { buff?: DfBuffSwitching | null } }>(
+    `/df/servers/${serverId}/characters/${characterId}/skill/buff/equip/equipment`,
+    {},
+    600,
+  );
+  return r.skill?.buff ?? null;
 }

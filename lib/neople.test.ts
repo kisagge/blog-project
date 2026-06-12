@@ -61,11 +61,23 @@ describe("neople API client", () => {
     );
   });
 
-  test("getEquipment: equipment 배열 추출", async () => {
-    stubFetch({ equipment: [{ slotId: "WEAPON", itemName: "폭군의 본의" }] });
-    const eq = await neople.getEquipment("cain", "id1");
-    expect(eq).toHaveLength(1);
-    expect(eq[0].itemName).toBe("폭군의 본의");
+  test("getEquipment: items + 활성 세트(setItemInfo) 추출, 비면 빈 배열", async () => {
+    stubFetch({
+      equipment: [{ slotId: "WEAPON", itemName: "폭군의 본의" }],
+      setItemInfo: [
+        { setItemName: "용투장의 제왕 세트", setItemRarityName: "태초" },
+      ],
+    });
+    const { items, sets } = await neople.getEquipment("cain", "id1");
+    expect(items).toHaveLength(1);
+    expect(items[0].itemName).toBe("폭군의 본의");
+    expect(sets[0].setItemName).toBe("용투장의 제왕 세트");
+
+    stubFetch({});
+    expect(await neople.getEquipment("cain", "id1")).toEqual({
+      items: [],
+      sets: [],
+    });
   });
 
   test("getTimeline: rows 추출 + limit 파라미터 부착, 비면 빈 배열", async () => {
@@ -81,5 +93,51 @@ describe("neople API client", () => {
   test("getCreature: 없으면 null", async () => {
     stubFetch({ creature: null });
     expect(await neople.getCreature("cain", "id1")).toBeNull();
+  });
+
+  test("getSkillStyle: skill.style 추출, 없으면 null", async () => {
+    stubFetch({
+      skill: { style: { active: [{ skillId: "a", name: "위빙" }] } },
+    });
+    const style = await neople.getSkillStyle("cain", "id1");
+    expect(style?.active?.[0].name).toBe("위빙");
+
+    stubFetch({}); // skill 키 없음
+    expect(await neople.getSkillStyle("cain", "id1")).toBeNull();
+  });
+
+  test("getOath: oath 추출, 없으면 null", async () => {
+    stubFetch({ oath: { info: { itemId: "o", itemName: "발키리 서약" } } });
+    const oath = await neople.getOath("cain", "id1");
+    expect(oath?.info.itemName).toBe("발키리 서약");
+
+    stubFetch({ oath: null });
+    expect(await neople.getOath("cain", "id1")).toBeNull();
+  });
+
+  test("getMistAssimilation: 추출, 없으면 null", async () => {
+    stubFetch({ mistAssimilation: { level: 31, status: [] } });
+    const mist = await neople.getMistAssimilation("cain", "id1");
+    expect(mist?.level).toBe(31);
+
+    stubFetch({ mistAssimilation: null });
+    expect(await neople.getMistAssimilation("cain", "id1")).toBeNull();
+  });
+
+  test("getBuffEquipment: skill.buff 추출, 없으면 null", async () => {
+    stubFetch({
+      skill: {
+        buff: {
+          skillInfo: { skillId: "b", name: "신기일체" },
+          equipment: [{ slotId: "WEAPON", itemName: "버프무기" }],
+        },
+      },
+    });
+    const buff = await neople.getBuffEquipment("cain", "id1");
+    expect(buff?.skillInfo?.name).toBe("신기일체");
+    expect(buff?.equipment?.[0].itemName).toBe("버프무기");
+
+    stubFetch({}); // skill 키 없음
+    expect(await neople.getBuffEquipment("cain", "id1")).toBeNull();
   });
 });
