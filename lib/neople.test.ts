@@ -82,4 +82,33 @@ describe("neople API client", () => {
     stubFetch({ creature: null });
     expect(await neople.getCreature("cain", "id1")).toBeNull();
   });
+
+  test("getSkillStyle: skill.style 추출, 없으면 null", async () => {
+    stubFetch({
+      skill: { style: { active: [{ skillId: "a", name: "위빙" }] } },
+    });
+    const style = await neople.getSkillStyle("cain", "id1");
+    expect(style?.active?.[0].name).toBe("위빙");
+
+    stubFetch({}); // skill 키 없음
+    expect(await neople.getSkillStyle("cain", "id1")).toBeNull();
+  });
+
+  test("getOath: oath 추출, 없으면 null", async () => {
+    stubFetch({ oath: { info: { itemId: "o", itemName: "발키리 서약" } } });
+    const oath = await neople.getOath("cain", "id1");
+    expect(oath?.info.itemName).toBe("발키리 서약");
+
+    stubFetch({ oath: null });
+    expect(await neople.getOath("cain", "id1")).toBeNull();
+  });
+
+  test("getMistAssimilation: 추출, 없으면 null", async () => {
+    stubFetch({ mistAssimilation: { level: 31, status: [] } });
+    const mist = await neople.getMistAssimilation("cain", "id1");
+    expect(mist?.level).toBe(31);
+
+    stubFetch({ mistAssimilation: null });
+    expect(await neople.getMistAssimilation("cain", "id1")).toBeNull();
+  });
 });

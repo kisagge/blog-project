@@ -213,3 +213,70 @@ export async function getTimeline(
   );
   return r.timeline?.rows ?? [];
 }
+
+// ----- 스킬 스타일 / 서약 / 안개융화 -----
+
+export type DfSkillEntry = {
+  skillId: string;
+  name?: string;
+  level?: number;
+  requiredLevel?: number;
+};
+
+export type DfSkillStyle = {
+  active?: DfSkillEntry[];
+  passive?: DfSkillEntry[];
+};
+
+export async function getSkillStyle(serverId: string, characterId: string) {
+  const r = await df<{ skill?: { style?: DfSkillStyle } }>(
+    `/df/servers/${serverId}/characters/${characterId}/skill/style`,
+    {},
+    600,
+  );
+  return r.skill?.style ?? null;
+}
+
+export type DfOathCrystal = {
+  slotNo: number;
+  itemId: string;
+  itemName: string;
+  itemRarity?: string;
+};
+
+export type DfOath = {
+  info: {
+    itemId: string;
+    itemName: string;
+    itemRarity?: string;
+    setPoint?: number;
+  };
+  crystal?: DfOathCrystal[];
+};
+
+export async function getOath(serverId: string, characterId: string) {
+  const r = await df<{ oath: DfOath | null }>(
+    `/df/servers/${serverId}/characters/${characterId}/equip/oath`,
+    {},
+    600,
+  );
+  return r.oath ?? null;
+}
+
+export type DfMistAssimilation = {
+  level: number;
+  expRate?: string;
+  status: DfStat[];
+};
+
+export async function getMistAssimilation(
+  serverId: string,
+  characterId: string,
+) {
+  const r = await df<{ mistAssimilation: DfMistAssimilation | null }>(
+    `/df/servers/${serverId}/characters/${characterId}/equip/mist-assimilation`,
+    {},
+    600,
+  );
+  return r.mistAssimilation ?? null;
+}

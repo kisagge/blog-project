@@ -5,6 +5,9 @@ import {
   getAvatar,
   getCreature,
   getTimeline,
+  getSkillStyle,
+  getOath,
+  getMistAssimilation,
   characterImageUrl,
   itemImageUrl,
   type DfStatusResponse,
@@ -13,6 +16,10 @@ import {
   type DfAvatarItem,
   type DfCreature,
   type DfTimelineRow,
+  type DfSkillStyle,
+  type DfSkillEntry,
+  type DfOath,
+  type DfMistAssimilation,
 } from "@/lib/neople";
 import { rarityColor } from "@/app/df/rarity";
 
@@ -24,13 +31,17 @@ export default async function DfDetailPage({
   params: Promise<{ server: string; characterId: string }>;
 }) {
   const { server, characterId } = await params;
-  const [status, equipment, avatar, creature, timeline] = await Promise.all([
-    getCharacterStatus(server, characterId).catch(() => null),
-    getEquipment(server, characterId).catch(() => []),
-    getAvatar(server, characterId).catch(() => []),
-    getCreature(server, characterId).catch(() => null),
-    getTimeline(server, characterId, 15).catch(() => []),
-  ]);
+  const [status, equipment, avatar, creature, timeline, skill, oath, mist] =
+    await Promise.all([
+      getCharacterStatus(server, characterId).catch(() => null),
+      getEquipment(server, characterId).catch(() => []),
+      getAvatar(server, characterId).catch(() => []),
+      getCreature(server, characterId).catch(() => null),
+      getTimeline(server, characterId, 15).catch(() => []),
+      getSkillStyle(server, characterId).catch(() => null),
+      getOath(server, characterId).catch(() => null),
+      getMistAssimilation(server, characterId).catch(() => null),
+    ]);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
@@ -50,6 +61,9 @@ export default async function DfDetailPage({
           <Header status={status} server={server} characterId={characterId} />
           <StatSection stats={status.status} />
           <EquipmentSection items={equipment} />
+          <OathSection oath={oath} />
+          <MistSection mist={mist} />
+          <SkillSection skill={skill} />
           <AvatarCreatureSection avatar={avatar} creature={creature} />
           <TimelineSection rows={timeline} />
         </div>
@@ -202,6 +216,110 @@ function EquipmentSection({ items }: { items: DfEquipItem[] }) {
           );
         })}
       </ul>
+    </Section>
+  );
+}
+
+function OathSection({ oath }: { oath: DfOath | null }) {
+  if (!oath) return null;
+  return (
+    <Section title="서약">
+      <div className="flex items-center gap-3">
+        <ItemThumb itemId={oath.info.itemId} alt={oath.info.itemName} />
+        <div className="flex min-w-0 flex-col">
+          <span
+            className={`truncate text-sm font-medium ${rarityColor(oath.info.itemRarity)}`}
+          >
+            {oath.info.itemName}
+          </span>
+          {typeof oath.info.setPoint === "number" && (
+            <span className="text-xs text-zinc-500">
+              세트 포인트 {oath.info.setPoint}
+            </span>
+          )}
+        </div>
+      </div>
+      {oath.crystal && oath.crystal.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-1">
+          {oath.crystal.map((c, i) => (
+            <li
+              key={`${c.slotNo}-${i}`}
+              className="flex items-center gap-2 text-sm"
+            >
+              <span className="w-5 shrink-0 text-xs text-zinc-400">
+                {c.slotNo + 1}
+              </span>
+              <span className={`truncate ${rarityColor(c.itemRarity)}`}>
+                {c.itemName}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+function MistSection({ mist }: { mist: DfMistAssimilation | null }) {
+  if (!mist) return null;
+  return (
+    <Section title="안개 융화">
+      <p className="mb-2 text-sm text-zinc-500">
+        레벨 {mist.level}
+        {mist.expRate && ` · ${mist.expRate}`}
+      </p>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+        {mist.status.map((s) => (
+          <div
+            key={s.name}
+            className="flex items-baseline justify-between gap-2 border-b border-black/[.05] py-1 text-sm dark:border-white/[.08]"
+          >
+            <dt className="text-zinc-500">{s.name}</dt>
+            <dd className="font-medium tabular-nums">{fmt(s.value)}</dd>
+          </div>
+        ))}
+      </dl>
+    </Section>
+  );
+}
+
+function SkillGroup({
+  label,
+  skills,
+}: {
+  label: string;
+  skills: DfSkillEntry[];
+}) {
+  return (
+    <div>
+      <p className="mb-1.5 text-xs text-zinc-400">{label}</p>
+      <ul className="flex flex-wrap gap-1.5">
+        {skills.map((s) => (
+          <li
+            key={s.skillId}
+            className="rounded border border-black/[.08] px-2 py-0.5 text-xs dark:border-white/[.145]"
+          >
+            {s.name}
+            {typeof s.level === "number" && (
+              <span className="text-zinc-400"> Lv{s.level}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SkillSection({ skill }: { skill: DfSkillStyle | null }) {
+  const active = skill?.active ?? [];
+  const passive = skill?.passive ?? [];
+  if (active.length === 0 && passive.length === 0) return null;
+  return (
+    <Section title="스킬">
+      <div className="flex flex-col gap-3">
+        {active.length > 0 && <SkillGroup label="액티브" skills={active} />}
+        {passive.length > 0 && <SkillGroup label="패시브" skills={passive} />}
+      </div>
     </Section>
   );
 }
