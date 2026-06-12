@@ -36,6 +36,17 @@ const SCHEMA = [
     "updatedAt" DATETIME NOT NULL
   )`,
   `CREATE UNIQUE INDEX "User_email_key" ON "User"("email")`,
+  `CREATE TABLE "PasswordResetCode" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "email" TEXT NOT NULL,
+    "codeHash" TEXT NOT NULL,
+    "expiresAt" DATETIME NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "verifiedAt" DATETIME,
+    "consumedAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX "PasswordResetCode_email_idx" ON "PasswordResetCode"("email")`,
   `CREATE TABLE "Comment" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "feedId" TEXT NOT NULL,

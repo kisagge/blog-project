@@ -51,6 +51,20 @@ model User {
   commentLikes CommentLike[]
 }
 
+// 회원 비밀번호 재설정 6자리 코드(해시 저장). 이메일별 최신 1건만 유효.
+model PasswordResetCode {
+  id         String    @id @default(uuid())
+  email      String
+  codeHash   String              // scrypt(코드) — 평문 미저장
+  expiresAt  DateTime            // 생성 + 3분
+  attempts   Int       @default(0)   // 검증 시도 횟수(초과 시 무효)
+  verifiedAt DateTime?           // 코드 검증 성공 시각
+  consumedAt DateTime?           // 비밀번호 변경 완료 시각
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
+}
+
 model Comment {
   id        String    @id @default(uuid())
   feedId    String
