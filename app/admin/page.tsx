@@ -2,16 +2,19 @@ import Link from "next/link";
 import { countFeeds } from "@/lib/feeds";
 import { getPublicEnabled } from "@/lib/site-config";
 import { countUsersByStatus } from "@/lib/users";
+import { listFeatured } from "@/lib/df-characters";
 
 export const metadata = { title: "관리자 · BY Playground" };
 
 export default async function AdminDashboardPage() {
-  const [feeds, publicEnabled, pendingCount, memberCount] = await Promise.all([
-    countFeeds(),
-    getPublicEnabled(),
-    countUsersByStatus("pending"),
-    countUsersByStatus("approved"),
-  ]);
+  const [feeds, publicEnabled, pendingCount, memberCount, dfCharacters] =
+    await Promise.all([
+      countFeeds(),
+      getPublicEnabled(),
+      countUsersByStatus("pending"),
+      countUsersByStatus("approved"),
+      listFeatured(),
+    ]);
 
   return (
     <section>
@@ -35,6 +38,12 @@ export default async function AdminDashboardPage() {
           label="회원"
           value={`${memberCount}`}
           sub="승인됨"
+        />
+        <Card
+          href="/admin/df"
+          label="던파 캐릭터"
+          value={`${dfCharacters.length}`}
+          sub="쇼케이스"
         />
         <Card
           href="/admin/settings"
