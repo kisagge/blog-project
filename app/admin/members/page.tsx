@@ -1,5 +1,6 @@
 import { listUsersByStatus, listUsersPage } from "@/lib/users";
 import { approveUserAction, removeUserAction } from "@/app/admin/actions";
+import { RejectUserButton } from "@/app/admin/reject-user-button";
 import Pager, { parsePage } from "@/app/admin/pager";
 
 export const metadata = { title: "회원 관리 · 관리자" };
@@ -31,8 +32,15 @@ export default async function AdminMembersPage({
               key={u.id}
               className="flex items-center justify-between gap-3 py-2 text-sm"
             >
-              <span className="min-w-0 truncate">
-                {u.nickname} · {u.email}
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate">
+                  {u.nickname} · {u.email}
+                </span>
+                {u.rejectionReason && (
+                  <span className="mt-0.5 truncate text-xs text-amber-600 dark:text-amber-500">
+                    재신청 · 이전 거절 사유: {u.rejectionReason}
+                  </span>
+                )}
               </span>
               <span className="flex shrink-0 gap-2">
                 <form action={approveUserAction}>
@@ -41,12 +49,10 @@ export default async function AdminMembersPage({
                     승인
                   </button>
                 </form>
-                <form action={removeUserAction}>
-                  <input type="hidden" name="id" value={u.id} />
-                  <button className="rounded border border-red-300 px-2 py-1 text-red-600">
-                    거절
-                  </button>
-                </form>
+                <RejectUserButton
+                  id={u.id}
+                  label={`${u.nickname} · ${u.email}`}
+                />
               </span>
             </li>
           ))}

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { setPublicEnabled } from "@/lib/site-config";
 import { setAdminNickname } from "@/lib/comment-actor";
-import { approveUser, deleteUser } from "@/lib/users";
+import { approveUser, deleteUser, rejectUser } from "@/lib/users";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
 
 export type FeedFormState =
@@ -94,6 +94,15 @@ export async function setSitePublic(formData: FormData) {
 export async function approveUserAction(formData: FormData) {
   await verifySession();
   await approveUser(String(formData.get("id") ?? ""));
+  revalidatePath("/admin");
+}
+
+export async function rejectUserAction(formData: FormData) {
+  await verifySession();
+  await rejectUser(
+    String(formData.get("id") ?? ""),
+    String(formData.get("reason") ?? ""),
+  );
   revalidatePath("/admin");
 }
 
