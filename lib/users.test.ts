@@ -27,13 +27,16 @@ describe("users", () => {
     const u = await m.findUserByEmail("a@x.com"); // 소문자 정규화 확인
     expect(u?.status).toBe("pending");
   });
-  test("중복 이메일은 거부", async () => {
+  test("신청 중(pending) 이메일 재신청은 '신청 중' 안내", async () => {
     const r = await m.createPendingUser({
       email: "a@x.com",
       nickname: "또",
       password: "password1",
     });
-    expect(r).toEqual({ ok: false, error: "이미 가입된 이메일입니다." });
+    expect(r).toEqual({
+      ok: false,
+      error: "이미 회원가입 신청 중입니다. 관리자 승인을 기다려 주세요.",
+    });
   });
   test("미승인 회원은 로그인 차단", async () => {
     const r = await m.authenticateMember("a@x.com", "password1");
@@ -82,5 +85,57 @@ describe("users", () => {
     const list = await m.listUsersByStatus("approved");
     expect(list.some((u) => u.email === "admin@byjang.local")).toBe(false);
     expect(before).toBe(list.length);
+  });
+
+  test("승인된 이메일 재신청은 '이미 가입' 안내", async () => {
+    const r = await m.createPendingUser({
+      email: "a@x.com", // 앞 테스트에서 승인됨
+      nickname: "또또",
+      password: "password1",
+    });
+    expect(r).toEqual({ ok: false, error: "이미 가입된 이메일입니다." });
+  });
+
+  test("거절은 행을 남기고 사유를 기록 (목록에서는 제외)", async () => {
+    await m.createPendingUser({
+      email: "rej@x.com",
+      nickname: "거절자",
+      password: "password1",
+    });
+    const u = await m.findUserByEmail("rej@x.com");
+    await m.rejectUser(u!.id, "  부적절한 닉네임  ");
+    const after = await m.findUserByEmail("rej@x.com");
+    expect(after?.status).toBe("rejected");
+    expect(after?.rejectionReason).toBe("부적절한 닉네임"); // trim됨
+    expect(after?.rejectedAt).toBeInstanceOf(Date);
+    // rejected는 pending/approved 목록 어디에도 안 보임
+    const pending = await m.listUsersByStatus("pending");
+    expect(pending.some((x) => x.email === "rej@x.com")).toBe(false);
+  });
+
+  test("거절된 이메일 재신청은 같은 행을 pending으로 되돌리고 이전 사유 보존", async () => {
+    const r = await m.createPendingUser({
+      email: "rej@x.com",
+      nickname: "다시신청",
+      password: "password2",
+    });
+    expect(r.ok).toBe(true);
+    const u = await m.findUserByEmail("rej@x.com");
+    expect(u?.status).toBe("pending");
+    expect(u?.nickname).toBe("다시신청"); // 새 입력값으로 갱신
+    expect(u?.rejectionReason).toBe("부적절한 닉네임"); // 과거 사유 보존
+    // 대기 목록에 이전 거절 사유가 함께 노출
+    const pending = await m.listUsersByStatus("pending");
+    const entry = pending.find((x) => x.email === "rej@x.com");
+    expect(entry?.rejectionReason).toBe("부적절한 닉네임");
+  });
+
+  test("재신청 건 승인 시 거절 이력 정리", async () => {
+    const u = await m.findUserByEmail("rej@x.com");
+    await m.approveUser(u!.id);
+    const after = await m.findUserByEmail("rej@x.com");
+    expect(after?.status).toBe("approved");
+    expect(after?.rejectionReason).toBeNull();
+    expect(after?.rejectedAt).toBeNull();
   });
 });

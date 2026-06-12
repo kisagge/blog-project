@@ -30,6 +30,8 @@ const SCHEMA = [
     "passwordHash" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'member',
     "status" TEXT NOT NULL DEFAULT 'pending',
+    "rejectionReason" TEXT,
+    "rejectedAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
   )`,
