@@ -107,3 +107,109 @@ export function characterImageUrl(
 export function itemImageUrl(itemId: string): string {
   return `${IMG}/df/items/${itemId}`;
 }
+
+// ----- 상세(능력치/장비/아바타/크리쳐/타임라인) -----
+
+export type DfStat = { name: string; value: number | string };
+
+export type DfStatusResponse = DfCharacterInfo & {
+  buff?: { name: string; level: number; status: DfStat[] }[] | null;
+  status: DfStat[];
+};
+
+export type DfEquipItem = {
+  slotId: string;
+  slotName: string;
+  itemId: string;
+  itemName: string;
+  itemRarity?: string;
+  itemTypeDetail?: string;
+  itemAvailableLevel?: number;
+  setItemName?: string | null;
+  reinforce?: number;
+  amplificationName?: string | null;
+  refine?: number;
+  itemGradeName?: string | null;
+  enchant?: { status?: DfStat[] } | null;
+};
+
+export type DfAvatarItem = {
+  slotId: string;
+  slotName: string;
+  itemId: string;
+  itemName: string;
+  itemRarity?: string;
+  optionAbility?: string | null;
+  clone?: { itemId: string | null; itemName: string | null };
+  emblems?: { slotColor: string; itemName: string; itemRarity?: string }[];
+};
+
+export type DfArtifact = {
+  slotColor: string;
+  itemId: string;
+  itemName: string;
+  itemRarity?: string;
+};
+
+export type DfCreature = {
+  itemId: string;
+  itemName: string;
+  itemRarity?: string;
+  clone?: { itemId: string | null; itemName: string | null };
+  artifact?: DfArtifact[];
+};
+
+export type DfTimelineRow = {
+  code: number;
+  name: string;
+  date: string;
+  data?: { itemName?: string; itemRarity?: string } & Record<string, unknown>;
+};
+
+export function getCharacterStatus(serverId: string, characterId: string) {
+  return df<DfStatusResponse>(
+    `/df/servers/${serverId}/characters/${characterId}/status`,
+    {},
+    600,
+  );
+}
+
+export async function getEquipment(serverId: string, characterId: string) {
+  const r = await df<{ equipment: DfEquipItem[] }>(
+    `/df/servers/${serverId}/characters/${characterId}/equip/equipment`,
+    {},
+    600,
+  );
+  return r.equipment ?? [];
+}
+
+export async function getAvatar(serverId: string, characterId: string) {
+  const r = await df<{ avatar: DfAvatarItem[] }>(
+    `/df/servers/${serverId}/characters/${characterId}/equip/avatar`,
+    {},
+    600,
+  );
+  return r.avatar ?? [];
+}
+
+export async function getCreature(serverId: string, characterId: string) {
+  const r = await df<{ creature: DfCreature | null }>(
+    `/df/servers/${serverId}/characters/${characterId}/equip/creature`,
+    {},
+    600,
+  );
+  return r.creature ?? null;
+}
+
+export async function getTimeline(
+  serverId: string,
+  characterId: string,
+  limit = 15,
+) {
+  const r = await df<{ timeline?: { rows?: DfTimelineRow[] } }>(
+    `/df/servers/${serverId}/characters/${characterId}/timeline`,
+    { limit },
+    300,
+  );
+  return r.timeline?.rows ?? [];
+}
