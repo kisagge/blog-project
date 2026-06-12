@@ -59,4 +59,33 @@ describe("df-characters", () => {
     const after = await m.listFeatured();
     expect(after.some((c) => c.characterId === "xyz")).toBe(false);
   });
+
+  test("reorderFeatured: 주어진 순서대로 sortOrder 갱신", async () => {
+    await m.addFeatured({
+      serverId: "anton",
+      characterId: "a2",
+      characterName: "둘",
+    });
+    await m.addFeatured({
+      serverId: "prey",
+      characterId: "a3",
+      characterName: "셋",
+    });
+    let list = await m.listFeatured();
+    expect(list).toHaveLength(3);
+    const reversed = [...list].reverse().map((c) => c.id);
+    await m.reorderFeatured(reversed);
+    list = await m.listFeatured();
+    expect(list.map((c) => c.id)).toEqual(reversed);
+  });
+
+  test("addFeatured: 신규는 맨 뒤에 배치", async () => {
+    await m.addFeatured({
+      serverId: "bakal",
+      characterId: "a4",
+      characterName: "넷",
+    });
+    const list = await m.listFeatured();
+    expect(list[list.length - 1].characterId).toBe("a4");
+  });
 });

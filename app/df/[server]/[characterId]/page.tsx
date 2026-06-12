@@ -25,6 +25,7 @@ import {
   type DfBuffSwitching,
 } from "@/lib/neople";
 import { rarityColor } from "@/app/df/rarity";
+import Tabs, { type TabItem } from "./tabs";
 
 export const metadata = { title: "캐릭터 상세 · 던파 · BY Playground" };
 
@@ -56,6 +57,58 @@ export default async function DfDetailPage({
     getBuffEquipment(server, characterId).catch(() => null),
   ]);
 
+  // 데이터가 있는 그룹만 탭으로 노출(세로 길이 절감).
+  const hasGear =
+    equipment.items.length > 0 || equipment.sets.length > 0 || !!oath || !!mist;
+  const hasSkill =
+    (skill?.active?.length ?? 0) > 0 ||
+    (skill?.passive?.length ?? 0) > 0 ||
+    !!buff?.skillInfo ||
+    (buff?.equipment?.length ?? 0) > 0;
+  const tabs: TabItem[] = status
+    ? ([
+        status.status?.length > 0 && {
+          id: "stat",
+          label: "능력치",
+          content: <StatSection stats={status.status} />,
+        },
+        hasGear && {
+          id: "gear",
+          label: "장비",
+          content: (
+            <>
+              <EquipmentSection items={equipment.items} />
+              <EquipSetSection sets={equipment.sets} />
+              <OathSection oath={oath} />
+              <MistSection mist={mist} />
+            </>
+          ),
+        },
+        hasSkill && {
+          id: "skill",
+          label: "스킬",
+          content: (
+            <>
+              <SkillSection skill={skill} />
+              <BuffSection buff={buff} />
+            </>
+          ),
+        },
+        (avatar.length > 0 || !!creature) && {
+          id: "avatar",
+          label: "아바타",
+          content: (
+            <AvatarCreatureSection avatar={avatar} creature={creature} />
+          ),
+        },
+        timeline.length > 0 && {
+          id: "timeline",
+          label: "활동",
+          content: <TimelineSection rows={timeline} />,
+        },
+      ].filter(Boolean) as TabItem[])
+    : [];
+
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
       <Link
@@ -70,17 +123,9 @@ export default async function DfDetailPage({
           캐릭터 정보를 불러오지 못했습니다.
         </p>
       ) : (
-        <div className="mt-4 flex flex-col gap-10">
+        <div className="mt-4 flex flex-col gap-8">
           <Header status={status} server={server} characterId={characterId} />
-          <StatSection stats={status.status} />
-          <EquipmentSection items={equipment.items} />
-          <EquipSetSection sets={equipment.sets} />
-          <OathSection oath={oath} />
-          <MistSection mist={mist} />
-          <SkillSection skill={skill} />
-          <BuffSection buff={buff} />
-          <AvatarCreatureSection avatar={avatar} creature={creature} />
-          <TimelineSection rows={timeline} />
+          <Tabs tabs={tabs} />
         </div>
       )}
     </main>

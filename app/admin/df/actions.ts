@@ -2,7 +2,11 @@
 import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/dal";
 import { searchCharacter, type DfCharacterRow } from "@/lib/neople";
-import { addFeatured, removeFeatured } from "@/lib/df-characters";
+import {
+  addFeatured,
+  removeFeatured,
+  reorderFeatured,
+} from "@/lib/df-characters";
 
 export type DfSearchState =
   | { rows?: DfCharacterRow[]; error?: string }
@@ -40,6 +44,13 @@ export async function addDfCharacterAction(formData: FormData) {
 export async function removeDfCharacterAction(formData: FormData) {
   await verifySession();
   await removeFeatured(String(formData.get("id") ?? ""));
+  revalidatePath("/admin/df");
+  revalidatePath("/df");
+}
+
+export async function reorderDfCharactersAction(orderedIds: string[]) {
+  await verifySession();
+  await reorderFeatured(orderedIds);
   revalidatePath("/admin/df");
   revalidatePath("/df");
 }
