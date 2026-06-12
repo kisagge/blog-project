@@ -1,0 +1,289 @@
+import Link from "next/link";
+import {
+  getCharacterStatus,
+  getEquipment,
+  getAvatar,
+  getCreature,
+  getTimeline,
+  characterImageUrl,
+  itemImageUrl,
+  type DfStatusResponse,
+  type DfStat,
+  type DfEquipItem,
+  type DfAvatarItem,
+  type DfCreature,
+  type DfTimelineRow,
+} from "@/lib/neople";
+import { rarityColor } from "@/app/df/rarity";
+
+export const metadata = { title: "캐릭터 상세 · 던파 · BY Playground" };
+
+export default async function DfDetailPage({
+  params,
+}: {
+  params: Promise<{ server: string; characterId: string }>;
+}) {
+  const { server, characterId } = await params;
+  const [status, equipment, avatar, creature, timeline] = await Promise.all([
+    getCharacterStatus(server, characterId).catch(() => null),
+    getEquipment(server, characterId).catch(() => []),
+    getAvatar(server, characterId).catch(() => []),
+    getCreature(server, characterId).catch(() => null),
+    getTimeline(server, characterId, 15).catch(() => []),
+  ]);
+
+  return (
+    <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
+      <Link
+        href="/df"
+        className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+      >
+        ← 목록
+      </Link>
+
+      {!status ? (
+        <p className="mt-8 text-sm text-zinc-500">
+          캐릭터 정보를 불러오지 못했습니다.
+        </p>
+      ) : (
+        <div className="mt-4 flex flex-col gap-10">
+          <Header status={status} server={server} characterId={characterId} />
+          <StatSection stats={status.status} />
+          <EquipmentSection items={equipment} />
+          <AvatarCreatureSection avatar={avatar} creature={creature} />
+          <TimelineSection rows={timeline} />
+        </div>
+      )}
+    </main>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="mb-3 text-lg font-semibold tracking-tight">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Header({
+  status,
+  server,
+  characterId,
+}: {
+  status: DfStatusResponse;
+  server: string;
+  characterId: string;
+}) {
+  return (
+    <div className="flex items-center gap-5">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={characterImageUrl(server, characterId, 2)}
+        alt={status.characterName}
+        className="h-28 w-28 shrink-0 rounded bg-black/[.03] object-contain dark:bg-white/[.04]"
+      />
+      <div className="flex min-w-0 flex-col gap-1">
+        <h1 className="truncate text-2xl font-semibold tracking-tight">
+          {status.characterName}
+        </h1>
+        <p className="text-sm text-zinc-500">
+          Lv{status.level} · {status.jobGrowName}
+        </p>
+        <p className="text-sm text-zinc-500">
+          {status.adventureName && <>모험단 {status.adventureName}</>}
+          {status.guildName && <> · 길드 {status.guildName}</>}
+        </p>
+        {typeof status.fame === "number" && (
+          <p className="text-sm font-medium text-amber-600 dark:text-amber-500">
+            명성 {status.fame.toLocaleString()}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const KEY_STATS = [
+  "힘",
+  "지능",
+  "체력",
+  "정신력",
+  "물리 공격",
+  "마법 공격",
+  "독립 공격",
+  "화속성 강화",
+  "수속성 강화",
+  "명속성 강화",
+  "암속성 강화",
+  "공격력 증가",
+  "버프력",
+  "최종 데미지 증가",
+  "HP",
+  "MP",
+];
+
+function fmt(v: number | string) {
+  return typeof v === "number" ? v.toLocaleString() : v;
+}
+
+function StatSection({ stats }: { stats: DfStat[] }) {
+  const byName = new Map(stats.map((s) => [s.name, s.value]));
+  const rows = KEY_STATS.filter((n) => byName.has(n));
+  if (rows.length === 0) return null;
+  return (
+    <Section title="능력치">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+        {rows.map((name) => (
+          <div
+            key={name}
+            className="flex items-baseline justify-between gap-2 border-b border-black/[.05] py-1 text-sm dark:border-white/[.08]"
+          >
+            <dt className="text-zinc-500">{name}</dt>
+            <dd className="font-medium tabular-nums">
+              {fmt(byName.get(name)!)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </Section>
+  );
+}
+
+function ItemThumb({ itemId, alt }: { itemId: string; alt: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={itemImageUrl(itemId)}
+      alt={alt}
+      className="h-10 w-10 shrink-0 rounded bg-black/[.03] object-contain dark:bg-white/[.04]"
+    />
+  );
+}
+
+function EquipmentSection({ items }: { items: DfEquipItem[] }) {
+  if (items.length === 0) return null;
+  return (
+    <Section title="장비">
+      <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
+        {items.map((it) => {
+          const enhance = it.amplificationName
+            ? `증폭 +${it.reinforce ?? 0}`
+            : it.reinforce
+              ? `+${it.reinforce} 강화`
+              : null;
+          return (
+            <li key={it.slotId} className="flex items-center gap-3 py-2">
+              <ItemThumb itemId={it.itemId} alt={it.itemName} />
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-xs text-zinc-400">
+                  {it.slotName}
+                </span>
+                <span
+                  className={`truncate text-sm font-medium ${rarityColor(it.itemRarity)}`}
+                >
+                  {it.itemName}
+                </span>
+              </div>
+              <span className="ml-auto shrink-0 text-right text-xs text-zinc-500">
+                {enhance && <div>{enhance}</div>}
+                {typeof it.refine === "number" && it.refine > 0 && (
+                  <div>재련 {it.refine}</div>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
+
+function AvatarCreatureSection({
+  avatar,
+  creature,
+}: {
+  avatar: DfAvatarItem[];
+  creature: DfCreature | null;
+}) {
+  if (avatar.length === 0 && !creature) return null;
+  return (
+    <Section title="아바타 · 크리쳐">
+      {creature && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-black/[.08] p-3 dark:border-white/[.145]">
+          <ItemThumb itemId={creature.itemId} alt={creature.itemName} />
+          <div className="flex min-w-0 flex-col">
+            <span className="text-xs text-zinc-400">크리쳐</span>
+            <span
+              className={`truncate text-sm font-medium ${rarityColor(creature.itemRarity)}`}
+            >
+              {creature.itemName}
+            </span>
+            {creature.artifact && creature.artifact.length > 0 && (
+              <span className="truncate text-xs text-zinc-500">
+                아티팩트 {creature.artifact.map((a) => a.itemName).join(", ")}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      {avatar.length > 0 && (
+        <ul className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+          {avatar.map((a) => (
+            <li key={a.slotId} className="flex items-center gap-3 py-1">
+              <ItemThumb itemId={a.itemId} alt={a.itemName} />
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-xs text-zinc-400">
+                  {a.slotName}
+                </span>
+                <span
+                  className={`truncate text-sm ${rarityColor(a.itemRarity)}`}
+                >
+                  {a.itemName}
+                </span>
+                {a.optionAbility && (
+                  <span className="truncate text-xs text-zinc-500">
+                    {a.optionAbility}
+                  </span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+function TimelineSection({ rows }: { rows: DfTimelineRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <Section title="최근 활동">
+      <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
+        {rows.map((r, i) => (
+          <li
+            key={`${r.date}-${i}`}
+            className="flex items-baseline justify-between gap-3 py-1.5 text-sm"
+          >
+            <span className="min-w-0">
+              <span className="text-zinc-500">{r.name}</span>
+              {r.data?.itemName && (
+                <span className={`ml-2 ${rarityColor(r.data.itemRarity)}`}>
+                  {r.data.itemName}
+                </span>
+              )}
+            </span>
+            <span className="shrink-0 text-xs text-zinc-400">{r.date}</span>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}

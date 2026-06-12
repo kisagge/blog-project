@@ -60,4 +60,26 @@ describe("neople API client", () => {
       "https://img-api.neople.co.kr/df/items/it1",
     );
   });
+
+  test("getEquipment: equipment 배열 추출", async () => {
+    stubFetch({ equipment: [{ slotId: "WEAPON", itemName: "폭군의 본의" }] });
+    const eq = await neople.getEquipment("cain", "id1");
+    expect(eq).toHaveLength(1);
+    expect(eq[0].itemName).toBe("폭군의 본의");
+  });
+
+  test("getTimeline: rows 추출 + limit 파라미터 부착, 비면 빈 배열", async () => {
+    const f = stubFetch({ timeline: { rows: [{ code: 504, name: "획득" }] } });
+    const rows = await neople.getTimeline("cain", "id1", 15);
+    expect(rows).toHaveLength(1);
+    expect(String(f.mock.calls[0][0])).toContain("limit=15");
+
+    stubFetch({}); // timeline 키 없음
+    expect(await neople.getTimeline("cain", "id1")).toEqual([]);
+  });
+
+  test("getCreature: 없으면 null", async () => {
+    stubFetch({ creature: null });
+    expect(await neople.getCreature("cain", "id1")).toBeNull();
+  });
 });
