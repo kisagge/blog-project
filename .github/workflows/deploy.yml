@@ -48,8 +48,9 @@ jobs:
           tags: |
             ghcr.io/kisagge/blog-project:latest
             ghcr.io/kisagge/blog-project:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # GHA 캐시(mode=max) export가 빌드(~1.5분)보다 훨씬 오래 걸려(~11분) 제거.
+          # better-sqlite3는 prebuild(컴파일 X), next build도 빠르므로 콜드 빌드가
+          # ~2분대로 충분. 캐시 유지 비용이 이득보다 커 순손해였음.
 
   deploy:
     needs: build-and-push
