@@ -280,3 +280,22 @@ export async function getMistAssimilation(
   );
   return r.mistAssimilation ?? null;
 }
+
+// 버프 스위칭(버프 강화) — 버프 스킬 + 그에 쓰는 장비.
+export type DfBuffSwitching = {
+  skillInfo?: {
+    skillId: string;
+    name: string;
+    option?: { level: number; desc?: string; values?: string[] };
+  };
+  equipment?: DfEquipItem[];
+};
+
+export async function getBuffEquipment(serverId: string, characterId: string) {
+  const r = await df<{ skill?: { buff?: DfBuffSwitching | null } }>(
+    `/df/servers/${serverId}/characters/${characterId}/skill/buff/equip/equipment`,
+    {},
+    600,
+  );
+  return r.skill?.buff ?? null;
+}

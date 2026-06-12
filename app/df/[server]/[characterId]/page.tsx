@@ -8,6 +8,7 @@ import {
   getSkillStyle,
   getOath,
   getMistAssimilation,
+  getBuffEquipment,
   characterImageUrl,
   itemImageUrl,
   type DfStatusResponse,
@@ -20,6 +21,7 @@ import {
   type DfSkillEntry,
   type DfOath,
   type DfMistAssimilation,
+  type DfBuffSwitching,
 } from "@/lib/neople";
 import { rarityColor } from "@/app/df/rarity";
 
@@ -31,17 +33,27 @@ export default async function DfDetailPage({
   params: Promise<{ server: string; characterId: string }>;
 }) {
   const { server, characterId } = await params;
-  const [status, equipment, avatar, creature, timeline, skill, oath, mist] =
-    await Promise.all([
-      getCharacterStatus(server, characterId).catch(() => null),
-      getEquipment(server, characterId).catch(() => []),
-      getAvatar(server, characterId).catch(() => []),
-      getCreature(server, characterId).catch(() => null),
-      getTimeline(server, characterId, 15).catch(() => []),
-      getSkillStyle(server, characterId).catch(() => null),
-      getOath(server, characterId).catch(() => null),
-      getMistAssimilation(server, characterId).catch(() => null),
-    ]);
+  const [
+    status,
+    equipment,
+    avatar,
+    creature,
+    timeline,
+    skill,
+    oath,
+    mist,
+    buff,
+  ] = await Promise.all([
+    getCharacterStatus(server, characterId).catch(() => null),
+    getEquipment(server, characterId).catch(() => []),
+    getAvatar(server, characterId).catch(() => []),
+    getCreature(server, characterId).catch(() => null),
+    getTimeline(server, characterId, 15).catch(() => []),
+    getSkillStyle(server, characterId).catch(() => null),
+    getOath(server, characterId).catch(() => null),
+    getMistAssimilation(server, characterId).catch(() => null),
+    getBuffEquipment(server, characterId).catch(() => null),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
@@ -64,6 +76,7 @@ export default async function DfDetailPage({
           <OathSection oath={oath} />
           <MistSection mist={mist} />
           <SkillSection skill={skill} />
+          <BuffSection buff={buff} />
           <AvatarCreatureSection avatar={avatar} creature={creature} />
           <TimelineSection rows={timeline} />
         </div>
@@ -148,6 +161,12 @@ function fmt(v: number | string) {
   return typeof v === "number" ? v.toLocaleString() : v;
 }
 
+function enchantText(enchant?: { status?: DfStat[] } | null): string | null {
+  const st = enchant?.status;
+  if (!st || st.length === 0) return null;
+  return st.map((s) => `${s.name} +${s.value}`).join(", ");
+}
+
 function StatSection({ stats }: { stats: DfStat[] }) {
   const byName = new Map(stats.map((s) => [s.name, s.value]));
   const rows = KEY_STATS.filter((n) => byName.has(n));
@@ -193,6 +212,7 @@ function EquipmentSection({ items }: { items: DfEquipItem[] }) {
             : it.reinforce
               ? `+${it.reinforce} 강화`
               : null;
+          const enchant = enchantText(it.enchant);
           return (
             <li key={it.slotId} className="flex items-center gap-3 py-2">
               <ItemThumb itemId={it.itemId} alt={it.itemName} />
@@ -205,6 +225,11 @@ function EquipmentSection({ items }: { items: DfEquipItem[] }) {
                 >
                   {it.itemName}
                 </span>
+                {enchant && (
+                  <span className="truncate text-xs text-sky-600 dark:text-sky-400">
+                    마법부여 {enchant}
+                  </span>
+                )}
               </div>
               <span className="ml-auto shrink-0 text-right text-xs text-zinc-500">
                 {enhance && <div>{enhance}</div>}
@@ -324,6 +349,61 @@ function SkillSection({ skill }: { skill: DfSkillStyle | null }) {
   );
 }
 
+function buffDesc(option?: {
+  desc?: string;
+  values?: string[];
+}): string | null {
+  if (!option?.desc) return null;
+  let text = option.desc;
+  (option.values ?? []).forEach((v, i) => {
+    text = text.replaceAll(`{value${i + 1}}`, v);
+  });
+  return text.replace(/\n/g, " · ");
+}
+
+function BuffSection({ buff }: { buff: DfBuffSwitching | null }) {
+  const equipment = buff?.equipment ?? [];
+  if (!buff?.skillInfo && equipment.length === 0) return null;
+  const desc = buffDesc(buff?.skillInfo?.option);
+  return (
+    <Section title="버프 스위칭">
+      {buff?.skillInfo && (
+        <div className="mb-3">
+          <p className="text-sm font-medium">
+            {buff.skillInfo.name}
+            {typeof buff.skillInfo.option?.level === "number" && (
+              <span className="text-zinc-400">
+                {" "}
+                Lv{buff.skillInfo.option.level}
+              </span>
+            )}
+          </p>
+          {desc && <p className="mt-0.5 text-xs text-zinc-500">{desc}</p>}
+        </div>
+      )}
+      {equipment.length > 0 && (
+        <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
+          {equipment.map((it) => (
+            <li key={it.slotId} className="flex items-center gap-3 py-2">
+              <ItemThumb itemId={it.itemId} alt={it.itemName} />
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-xs text-zinc-400">
+                  {it.slotName}
+                </span>
+                <span
+                  className={`truncate text-sm ${rarityColor(it.itemRarity)}`}
+                >
+                  {it.itemName}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
 function AvatarCreatureSection({
   avatar,
   creature,
@@ -369,6 +449,11 @@ function AvatarCreatureSection({
                 {a.optionAbility && (
                   <span className="truncate text-xs text-zinc-500">
                     {a.optionAbility}
+                  </span>
+                )}
+                {a.emblems && a.emblems.length > 0 && (
+                  <span className="truncate text-xs text-zinc-400">
+                    엠블렘 {a.emblems.map((e) => e.itemName).join(", ")}
                   </span>
                 )}
               </div>

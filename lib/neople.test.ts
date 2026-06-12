@@ -111,4 +111,21 @@ describe("neople API client", () => {
     stubFetch({ mistAssimilation: null });
     expect(await neople.getMistAssimilation("cain", "id1")).toBeNull();
   });
+
+  test("getBuffEquipment: skill.buff 추출, 없으면 null", async () => {
+    stubFetch({
+      skill: {
+        buff: {
+          skillInfo: { skillId: "b", name: "신기일체" },
+          equipment: [{ slotId: "WEAPON", itemName: "버프무기" }],
+        },
+      },
+    });
+    const buff = await neople.getBuffEquipment("cain", "id1");
+    expect(buff?.skillInfo?.name).toBe("신기일체");
+    expect(buff?.equipment?.[0].itemName).toBe("버프무기");
+
+    stubFetch({}); // skill 키 없음
+    expect(await neople.getBuffEquipment("cain", "id1")).toBeNull();
+  });
 });
