@@ -166,6 +166,16 @@ export type DfTimelineRow = {
   data?: { itemName?: string; itemRarity?: string } & Record<string, unknown>;
 };
 
+// 장착 장비의 활성 세트 효과.
+export type DfActiveSet = {
+  setItemName: string;
+  setItemRarityName?: string;
+  active?: {
+    status?: DfStat[];
+    setPoint?: { current?: number; min?: number; max?: number };
+  };
+};
+
 export function getCharacterStatus(serverId: string, characterId: string) {
   return df<DfStatusResponse>(
     `/df/servers/${serverId}/characters/${characterId}/status`,
@@ -175,12 +185,15 @@ export function getCharacterStatus(serverId: string, characterId: string) {
 }
 
 export async function getEquipment(serverId: string, characterId: string) {
-  const r = await df<{ equipment: DfEquipItem[] }>(
+  const r = await df<{
+    equipment?: DfEquipItem[];
+    setItemInfo?: DfActiveSet[];
+  }>(
     `/df/servers/${serverId}/characters/${characterId}/equip/equipment`,
     {},
     600,
   );
-  return r.equipment ?? [];
+  return { items: r.equipment ?? [], sets: r.setItemInfo ?? [] };
 }
 
 export async function getAvatar(serverId: string, characterId: string) {
@@ -244,6 +257,8 @@ export type DfOathCrystal = {
   itemRarity?: string;
 };
 
+export type DfOathStat = { key: string; value: number | string };
+
 export type DfOath = {
   info: {
     itemId: string;
@@ -252,6 +267,13 @@ export type DfOath = {
     setPoint?: number;
   };
   crystal?: DfOathCrystal[];
+  // 활성 세트 효과.
+  setInfo?: {
+    setName?: string;
+    setOptionName?: string;
+    setRarityName?: string;
+    active?: { status?: DfOathStat[] };
+  };
 };
 
 export async function getOath(serverId: string, characterId: string) {

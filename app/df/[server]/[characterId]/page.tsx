@@ -14,6 +14,7 @@ import {
   type DfStatusResponse,
   type DfStat,
   type DfEquipItem,
+  type DfActiveSet,
   type DfAvatarItem,
   type DfCreature,
   type DfTimelineRow,
@@ -45,7 +46,7 @@ export default async function DfDetailPage({
     buff,
   ] = await Promise.all([
     getCharacterStatus(server, characterId).catch(() => null),
-    getEquipment(server, characterId).catch(() => []),
+    getEquipment(server, characterId).catch(() => ({ items: [], sets: [] })),
     getAvatar(server, characterId).catch(() => []),
     getCreature(server, characterId).catch(() => null),
     getTimeline(server, characterId, 15).catch(() => []),
@@ -72,7 +73,8 @@ export default async function DfDetailPage({
         <div className="mt-4 flex flex-col gap-10">
           <Header status={status} server={server} characterId={characterId} />
           <StatSection stats={status.status} />
-          <EquipmentSection items={equipment} />
+          <EquipmentSection items={equipment.items} />
+          <EquipSetSection sets={equipment.sets} />
           <OathSection oath={oath} />
           <MistSection mist={mist} />
           <SkillSection skill={skill} />
@@ -245,6 +247,57 @@ function EquipmentSection({ items }: { items: DfEquipItem[] }) {
   );
 }
 
+function StatList({
+  stats,
+}: {
+  stats: { name?: string; key?: string; value: number | string }[];
+}) {
+  return (
+    <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-zinc-500">
+      {stats.map((s, i) => (
+        <li key={i}>
+          {s.name ?? s.key}{" "}
+          <span className="font-medium text-zinc-700 dark:text-zinc-300">
+            {fmt(s.value)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function EquipSetSection({ sets }: { sets: DfActiveSet[] }) {
+  if (sets.length === 0) return null;
+  return (
+    <Section title="장비 활성 세트">
+      <ul className="flex flex-col gap-3">
+        {sets.map((s, i) => (
+          <li
+            key={i}
+            className="rounded-lg border border-black/[.08] p-3 dark:border-white/[.145]"
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <span
+                className={`text-sm font-medium ${rarityColor(s.setItemRarityName)}`}
+              >
+                {s.setItemName}
+              </span>
+              {typeof s.active?.setPoint?.current === "number" && (
+                <span className="shrink-0 text-xs text-zinc-500">
+                  세트 포인트 {s.active.setPoint.current.toLocaleString()}
+                </span>
+              )}
+            </div>
+            {s.active?.status && s.active.status.length > 0 && (
+              <StatList stats={s.active.status} />
+            )}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 function OathSection({ oath }: { oath: DfOath | null }) {
   if (!oath) return null;
   return (
@@ -280,6 +333,25 @@ function OathSection({ oath }: { oath: DfOath | null }) {
             </li>
           ))}
         </ul>
+      )}
+      {oath.setInfo && (
+        <div className="mt-3 rounded-lg border border-black/[.08] p-3 dark:border-white/[.145]">
+          <span className="text-xs text-zinc-400">활성 세트</span>
+          <p
+            className={`text-sm font-medium ${rarityColor(oath.setInfo.setRarityName?.split(" ")[0])}`}
+          >
+            {oath.setInfo.setOptionName ?? oath.setInfo.setName}
+            {oath.setInfo.setRarityName && (
+              <span className="ml-1 text-xs text-zinc-400">
+                {oath.setInfo.setRarityName}
+              </span>
+            )}
+          </p>
+          {oath.setInfo.active?.status &&
+            oath.setInfo.active.status.length > 0 && (
+              <StatList stats={oath.setInfo.active.status} />
+            )}
+        </div>
       )}
     </Section>
   );

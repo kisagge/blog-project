@@ -61,11 +61,23 @@ describe("neople API client", () => {
     );
   });
 
-  test("getEquipment: equipment 배열 추출", async () => {
-    stubFetch({ equipment: [{ slotId: "WEAPON", itemName: "폭군의 본의" }] });
-    const eq = await neople.getEquipment("cain", "id1");
-    expect(eq).toHaveLength(1);
-    expect(eq[0].itemName).toBe("폭군의 본의");
+  test("getEquipment: items + 활성 세트(setItemInfo) 추출, 비면 빈 배열", async () => {
+    stubFetch({
+      equipment: [{ slotId: "WEAPON", itemName: "폭군의 본의" }],
+      setItemInfo: [
+        { setItemName: "용투장의 제왕 세트", setItemRarityName: "태초" },
+      ],
+    });
+    const { items, sets } = await neople.getEquipment("cain", "id1");
+    expect(items).toHaveLength(1);
+    expect(items[0].itemName).toBe("폭군의 본의");
+    expect(sets[0].setItemName).toBe("용투장의 제왕 세트");
+
+    stubFetch({});
+    expect(await neople.getEquipment("cain", "id1")).toEqual({
+      items: [],
+      sets: [],
+    });
   });
 
   test("getTimeline: rows 추출 + limit 파라미터 부착, 비면 빈 배열", async () => {
