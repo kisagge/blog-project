@@ -10,8 +10,16 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const feed = await getFeedBySlug(slug);
+  if (!feed) return { title: "찾을 수 없음" };
+  const description = feed.summary?.trim() || undefined;
   return {
-    title: feed ? `${feed.title} · BY Playground` : "Not found · BY Playground",
+    title: feed.title,
+    description,
+    openGraph: {
+      type: "article",
+      title: feed.title,
+      description,
+    },
   };
 }
 

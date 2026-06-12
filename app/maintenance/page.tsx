@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getPublicEnabled } from "@/lib/site-config";
 
-export const metadata = { title: "점검 중 · BY Playground" };
+export const metadata = { title: "점검 중" };
 export const dynamic = "force-dynamic";
 
 export default async function MaintenancePage() {

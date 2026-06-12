@@ -2,7 +2,7 @@ import Link from "next/link";
 import { listFeatured } from "@/lib/df-characters";
 import { getCharacterInfo, characterImageUrl } from "@/lib/neople";
 
-export const metadata = { title: "던파 캐릭터 · BY Playground" };
+export const metadata = { title: "던파 캐릭터" };
 
 export default async function DfPage() {
   const featured = await listFeatured();

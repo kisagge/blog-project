@@ -1,7 +1,10 @@
 import { searchPublishedFeeds } from "@/lib/feeds";
 import FeedList from "./feed-list";
 
-export const metadata = { title: "피드 · BY Playground" };
+export const metadata = {
+  title: "피드",
+  description: "BY Playground에 남긴 글 목록",
+};
 
 // 런타임에 DB를 조회한다(빌드 타임 prerender 시 DB가 없으므로 동적 렌더).
 export const dynamic = "force-dynamic";

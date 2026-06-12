@@ -1,6 +1,6 @@
 import RequestForm from "./request-form";
 
-export const metadata = { title: "비밀번호 찾기 · BY Playground" };
+export const metadata = { title: "비밀번호 찾기" };
 
 export default function ForgotPasswordPage() {
   return (

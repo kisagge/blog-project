@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getResetCookie } from "@/lib/reset-token";
 import ResetForm from "./reset-form";
 
-export const metadata = { title: "새 비밀번호 · BY Playground" };
+export const metadata = { title: "새 비밀번호" };
 
 export default async function ResetPage() {
   const cookie = await getResetCookie();

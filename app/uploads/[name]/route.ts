@@ -9,7 +9,10 @@ const MIME: Record<string, string> = {
   webp: "image/webp",
 };
 
-export async function GET(_req: Request, { params }: { params: Promise<{ name: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ name: string }> },
+) {
   const { name } = await params;
   if (!/^[a-f0-9-]+\.(jpg|jpeg|png|webp)$/i.test(name)) {
     return new Response("Not found", { status: 404 });
