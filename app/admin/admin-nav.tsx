@@ -6,6 +6,7 @@ const TABS = [
   { href: "/admin", label: "대시보드" },
   { href: "/admin/feeds", label: "글" },
   { href: "/admin/members", label: "회원" },
+  { href: "/admin/df", label: "던파" },
   { href: "/admin/settings", label: "설정" },
 ];
 

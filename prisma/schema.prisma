@@ -51,6 +51,18 @@ model User {
   commentLikes CommentLike[]
 }
 
+// 던파 쇼케이스에 노출할 캐릭터(관리자 등록). characterId는 Neople 고유 ID.
+model DfCharacter {
+  id            String   @id @default(uuid())
+  serverId      String
+  characterId   String
+  characterName String
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@unique([serverId, characterId])
+}
+
 // 회원 비밀번호 재설정 6자리 코드(해시 저장). 이메일별 최신 1건만 유효.
 model PasswordResetCode {
   id         String    @id @default(uuid())

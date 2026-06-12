@@ -54,6 +54,14 @@ export default async function RootLayout({
               >
                 Feed
               </Link>
+              {(session?.role === "member" || session?.role === "admin") && (
+                <Link
+                  href="/df"
+                  className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                >
+                  던파
+                </Link>
+              )}
               {session?.role === "member" ? (
                 <>
                   <span className="text-zinc-500">{session.nickname}</span>
