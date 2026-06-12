@@ -33,11 +33,14 @@ export default function SignupForm() {
       />
       <Field label="닉네임" name="nickname" error={state?.errors?.nickname} />
       <Field
-        label="비밀번호 (8자 이상)"
+        label="비밀번호"
         name="password"
         type="password"
         error={state?.errors?.password}
       />
+      <p className="-mt-3 text-xs text-zinc-500">
+        8자 이상, 소문자·대문자·숫자·특수문자를 각 1개 이상 포함하세요.
+      </p>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
       <button
         type="submit"
