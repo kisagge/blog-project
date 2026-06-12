@@ -2,7 +2,7 @@ import { verifySession } from "@/lib/dal";
 import { logout } from "@/app/actions/auth";
 import AdminNav from "./admin-nav";
 
-export const metadata = { title: "관리자 · BY Playground" };
+export const metadata = { title: "관리자" };
 
 export default async function AdminLayout({
   children,

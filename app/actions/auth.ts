@@ -13,7 +13,10 @@ function passwordMatches(input: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-export async function login(_state: LoginState, formData: FormData): Promise<LoginState> {
+export async function login(
+  _state: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
   const password = String(formData.get("password") ?? "");
   if (!passwordMatches(password)) {
     return { error: "비밀번호가 올바르지 않습니다." };

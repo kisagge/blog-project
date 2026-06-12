@@ -19,8 +19,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BY Playground",
-  description: "BY Playground — 개인 기록 공간",
+  metadataBase: new URL("https://by-jang-blog.xyz"),
+  title: { default: "BY Playground", template: "%s · BY Playground" },
+  description: "생각과 기록을 남기는 개인 공간",
+  openGraph: {
+    type: "website",
+    siteName: "BY Playground",
+    title: "BY Playground",
+    description: "생각과 기록을 남기는 개인 공간",
+    locale: "ko_KR",
+  },
+  twitter: { card: "summary" },
 };
 
 export default async function RootLayout({

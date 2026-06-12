@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getResetCookie } from "@/lib/reset-token";
 import VerifyForm from "./verify-form";
 
-export const metadata = { title: "코드 확인 · BY Playground" };
+export const metadata = { title: "코드 확인" };
 
 export default async function VerifyPage() {
   const cookie = await getResetCookie();

@@ -4,7 +4,7 @@ import { getPublicEnabled } from "@/lib/site-config";
 import { countUsersByStatus } from "@/lib/users";
 import { listFeatured } from "@/lib/df-characters";
 
-export const metadata = { title: "관리자 · BY Playground" };
+export const metadata = { title: "관리자" };
 
 export default async function AdminDashboardPage() {
   const [feeds, publicEnabled, pendingCount, memberCount, dfCharacters] =

@@ -50,6 +50,14 @@ body {
     cursor: pointer;
   }
 
+  /* 입력 요소 포커스 시 브라우저 기본 outline 제거 + 은은한 ring(접근성 유지). */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 18%, transparent);
+  }
+
   /* 얇고 은은한 테마 대응 스크롤바(페이지·댓글 입력 등). */
   * {
     scrollbar-width: thin;

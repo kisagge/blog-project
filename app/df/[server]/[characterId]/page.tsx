@@ -27,7 +27,7 @@ import {
 import { rarityColor } from "@/app/df/rarity";
 import Tabs, { type TabItem } from "./tabs";
 
-export const metadata = { title: "캐릭터 상세 · 던파 · BY Playground" };
+export const metadata = { title: "캐릭터 상세 · 던파" };
 
 export default async function DfDetailPage({
   params,
