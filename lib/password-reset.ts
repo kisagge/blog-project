@@ -38,7 +38,13 @@ export async function requestPasswordReset(
         expiresAt,
       },
     });
-    await sendPasswordResetCode(normalized, code);
+    // 발송 실패(SES 샌드박스·바운스·스로틀 등)가 플로우를 깨뜨리지 않도록 흡수.
+    // 존재 비노출 정책상 UX는 성공/실패와 무관하게 동일해야 한다.
+    try {
+      await sendPasswordResetCode(normalized, code);
+    } catch (e) {
+      console.error("[password-reset] 코드 메일 발송 실패:", e);
+    }
   }
   return { expiresAt };
 }

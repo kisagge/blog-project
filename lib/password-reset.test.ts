@@ -124,6 +124,19 @@ describe("password-reset", () => {
     });
   });
 
+  test("메일 발송 실패해도 요청은 깨지지 않음(코드 저장·검증 가능)", async () => {
+    await approvedMember("fail@x.com");
+    sendMock.mockClear();
+    sendMock.mockRejectedValueOnce(new Error("SES boom"));
+    // 예외가 전파되지 않아야 한다.
+    await expect(pr.requestPasswordReset("fail@x.com")).resolves.toMatchObject({
+      expiresAt: expect.any(Date),
+    });
+    // 코드는 정상 저장되어 검증 가능(발송만 실패).
+    const code = sendMock.mock.calls[0][1] as string;
+    expect(await pr.verifyResetCode("fail@x.com", code)).toEqual({ ok: true });
+  });
+
   test("재요청 시 이전 코드는 폐기되고 새 코드만 유효", async () => {
     await approvedMember("re@x.com");
     sendMock.mockClear();
