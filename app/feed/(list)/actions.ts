@@ -8,6 +8,7 @@ export type FeedCard = {
   title: string;
   summary: string | null;
   createdAt: string;
+  viewCount: number;
 };
 
 export type FeedPage = { items: FeedCard[]; hasMore: boolean };

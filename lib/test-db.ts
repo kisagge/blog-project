@@ -14,10 +14,21 @@ const SCHEMA = [
     "summary" TEXT,
     "content" TEXT NOT NULL,
     "published" BOOLEAN NOT NULL DEFAULT false,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
   )`,
   `CREATE UNIQUE INDEX "Feed_slug_key" ON "Feed"("slug")`,
+  `CREATE TABLE "View" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "entityType" TEXT NOT NULL,
+    "entityId" TEXT NOT NULL,
+    "visitorId" TEXT NOT NULL,
+    "day" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX "View_entityType_entityId_idx" ON "View"("entityType", "entityId")`,
+  `CREATE UNIQUE INDEX "View_entityType_entityId_visitorId_day_key" ON "View"("entityType", "entityId", "visitorId", "day")`,
   `CREATE TABLE "SiteConfig" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
     "publicEnabled" BOOLEAN NOT NULL DEFAULT true,
@@ -53,6 +64,7 @@ const SCHEMA = [
     "characterId" TEXT NOT NULL,
     "characterName" TEXT NOT NULL,
     "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE UNIQUE INDEX "DfCharacter_serverId_characterId_key" ON "DfCharacter"("serverId", "characterId")`,

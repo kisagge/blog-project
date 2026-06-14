@@ -62,6 +62,9 @@ export default async function DfPage() {
                       정보를 불러오지 못했습니다
                     </span>
                   )}
+                  <span className="text-sm text-zinc-500">
+                    조회 {c.viewCount.toLocaleString()}
+                  </span>
                 </span>
               </Link>
             </li>

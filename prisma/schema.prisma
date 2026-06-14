@@ -19,6 +19,7 @@ model Feed {
   summary   String?
   content   String              // 본문 (마크다운/HTML 문자열로 저장)
   published Boolean  @default(false)   // 초안/공개 토글
+  viewCount Int      @default(0)        // 누적 조회수(방문자·하루 단위 중복 제거 후 집계)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   comments  Comment[]
@@ -58,9 +59,23 @@ model DfCharacter {
   characterId   String
   characterName String
   sortOrder     Int      @default(0)
+  viewCount     Int      @default(0)   // 누적 조회수
   createdAt     DateTime @default(now())
 
   @@unique([serverId, characterId])
+}
+
+// 조회 기록(중복 제거용). 같은 방문자·대상·날짜(KST)는 1건만 → viewCount 1 증가.
+model View {
+  id         String   @id @default(uuid())
+  entityType String   // "feed" | "df"
+  entityId   String
+  visitorId  String
+  day        String   // KST "YYYY-MM-DD"
+  createdAt  DateTime @default(now())
+
+  @@unique([entityType, entityId, visitorId, day])
+  @@index([entityType, entityId])
 }
 
 // 회원 비밀번호 재설정 6자리 코드(해시 저장). 이메일별 최신 1건만 유효.
