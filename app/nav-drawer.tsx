@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/app/theme-toggle";
 import { logout } from "@/app/actions/auth";
@@ -12,26 +12,58 @@ type NavSession =
 export default function NavDrawer({ session }: { session: NavSession }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // 열렸을 때 스크롤 잠금 + Esc 닫기.
+  // 열렸을 때: 스크롤 잠금 + 첫 요소 포커스 + Esc/Tab(포커스 트랩) + 닫힐 때 트리거로 복귀.
   useEffect(() => {
     if (!open) return;
     document.body.style.overflow = "hidden";
+    const trigger = triggerRef.current; // 닫힐 때 포커스 복귀 대상(캡처)
+    const panel = panelRef.current;
+    const focusables = () =>
+      panel
+        ? Array.from(
+            panel.querySelectorAll<HTMLElement>(
+              'a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])',
+            ),
+          )
+        : [];
+    focusables()[0]?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key === "Tab") {
+        const els = focusables();
+        if (els.length === 0) return;
+        const first = els[0];
+        const last = els[els.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
+      trigger?.focus();
     };
   }, [open]);
 
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         aria-label="메뉴 열기"
+        aria-expanded={open}
         onClick={() => setOpen(true)}
         className="-ml-1 rounded p-1 text-zinc-600 hover:bg-black/[.04] dark:text-zinc-300 dark:hover:bg-white/[.06]"
       >
@@ -54,10 +86,14 @@ export default function NavDrawer({ session }: { session: NavSession }) {
       )}
 
       <aside
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="메뉴"
+        inert={!open}
         className={`bg-background fixed top-0 left-0 z-50 flex h-full w-64 flex-col border-r border-black/[.08] transition-transform duration-200 dark:border-white/[.145] ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
-        aria-hidden={!open}
       >
         <div className="flex items-center justify-between px-5 py-4">
           <span className="text-lg font-semibold tracking-tight">메뉴</span>

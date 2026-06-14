@@ -58,6 +58,12 @@ export default async function RootLayout({
       </head>
       <body className="flex min-h-full flex-col">
         <SiteVisitTracker />
+        <a
+          href="#main-content"
+          className="bg-foreground text-background sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded focus:px-4 focus:py-2 focus:text-sm"
+        >
+          본문으로 건너뛰기
+        </a>
         <header className="border-b border-black/[.08] dark:border-white/[.145]">
           <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-6 py-4">
             <NavDrawer session={navSession} />
@@ -82,7 +88,9 @@ export default async function RootLayout({
             )}
           </div>
         </header>
-        {children}
+        <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col">
+          {children}
+        </div>
       </body>
     </html>
   );

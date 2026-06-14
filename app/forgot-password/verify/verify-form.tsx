@@ -59,7 +59,11 @@ export default function VerifyForm({ expiresAt }: { expiresAt: string }) {
             className={`${inputCls} text-center text-lg tracking-[0.4em]`}
           />
         </div>
-        {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+        {state?.error && (
+          <p role="alert" className="text-sm text-red-600">
+            {state.error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={pending || expired}
