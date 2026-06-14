@@ -48,6 +48,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* 모션 최소화 선호 시 애니메이션·트랜지션·부드러운 스크롤 비활성(전정 장애 등 배려). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Tailwind v4 preflight는 버튼 기본 커서를 default로 둔다. 활성 버튼/링크는 pointer로 복원. */
 @layer base {
   button:not(:disabled),

@@ -41,7 +41,11 @@ export default function SignupForm() {
       <p className="-mt-3 text-xs text-zinc-500">
         8자 이상, 소문자·대문자·숫자·특수문자를 각 1개 이상 포함하세요.
       </p>
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && (
+        <p role="alert" className="text-sm text-red-600">
+          {state.error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={pending}
@@ -76,7 +80,11 @@ function Field({
         {label}
       </label>
       <input id={name} name={name} type={type} className={inputCls} />
-      {error && <p className="text-sm text-red-600">{error.join(" ")}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error.join(" ")}
+        </p>
+      )}
     </div>
   );
 }

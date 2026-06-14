@@ -79,7 +79,9 @@ export default function CommentForm({
       />
       <div className="flex items-center justify-between gap-3">
         {error ? (
-          <p className="text-sm text-red-600">{error}</p>
+          <p role="alert" className="text-sm text-red-600">
+            {error}
+          </p>
         ) : (
           <span
             className={`text-xs ${tooLong ? "text-red-600" : "text-zinc-400"}`}

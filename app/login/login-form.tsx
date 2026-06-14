@@ -19,7 +19,11 @@ export default function LoginForm() {
         autoComplete="current-password"
         className="rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20"
       />
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && (
+        <p role="alert" className="text-sm text-red-600">
+          {state.error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={pending}

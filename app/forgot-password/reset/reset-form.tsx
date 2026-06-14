@@ -25,7 +25,11 @@ export default function ResetForm() {
         name="confirm"
         error={state?.errors?.confirm}
       />
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && (
+        <p role="alert" className="text-sm text-red-600">
+          {state.error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={pending}
@@ -58,7 +62,11 @@ function Field({
         autoComplete="new-password"
         className={inputCls}
       />
-      {error && <p className="text-sm text-red-600">{error.join(" ")}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error.join(" ")}
+        </p>
+      )}
     </div>
   );
 }

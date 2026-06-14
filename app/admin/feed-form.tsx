@@ -121,7 +121,9 @@ export default function FeedForm({
           공개
         </label>
         {state?.message && (
-          <p className="text-sm text-red-600">{state.message}</p>
+          <p role="alert" className="text-sm text-red-600">
+            {state.message}
+          </p>
         )}
         <button
           type="submit"
@@ -152,7 +154,11 @@ function Field({
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium">{label}</label>
       {children}
-      {error && <p className="text-sm text-red-600">{error.join(" ")}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error.join(" ")}
+        </p>
+      )}
     </div>
   );
 }

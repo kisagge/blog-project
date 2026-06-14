@@ -42,7 +42,11 @@ export default function DfManager({ servers }: { servers: DfServer[] }) {
         </button>
       </form>
 
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && (
+        <p role="alert" className="text-sm text-red-600">
+          {state.error}
+        </p>
+      )}
 
       {state?.rows && state.rows.length > 0 && (
         <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
