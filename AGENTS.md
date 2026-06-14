@@ -20,3 +20,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **대비**: 텍스트/배경 색 대비 충분히(특히 보조 텍스트).
 
 새 컴포넌트엔 위 항목을 점검하고, 가능한 경우 테스트에도 반영한다.
+
+# 웹 표준 (필수)
+
+새 기능·UI 변경 시 **유효한 마크업과 시맨틱**을 함께 지킨다.
+
+- **중첩 규칙**: 인터랙티브 요소 중첩 금지(`a`/`button` 안에 `a`/`button`), `p` 안에 블록 요소 금지, `form` 중첩 금지, `li`는 `ul/ol` 직속, `table` 구조 준수.
+- **시맨틱 요소**: 목적에 맞는 태그(`article/section/nav/header/time/ul/ol/figure`).
+- **속성**: 유효한 속성·값만. 불리언/열거 속성 규칙 준수.
+- 가능하면 W3C Nu 검사기로 렌더 결과를 확인한다.
+- 참고: React 19 server-action 폼은 SSR 시 `action=""`로 렌더되어 검사기가 오류로 표기하나 이는 프레임워크 동작(기능 정상)이며 우리 마크업 결함이 아니다.
