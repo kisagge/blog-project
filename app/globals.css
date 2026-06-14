@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* dark: 변형을 OS 미디어가 아닌 data-theme="dark" 속성 기준으로 (수동 토글 지원) */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+/* dark: 변형을 data-theme 기준으로 (수동 토글). 대표(brand)도 어두운 배경이라 포함. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="brand"], [data-theme="brand"] *));
 
 :root {
   --background: #ffffff;
@@ -32,6 +32,13 @@
 [data-theme="dark"] {
   --background: #0a0a0a;
   --foreground: #ededed;
+  color-scheme: dark;
+}
+
+/* 대표(brand) 테마 — favicon 차콜(#0F172A) 배경 + 밝은 슬레이트 전경. 기본 테마. */
+[data-theme="brand"] {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
   color-scheme: dark;
 }
 

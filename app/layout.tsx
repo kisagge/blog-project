@@ -3,10 +3,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { getSession } from "@/lib/dal";
 import NavDrawer from "@/app/nav-drawer";
+import SiteVisitTracker from "@/app/site-visit-tracker";
 import "./globals.css";
 
 // 페인트 전에 data-theme를 확정해 깜빡임 방지 (localStorage 선택 + system은 OS 추종).
-const THEME_SCRIPT = `(function(){try{var c=localStorage.getItem('theme')||'system';var d=c==='dark'||(c==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){}})();`;
+const THEME_SCRIPT = `(function(){try{var c=localStorage.getItem('theme');if(c!=='light'&&c!=='dark'&&c!=='brand')c='brand';document.documentElement.setAttribute('data-theme',c);}catch(e){}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,6 +57,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col">
+        <SiteVisitTracker />
         <header className="border-b border-black/[.08] dark:border-white/[.145]">
           <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-6 py-4">
             <NavDrawer session={navSession} />

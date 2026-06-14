@@ -3,22 +3,34 @@ import { countFeeds } from "@/lib/feeds";
 import { getPublicEnabled } from "@/lib/site-config";
 import { countUsersByStatus } from "@/lib/users";
 import { listFeatured } from "@/lib/df-characters";
+import { countTodayVisitors } from "@/lib/views";
+import { version } from "@/package.json";
 
 export const metadata = { title: "관리자" };
 
 export default async function AdminDashboardPage() {
-  const [feeds, publicEnabled, pendingCount, memberCount, dfCharacters] =
-    await Promise.all([
-      countFeeds(),
-      getPublicEnabled(),
-      countUsersByStatus("pending"),
-      countUsersByStatus("approved"),
-      listFeatured(),
-    ]);
+  const [
+    feeds,
+    publicEnabled,
+    pendingCount,
+    memberCount,
+    dfCharacters,
+    todayVisitors,
+  ] = await Promise.all([
+    countFeeds(),
+    getPublicEnabled(),
+    countUsersByStatus("pending"),
+    countUsersByStatus("approved"),
+    listFeatured(),
+    countTodayVisitors(),
+  ]);
 
   return (
     <section>
-      <h1 className="mb-6 text-xl font-semibold tracking-tight">대시보드</h1>
+      <div className="mb-6 flex items-baseline justify-between">
+        <h1 className="text-xl font-semibold tracking-tight">대시보드</h1>
+        <span className="text-xs text-zinc-500">v{version}</span>
+      </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Card
           href="/admin/feeds"
@@ -44,6 +56,12 @@ export default async function AdminDashboardPage() {
           label="던파 캐릭터"
           value={`${dfCharacters.length}`}
           sub="쇼케이스"
+        />
+        <Card
+          href="/admin"
+          label="오늘 방문자"
+          value={`${todayVisitors}`}
+          sub="순 방문 기준"
         />
         <Card
           href="/admin/settings"
