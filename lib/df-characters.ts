@@ -7,6 +7,16 @@ export async function listFeatured() {
   });
 }
 
+// 등록된 캐릭터 단건(조회수 트래킹·표시용). 미등록이면 null.
+export async function getFeaturedByCharacter(
+  serverId: string,
+  characterId: string,
+) {
+  return prisma.dfCharacter.findUnique({
+    where: { serverId_characterId: { serverId, characterId } },
+  });
+}
+
 // 등록(이미 있으면 이름만 갱신). serverId+characterId 유니크. 신규는 맨 뒤에 배치.
 export async function addFeatured(input: {
   serverId: string;

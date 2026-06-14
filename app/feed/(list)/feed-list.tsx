@@ -123,14 +123,14 @@ export default function FeedList({
                     {feed.summary}
                   </p>
                 )}
-                <time
-                  dateTime={feed.createdAt}
-                  className="mt-2 block text-sm text-zinc-500"
-                >
-                  {new Date(feed.createdAt).toLocaleDateString("ko-KR", {
-                    timeZone: "Asia/Seoul",
-                  })}
-                </time>
+                <p className="mt-2 text-sm text-zinc-500">
+                  <time dateTime={feed.createdAt}>
+                    {new Date(feed.createdAt).toLocaleDateString("ko-KR", {
+                      timeZone: "Asia/Seoul",
+                    })}
+                  </time>
+                  <span> · 조회 {feed.viewCount.toLocaleString()}</span>
+                </p>
               </Link>
             </li>
           ))}

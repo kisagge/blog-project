@@ -28,7 +28,13 @@ export async function searchPublishedFeeds({
       }),
     },
     orderBy: { createdAt: "desc" },
-    select: { slug: true, title: true, summary: true, createdAt: true },
+    select: {
+      slug: true,
+      title: true,
+      summary: true,
+      createdAt: true,
+      viewCount: true,
+    },
     skip,
     take: take + 1,
   });

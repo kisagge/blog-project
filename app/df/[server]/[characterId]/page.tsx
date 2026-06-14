@@ -25,6 +25,8 @@ import {
   type DfBuffSwitching,
 } from "@/lib/neople";
 import { rarityColor } from "@/app/df/rarity";
+import { getFeaturedByCharacter } from "@/lib/df-characters";
+import ViewTracker from "@/app/view-tracker";
 import Tabs, { type TabItem } from "./tabs";
 
 export const metadata = { title: "캐릭터 상세 · 던파" };
@@ -56,6 +58,10 @@ export default async function DfDetailPage({
     getMistAssimilation(server, characterId).catch(() => null),
     getBuffEquipment(server, characterId).catch(() => null),
   ]);
+  // 등록된 쇼케이스 캐릭터면 조회수 트래킹/표시(미등록이면 null).
+  const featured = await getFeaturedByCharacter(server, characterId).catch(
+    () => null,
+  );
 
   // 데이터가 있는 그룹만 탭으로 노출(세로 길이 절감).
   const hasGear =
@@ -118,13 +124,20 @@ export default async function DfDetailPage({
         ← 목록
       </Link>
 
+      {featured && <ViewTracker type="df" id={featured.id} />}
+
       {!status ? (
         <p className="mt-8 text-sm text-zinc-500">
           캐릭터 정보를 불러오지 못했습니다.
         </p>
       ) : (
         <div className="mt-4 flex flex-col gap-8">
-          <Header status={status} server={server} characterId={characterId} />
+          <Header
+            status={status}
+            server={server}
+            characterId={characterId}
+            viewCount={featured?.viewCount}
+          />
           <Tabs tabs={tabs} />
         </div>
       )}
@@ -151,10 +164,12 @@ function Header({
   status,
   server,
   characterId,
+  viewCount,
 }: {
   status: DfStatusResponse;
   server: string;
   characterId: string;
+  viewCount?: number;
 }) {
   return (
     <div className="flex items-center gap-5">
@@ -178,6 +193,11 @@ function Header({
         {typeof status.fame === "number" && (
           <p className="text-sm font-medium text-amber-600 dark:text-amber-500">
             명성 {status.fame.toLocaleString()}
+          </p>
+        )}
+        {typeof viewCount === "number" && (
+          <p className="text-sm text-zinc-500">
+            조회 {viewCount.toLocaleString()}
           </p>
         )}
       </div>
