@@ -29,7 +29,7 @@ async function visitorId(): Promise<string> {
 
 // 오늘 첫 조회면 View 기록을 만들고 true. 이미 봤으면 false(unique 충돌).
 async function recordView(
-  entityType: "feed" | "df",
+  entityType: "feed" | "df" | "site",
   entityId: string,
 ): Promise<boolean> {
   const visitor = await visitorId();
@@ -60,4 +60,14 @@ export async function trackDfView(dfCharacterId: string): Promise<void> {
       })
       .catch(() => {});
   }
+}
+
+// 사이트 방문(페이지 무관). 방문자·하루 단위로 1건 → 일 순 방문자 집계.
+const SITE = "site";
+export async function trackSiteVisit(): Promise<void> {
+  await recordView("site", SITE);
+}
+
+export async function countTodayVisitors(): Promise<number> {
+  return prisma.view.count({ where: { entityType: "site", day: kstDay() } });
 }

@@ -1,53 +1,38 @@
 "use client";
 import { useEffect, useState } from "react";
 import {
-  resolveTheme,
+  normalizeTheme,
   THEME_ORDER,
   THEME_STORAGE_KEY,
+  DEFAULT_THEME,
   type ThemeChoice,
 } from "@/lib/theme";
 
 const LABEL: Record<ThemeChoice, string> = {
+  brand: "대표",
   light: "라이트",
   dark: "다크",
-  system: "시스템",
 };
 
 function applyTheme(choice: ThemeChoice) {
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  document.documentElement.setAttribute(
-    "data-theme",
-    resolveTheme(choice, prefersDark),
-  );
+  document.documentElement.setAttribute("data-theme", choice);
 }
 
 export default function ThemeToggle() {
-  const [choice, setChoice] = useState<ThemeChoice>("system");
+  const [choice, setChoice] = useState<ThemeChoice>(DEFAULT_THEME);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // localStorage는 클라이언트에서만 읽을 수 있어 마운트 후 1회 동기화한다.
     // 하이드레이션 과정에서 <html data-theme>가 사라질 수 있으므로 여기서 재적용해
-    // 선택값을 다시 확정한다(라이브 새로고침 시 다크→라이트로 풀리던 문제 방지).
-    const stored = localStorage.getItem(
-      THEME_STORAGE_KEY,
-    ) as ThemeChoice | null;
-    const current = stored && THEME_ORDER.includes(stored) ? stored : "system";
+    // 선택값을 다시 확정한다(새로고침 시 테마가 풀리던 문제 방지).
+    const current = normalizeTheme(localStorage.getItem(THEME_STORAGE_KEY));
     applyTheme(current);
     /* eslint-disable react-hooks/set-state-in-effect */
     setChoice(current);
     setMounted(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
-
-  // system 선택 중엔 OS 테마 변경을 실시간 반영.
-  useEffect(() => {
-    if (choice !== "system") return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => applyTheme("system");
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [choice]);
 
   function cycle() {
     const next =
@@ -105,19 +90,10 @@ function Icon({ choice }: { choice: ThemeChoice }) {
       </svg>
     );
   }
+  // brand: favicon을 닮은 라운드 사각형.
   return (
-    <svg
-      className={cls}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <rect x="2" y="4" width="20" height="14" rx="2" />
-      <path d="M8 21h8M12 18v3" />
+    <svg className={cls} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
     </svg>
   );
 }

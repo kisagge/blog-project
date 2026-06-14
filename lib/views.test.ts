@@ -85,4 +85,13 @@ describe("views", () => {
     const d = await prisma.dfCharacter.findUnique({ where: { id: dfId } });
     expect(d?.viewCount).toBe(1);
   });
+
+  test("사이트 방문은 일 순 방문자로 집계 + 같은 방문자 중복 제거", async () => {
+    const before = await views.countTodayVisitors();
+    await views.trackSiteVisit(); // 새 방문자(beforeEach 리셋)
+    const mid = await views.countTodayVisitors();
+    expect(mid).toBe(before + 1);
+    await views.trackSiteVisit(); // 같은 방문자 재방문
+    expect(await views.countTodayVisitors()).toBe(mid);
+  });
 });
