@@ -22,6 +22,7 @@ export async function searchFeeds({
   const term = q.trim();
   const rows = await prisma.feed.findMany({
     where: {
+      status: "published", // 임시저장(draft)은 공개 목록에서 제외
       visibility: { in: listableVisibilities(role) },
       ...(term && {
         OR: [
@@ -64,6 +65,7 @@ export async function getAdminFeedsPage(
   const skip = (Math.max(1, page) - 1) * take;
   const [items, total] = await Promise.all([
     prisma.feed.findMany({
+      where: { authorId: null }, // 관리자 CMS는 관리자 글만(회원 글 제외)
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -75,7 +77,7 @@ export async function getAdminFeedsPage(
       skip,
       take,
     }),
-    prisma.feed.count(),
+    prisma.feed.count({ where: { authorId: null } }),
   ]);
   return { items, total, pageSize: take };
 }
@@ -88,9 +90,9 @@ export async function getFeedById(id: string) {
 // 관리자 대시보드용: 목록을 다 불러오지 않고 count로 요약.
 export async function countFeeds() {
   const [total, pub, members] = await Promise.all([
-    prisma.feed.count(),
-    prisma.feed.count({ where: { visibility: "public" } }),
-    prisma.feed.count({ where: { visibility: "members" } }),
+    prisma.feed.count({ where: { authorId: null } }),
+    prisma.feed.count({ where: { authorId: null, visibility: "public" } }),
+    prisma.feed.count({ where: { authorId: null, visibility: "members" } }),
   ]);
   return { total, public: pub, members, private: total - pub - members };
 }

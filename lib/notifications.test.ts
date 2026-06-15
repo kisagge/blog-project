@@ -142,4 +142,37 @@ describe("notifications", () => {
       await prisma.notification.count({ where: { userId: admin.id } }),
     ).toBe(before);
   });
+
+  test("notifyFeedComment: 회원 글이면 관리자 아닌 작성자에게 알림", async () => {
+    // 작성자 A의 회원 글에 B가 댓글 → A에게 알림(관리자 아님).
+    const memFeed = await prisma.feed.create({
+      data: {
+        slug: "mp",
+        title: "회원글",
+        content: "c",
+        visibility: "members",
+        status: "published",
+        authorId,
+      },
+    });
+    const before = await prisma.notification.count({
+      where: { userId: authorId },
+    });
+    await m.notifyFeedComment({
+      feedId: memFeed.id,
+      commentId: "top3",
+      slug: "mp",
+      fromUserId: replierId,
+      fromNickname: "B",
+    });
+    const rows = await prisma.notification.findMany({
+      where: { userId: authorId },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+    });
+    expect(rows[0].url).toBe("/feed/mp?c=top3");
+    expect(
+      await prisma.notification.count({ where: { userId: authorId } }),
+    ).toBe(before + 1);
+  });
 });
