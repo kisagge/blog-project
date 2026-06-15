@@ -38,7 +38,20 @@ import ShareBar from "@/app/share-bar";
 import { absoluteUrl } from "@/lib/share";
 import Tabs, { type TabItem } from "./tabs";
 
-export const metadata = { title: "캐릭터 상세 · 던파" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ server: string; characterId: string }>;
+}) {
+  const { server, characterId } = await params;
+  return {
+    title: "캐릭터 상세 · 던파",
+    openGraph: {
+      type: "profile",
+      images: [characterImageUrl(server, characterId, 2)],
+    },
+  };
+}
 
 export default async function DfDetailPage({
   params,
@@ -170,6 +183,7 @@ export default async function DfDetailPage({
             url={absoluteUrl(`/df/${server}/${characterId}`)}
             title={status.characterName}
             kakaoKey={process.env.KAKAO_JS_KEY}
+            imageUrl={characterImageUrl(server, characterId, 2)}
           />
           <Tabs tabs={tabs} />
         </div>

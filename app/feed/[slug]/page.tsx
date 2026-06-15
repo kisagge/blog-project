@@ -7,7 +7,7 @@ import FeedEngagement from "@/app/feed/feed-engagement";
 import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
 import ShareBar from "@/app/share-bar";
-import { absoluteUrl } from "@/lib/share";
+import { absoluteUrl, firstContentImage, toAbsolute } from "@/lib/share";
 
 export async function generateMetadata({
   params,
@@ -24,10 +24,12 @@ export async function generateMetadata({
   if (access === "not-found") return { title: "찾을 수 없음" };
   const description =
     access === "ok" ? feed.summary?.trim() || undefined : undefined;
+  const img = access === "ok" ? firstContentImage(feed.content) : null;
+  const images = img ? [toAbsolute(img)] : undefined;
   return {
     title: feed.title,
     description,
-    openGraph: { type: "article", title: feed.title, description },
+    openGraph: { type: "article", title: feed.title, description, images },
   };
 }
 
@@ -74,6 +76,10 @@ export default async function FeedDetailPage({
           url={absoluteUrl(`/feed/${feed.slug}`)}
           title={feed.title}
           kakaoKey={process.env.KAKAO_JS_KEY}
+          imageUrl={(() => {
+            const i = firstContentImage(feed.content);
+            return i ? toAbsolute(i) : undefined;
+          })()}
         />
       </div>
       <FeedEngagement feedId={feed.id} slug={feed.slug} sort={sort} />
