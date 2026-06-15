@@ -198,13 +198,16 @@ export default async function DfDetailPage({
             characterId={characterId}
             viewCount={featured?.viewCount}
           />
-          <ShareBar
-            url={absoluteUrl(`/df/${server}/${characterId}`)}
-            title={status.characterName}
-            description={dfDescription(status)}
-            kakaoKey={process.env.KAKAO_JS_KEY}
-            imageUrl={characterImageUrl(server, characterId, 2)}
-          />
+          {/* 비공개(초안)는 공유해도 타인에겐 404 — 공유 버튼 비노출. */}
+          {featured?.visibility !== "private" && (
+            <ShareBar
+              url={absoluteUrl(`/df/${server}/${characterId}`)}
+              title={status.characterName}
+              description={dfDescription(status)}
+              kakaoKey={process.env.KAKAO_JS_KEY}
+              imageUrl={characterImageUrl(server, characterId, 2)}
+            />
+          )}
           <Tabs tabs={tabs} />
         </div>
       )}

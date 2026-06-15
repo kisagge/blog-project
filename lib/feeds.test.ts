@@ -90,11 +90,13 @@ describe("searchFeeds", () => {
     expect(items.map((f) => f.slug)).toEqual(["pub-7"]);
   });
 
-  test("비공개 글은 검색에서 제외(anon·회원·관리자 목록 모두)", async () => {
-    for (const role of ["anon", "member", "admin"] as const) {
+  test("비공개 글은 anon·회원 목록에서 제외, 관리자는 노출", async () => {
+    for (const role of ["anon", "member"] as const) {
       const { items } = await searchFeeds({ role, q: "오직비공개단어" });
       expect(items).toHaveLength(0);
     }
+    const { items } = await searchFeeds({ role: "admin", q: "오직비공개단어" });
+    expect(items).toHaveLength(1);
   });
 
   test("회원공개 글: anon 제외, 회원 포함", async () => {

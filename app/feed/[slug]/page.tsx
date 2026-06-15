@@ -72,18 +72,21 @@ export default async function FeedDetailPage({
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <ViewTracker type="feed" id={feed.id} />
       <FeedArticle feed={feed} />
-      <div className="mt-6 border-t border-black/[.06] pt-6 dark:border-white/[.1]">
-        <ShareBar
-          url={absoluteUrl(`/feed/${feed.slug}`)}
-          title={feed.title}
-          description={feed.summary?.trim() || undefined}
-          kakaoKey={process.env.KAKAO_JS_KEY}
-          imageUrl={(() => {
-            const i = firstContentImage(feed.content);
-            return i ? toAbsolute(i) : undefined;
-          })()}
-        />
-      </div>
+      {/* 비공개(초안)는 공유해도 타인에겐 404 — 공유 버튼 비노출. */}
+      {feed.visibility !== "private" && (
+        <div className="mt-6 border-t border-black/[.06] pt-6 dark:border-white/[.1]">
+          <ShareBar
+            url={absoluteUrl(`/feed/${feed.slug}`)}
+            title={feed.title}
+            description={feed.summary?.trim() || undefined}
+            kakaoKey={process.env.KAKAO_JS_KEY}
+            imageUrl={(() => {
+              const i = firstContentImage(feed.content);
+              return i ? toAbsolute(i) : undefined;
+            })()}
+          />
+        </div>
+      )}
       <FeedEngagement
         feedId={feed.id}
         slug={feed.slug}

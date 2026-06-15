@@ -11,8 +11,10 @@ export const VISIBILITY_LABELS: Record<Visibility, string> = {
 
 export type ViewerRole = "anon" | "member" | "admin";
 
-// 공개 목록(피드/캐릭터 리스트)에 노출할 visibility — 비공개(초안)는 공개 목록에 절대 노출 안 함.
+// 공개 목록(피드/캐릭터 리스트)에 노출할 visibility.
+// 관리자는 비공개(초안)도 목록에서 볼 수 있고, 그 외엔 비공개를 절대 노출하지 않는다.
 export function listableVisibilities(role: ViewerRole): Visibility[] {
+  if (role === "admin") return ["public", "members", "private"];
   return role === "anon" ? ["public"] : ["public", "members"];
 }
 

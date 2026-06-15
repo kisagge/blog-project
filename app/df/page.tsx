@@ -45,8 +45,15 @@ export default async function DfPage() {
                   className="h-20 w-20 shrink-0 rounded bg-black/[.03] object-contain dark:bg-white/[.04]"
                 />
                 <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate font-semibold">
-                    {info?.characterName ?? c.characterName}
+                  <span className="flex items-center gap-1.5">
+                    {c.visibility === "private" && (
+                      <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                        비공개
+                      </span>
+                    )}
+                    <span className="truncate font-semibold">
+                      {info?.characterName ?? c.characterName}
+                    </span>
                   </span>
                   {info ? (
                     <>
