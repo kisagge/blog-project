@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
-import { getFeedBySlug } from "@/lib/feeds";
+import { getFeedBySlug, searchFeeds } from "@/lib/feeds";
+import { getViewerRole } from "@/lib/dal";
+import { checkAccess, type Visibility } from "@/lib/visibility";
 import FeedArticle from "@/app/feed/feed-article";
 import FeedEngagement from "@/app/feed/feed-engagement";
+import MemberGate from "@/app/feed/member-gate";
 import ViewTracker from "@/app/view-tracker";
 
 export async function generateMetadata({
@@ -10,17 +13,19 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const feed = await getFeedBySlug(slug);
+  const [feed, role] = await Promise.all([
+    getFeedBySlug(slug),
+    getViewerRole(),
+  ]);
   if (!feed) return { title: "찾을 수 없음" };
-  const description = feed.summary?.trim() || undefined;
+  const access = checkAccess(feed.visibility as Visibility, role);
+  if (access === "not-found") return { title: "찾을 수 없음" };
+  const description =
+    access === "ok" ? feed.summary?.trim() || undefined : undefined;
   return {
     title: feed.title,
     description,
-    openGraph: {
-      type: "article",
-      title: feed.title,
-      description,
-    },
+    openGraph: { type: "article", title: feed.title, description },
   };
 }
 
@@ -32,8 +37,19 @@ export default async function FeedDetailPage({
   searchParams: Promise<{ sort?: string }>;
 }) {
   const { slug } = await params;
-  const feed = await getFeedBySlug(slug);
+  const [feed, role] = await Promise.all([
+    getFeedBySlug(slug),
+    getViewerRole(),
+  ]);
   if (!feed) notFound();
+
+  const access = checkAccess(feed.visibility as Visibility, role);
+  if (access === "not-found") notFound(); // 비공개: 관리자 외 404
+  if (access === "members-only") {
+    // 회원 공개 + 비로그인: 안내 + 가입/로그인 유도 + 다른 전체공개 글.
+    const { items } = await searchFeeds({ role: "anon", take: 5 });
+    return <MemberGate related={items} />;
+  }
 
   const sort = (await searchParams).sort === "newest" ? "newest" : "popular";
 

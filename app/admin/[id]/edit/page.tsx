@@ -33,7 +33,7 @@ export default async function EditFeedPage({
           slug: feed.slug,
           summary: feed.summary,
           content: feed.content,
-          published: feed.published,
+          visibility: feed.visibility as "public" | "members" | "private",
         }}
       />
     </section>

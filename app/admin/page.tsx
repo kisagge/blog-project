@@ -36,7 +36,7 @@ export default async function AdminDashboardPage() {
           href="/admin/feeds"
           label="글"
           value={`${feeds.total}`}
-          sub={`공개 ${feeds.published} · 비공개 ${feeds.draft}`}
+          sub={`공개 ${feeds.public} · 회원 ${feeds.members} · 비공개 ${feeds.private}`}
         />
         <Card
           href="/admin/members"

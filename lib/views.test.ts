@@ -37,7 +37,7 @@ beforeAll(async () => {
   prisma = db.prisma as Prisma;
   views = await import("@/lib/views");
   const feed = await prisma.feed.create({
-    data: { slug: "v", title: "t", content: "c", published: true },
+    data: { slug: "v", title: "t", content: "c", visibility: "public" },
   });
   feedId = feed.id;
   const df = await prisma.dfCharacter.create({

@@ -1,4 +1,5 @@
-import { searchPublishedFeeds } from "@/lib/feeds";
+import { searchFeeds } from "@/lib/feeds";
+import { getViewerRole } from "@/lib/dal";
 import FeedList from "./feed-list";
 
 export const metadata = {
@@ -15,7 +16,8 @@ export default async function FeedListPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const q = (await searchParams).q ?? "";
-  const { items, hasMore } = await searchPublishedFeeds({ q });
+  const role = await getViewerRole();
+  const { items, hasMore } = await searchFeeds({ q, role });
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
@@ -23,6 +25,7 @@ export default async function FeedListPage({
       <FeedList
         initialItems={items.map((f) => ({
           ...f,
+          visibility: f.visibility as "public" | "members" | "private",
           createdAt: f.createdAt.toISOString(),
         }))}
         initialHasMore={hasMore}

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { getAdminFeedsPage } from "@/lib/feeds";
-import { togglePublished } from "@/app/admin/actions";
+import { cycleFeedVisibility } from "@/app/admin/actions";
 import { DeleteFeedButton } from "@/app/admin/delete-feed-button";
 import Pager, { parsePage } from "@/app/admin/pager";
+import { VISIBILITY_LABELS, type Visibility } from "@/lib/visibility";
 
 export const metadata = { title: "글 목록 · 관리자" };
 
@@ -44,17 +45,19 @@ export default async function AdminFeedsPage({
               <div className="min-w-0">
                 <p className="truncate font-medium">{feed.title}</p>
                 <p className="truncate text-sm text-zinc-500">
-                  /{feed.slug} · {feed.published ? "공개" : "비공개"}
+                  /{feed.slug} ·{" "}
+                  {VISIBILITY_LABELS[feed.visibility as Visibility]}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2 text-sm">
-                <form action={togglePublished}>
+                <form action={cycleFeedVisibility}>
                   <input type="hidden" name="id" value={feed.id} />
                   <button
                     type="submit"
+                    title="공개 범위 변경(전체→회원→비공개)"
                     className="rounded border border-black/15 px-2 py-1 dark:border-white/20"
                   >
-                    {feed.published ? "비공개로" : "공개로"}
+                    범위 변경
                   </button>
                 </form>
                 <Link

@@ -11,7 +11,7 @@ describe("FeedFormSchema", () => {
     slug: "hello-world",
     summary: "",
     content: "본문",
-    published: true,
+    visibility: "public",
   };
 
   test("유효한 입력을 통과시킨다", () => {
@@ -78,17 +78,16 @@ describe("비밀번호 규칙(가입·재설정 공용)", () => {
 });
 
 describe("feedFormToObject", () => {
-  test("체크박스 on을 boolean true로 변환한다", () => {
+  test("visibility select 값을 그대로 반영", () => {
     const fd = new FormData();
-    fd.set("title", "t");
-    fd.set("slug", "s");
-    fd.set("content", "c");
-    fd.set("published", "on");
-    expect(feedFormToObject(fd).published).toBe(true);
+    fd.set("visibility", "members");
+    expect(feedFormToObject(fd).visibility).toBe("members");
   });
 
-  test("published 없으면 false", () => {
+  test("visibility 없거나 잘못된 값이면 비공개(private)", () => {
+    expect(feedFormToObject(new FormData()).visibility).toBe("private");
     const fd = new FormData();
-    expect(feedFormToObject(fd).published).toBe(false);
+    fd.set("visibility", "xyz");
+    expect(feedFormToObject(fd).visibility).toBe("private");
   });
 });

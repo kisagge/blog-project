@@ -12,7 +12,7 @@ type Props = {
     slug?: string;
     summary?: string | null;
     content?: string;
-    published?: boolean;
+    visibility?: "public" | "members" | "private";
   };
   submitLabel: string;
 };
@@ -113,12 +113,16 @@ export default function FeedForm({
           </div>
         </Field>
         <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="published"
-            defaultChecked={d.published}
-          />
-          공개
+          공개 범위
+          <select
+            name="visibility"
+            defaultValue={d.visibility ?? "private"}
+            className="rounded border border-black/15 bg-transparent px-2 py-1 dark:border-white/20"
+          >
+            <option value="public">전체 공개</option>
+            <option value="members">회원 공개</option>
+            <option value="private">비공개(초안)</option>
+          </select>
         </label>
         {state?.message && (
           <p role="alert" className="text-sm text-red-600">

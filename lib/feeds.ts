@@ -1,24 +1,28 @@
 import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 
 export const FEED_PAGE_SIZE = 10;
 
-// 목록: 공개된 글만, 최신순, 카드 필드만. 검색어(q)가 있으면 제목/내용/요약을 부분일치 필터.
+// 목록: 뷰어 권한으로 볼 수 있는 글(anon=전체공개, 회원/관리자=전체공개+회원공개), 최신순.
+// 비공개(초안)는 공개 목록에 노출 안 함. 검색어(q)가 있으면 제목/내용/요약 부분일치.
 // take+1로 한 건 더 조회해 다음 페이지 존재 여부(hasMore)를 추가 쿼리 없이 판단한다.
-export async function searchPublishedFeeds({
+export async function searchFeeds({
   q = "",
   skip = 0,
   take = FEED_PAGE_SIZE,
+  role,
 }: {
   q?: string;
   skip?: number;
   take?: number;
+  role: ViewerRole;
 }) {
   const term = q.trim();
   const rows = await prisma.feed.findMany({
     where: {
-      published: true,
+      visibility: { in: listableVisibilities(role) },
       ...(term && {
         OR: [
           { title: { contains: term } },
@@ -34,6 +38,7 @@ export async function searchPublishedFeeds({
       summary: true,
       createdAt: true,
       viewCount: true,
+      visibility: true,
     },
     skip,
     take: take + 1,
@@ -42,12 +47,10 @@ export async function searchPublishedFeeds({
   return { items: hasMore ? rows.slice(0, take) : rows, hasMore };
 }
 
-// 상세: 공개된 단일 글, 없으면 null
+// 상세: slug로 단건(공개 범위 무관). 접근 제어는 호출부에서 visibility로 판정.
 // cache로 감싸 같은 요청 내 중복 호출(generateMetadata + 페이지 본문)을 1회로 dedupe
 export const getFeedBySlug = cache(async (slug: string) => {
-  return prisma.feed.findFirst({
-    where: { slug, published: true },
-  });
+  return prisma.feed.findUnique({ where: { slug } });
 });
 
 export const ADMIN_PAGE_SIZE = 20;
@@ -66,7 +69,7 @@ export async function getAdminFeedsPage(
         id: true,
         slug: true,
         title: true,
-        published: true,
+        visibility: true,
         createdAt: true,
       },
       skip,
@@ -84,9 +87,10 @@ export async function getFeedById(id: string) {
 
 // 관리자 대시보드용: 목록을 다 불러오지 않고 count로 요약.
 export async function countFeeds() {
-  const [total, published] = await Promise.all([
+  const [total, pub, members] = await Promise.all([
     prisma.feed.count(),
-    prisma.feed.count({ where: { published: true } }),
+    prisma.feed.count({ where: { visibility: "public" } }),
+    prisma.feed.count({ where: { visibility: "members" } }),
   ]);
-  return { total, published, draft: total - published };
+  return { total, public: pub, members, private: total - pub - members };
 }

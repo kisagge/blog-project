@@ -16,7 +16,7 @@ beforeAll(async () => {
   prisma = db.prisma;
   cleanup = db.cleanup;
   const feed = await prisma.feed.create({
-    data: { slug: "f1", title: "F", content: "c", published: true },
+    data: { slug: "f1", title: "F", content: "c", visibility: "public" },
   });
   feedId = feed.id;
   const a = await prisma.user.create({
@@ -101,7 +101,7 @@ describe("comments", () => {
   test("인기순 정렬: 좋아요 많은 상위 댓글이 먼저, 대댓글은 시간순 유지", async () => {
     const cl = await import("@/lib/comment-likes");
     const f2 = await prisma.feed.create({
-      data: { slug: "f2", title: "F2", content: "c", published: true },
+      data: { slug: "f2", title: "F2", content: "c", visibility: "public" },
     });
     const older = (await m.addComment({
       feedId: f2.id,
@@ -143,7 +143,7 @@ describe("comments", () => {
 
   test("페이지네이션: skip/take로 상위 댓글 분할, total은 전체", async () => {
     const f3 = await prisma.feed.create({
-      data: { slug: "f3", title: "F3", content: "c", published: true },
+      data: { slug: "f3", title: "F3", content: "c", visibility: "public" },
     });
     for (let i = 0; i < 30; i++) {
       await m.addComment({ feedId: f3.id, userId: alice, content: `c${i}` });
