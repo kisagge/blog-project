@@ -50,6 +50,20 @@ model User {
   comments  Comment[]
   likes     Like[]
   commentLikes CommentLike[]
+  pushSubscriptions PushSubscription[]
+}
+
+// 웹 푸시 구독(회원별, 기기별). endpoint 유니크.
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // 던파 쇼케이스에 노출할 캐릭터(관리자 등록). characterId는 Neople 고유 ID.

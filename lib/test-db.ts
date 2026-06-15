@@ -47,6 +47,16 @@ const SCHEMA = [
     "updatedAt" DATETIME NOT NULL
   )`,
   `CREATE UNIQUE INDEX "User_email_key" ON "User"("email")`,
+  `CREATE TABLE "PushSubscription" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "endpoint" TEXT NOT NULL,
+    "p256dh" TEXT NOT NULL,
+    "auth" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint")`,
+  `CREATE INDEX "PushSubscription_userId_idx" ON "PushSubscription"("userId")`,
   `CREATE TABLE "PasswordResetCode" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "email" TEXT NOT NULL,

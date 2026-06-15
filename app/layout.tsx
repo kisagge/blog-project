@@ -68,7 +68,10 @@ export default async function RootLayout({
         </a>
         <header className="border-b border-black/[.08] dark:border-white/[.145]">
           <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-6 py-4">
-            <NavDrawer session={navSession} />
+            <NavDrawer
+              session={navSession}
+              vapidKey={process.env.VAPID_PUBLIC_KEY}
+            />
             <Link href="/" className="text-lg font-semibold tracking-tight">
               BY Playground
             </Link>
