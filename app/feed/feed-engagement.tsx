@@ -9,10 +9,12 @@ export default async function FeedEngagement({
   feedId,
   slug,
   sort = "popular",
+  highlightCommentId,
 }: {
   feedId: string;
   slug: string;
   sort?: CommentSort;
+  highlightCommentId?: string;
 }) {
   const session = await getSession();
   const actor = await getCommentActor();
@@ -43,6 +45,7 @@ export default async function FeedEngagement({
         isAdmin={isAdmin}
         initialItems={page.items}
         initialTotal={page.total}
+        initialHighlightId={highlightCommentId}
       />
     </section>
   );

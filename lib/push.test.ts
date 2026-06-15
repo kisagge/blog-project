@@ -12,9 +12,7 @@ type Prisma = (typeof import("@/lib/prisma"))["prisma"];
 let push: Push;
 let prisma: Prisma;
 let cleanup: () => Promise<void>;
-let authorId: string;
-let replierId: string;
-let parentId: string;
+let userId: string;
 
 beforeAll(async () => {
   process.env.VAPID_PUBLIC_KEY = "pub";
@@ -24,23 +22,11 @@ beforeAll(async () => {
   cleanup = db.cleanup;
   prisma = db.prisma as Prisma;
   push = await import("@/lib/push");
-
-  const feed = await prisma.feed.create({
-    data: { slug: "p", title: "T", content: "c", visibility: "public" },
-  });
-  const a = await prisma.user.create({
+  const u = await prisma.user.create({
     data: { email: "a@x.com", nickname: "A", passwordHash: "-" },
   });
-  const b = await prisma.user.create({
-    data: { email: "b@x.com", nickname: "B", passwordHash: "-" },
-  });
-  authorId = a.id;
-  replierId = b.id;
-  const c = await prisma.comment.create({
-    data: { feedId: feed.id, userId: a.id, content: "원댓글" },
-  });
-  parentId = c.id;
-  await push.saveSubscription(a.id, {
+  userId = u.id;
+  await push.saveSubscription(userId, {
     endpoint: "https://push/a",
     keys: { p256dh: "x", auth: "y" },
   });
@@ -51,32 +37,12 @@ afterAll(async () => {
 
 describe("push", () => {
   test("saveSubscription: 저장됨(endpoint 유니크)", async () => {
-    expect(
-      await prisma.pushSubscription.count({ where: { userId: authorId } }),
-    ).toBe(1);
+    expect(await prisma.pushSubscription.count({ where: { userId } })).toBe(1);
   });
 
-  test("notifyCommentReply: 타인 답글이면 원작성자에게 발송", async () => {
+  test("sendToUser: 구독자에게 web-push 발송", async () => {
     sendNotification.mockClear();
-    await push.notifyCommentReply({
-      parentId,
-      slug: "p",
-      fromUserId: replierId,
-      fromNickname: "B",
-      content: "답글 내용",
-    });
+    await push.sendToUser(userId, { title: "t", body: "b" });
     expect(sendNotification).toHaveBeenCalledTimes(1);
-  });
-
-  test("notifyCommentReply: 본인 답글이면 미발송", async () => {
-    sendNotification.mockClear();
-    await push.notifyCommentReply({
-      parentId,
-      slug: "p",
-      fromUserId: authorId,
-      fromNickname: "A",
-      content: "셀프",
-    });
-    expect(sendNotification).not.toHaveBeenCalled();
   });
 });

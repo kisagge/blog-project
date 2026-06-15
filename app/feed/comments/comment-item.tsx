@@ -14,6 +14,7 @@ export default function CommentItem({
   isAdmin,
   isReply = false,
   highlightId,
+  initialHighlightId,
   onRequestDelete,
   onCreatedReply,
 }: {
@@ -25,11 +26,17 @@ export default function CommentItem({
   isAdmin: boolean;
   isReply?: boolean;
   highlightId?: string | null;
+  initialHighlightId?: string;
   onRequestDelete: (id: string) => void;
   onCreatedReply: (parentId: string, comment: CommentNode) => void;
 }) {
   const [replying, setReplying] = useState(false);
-  const [repliesOpen, setRepliesOpen] = useState(false);
+  // 알림 딥링크 대상이 이 댓글의 답글이면 처음부터 펼쳐서 보이게.
+  const [repliesOpen, setRepliesOpen] = useState(
+    () =>
+      !!initialHighlightId &&
+      node.replies.some((r) => r.id === initialHighlightId),
+  );
   const canDelete =
     !node.deleted &&
     (isAdmin || (!!actorUserId && actorUserId === node.userId));
@@ -130,6 +137,7 @@ export default function CommentItem({
               isAdmin={isAdmin}
               isReply
               highlightId={highlightId}
+              initialHighlightId={initialHighlightId}
               onRequestDelete={onRequestDelete}
               onCreatedReply={onCreatedReply}
             />

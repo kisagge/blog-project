@@ -51,6 +51,20 @@ model User {
   likes     Like[]
   commentLikes CommentLike[]
   pushSubscriptions PushSubscription[]
+  notifications Notification[]
+}
+
+// 인앱 알림(회원별). 답글 등 이벤트 시 생성, readAt로 읽음 관리.
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  body      String
+  url       String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 // 웹 푸시 구독(회원별, 기기별). endpoint 유니크.

@@ -57,6 +57,15 @@ const SCHEMA = [
   )`,
   `CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint")`,
   `CREATE INDEX "PushSubscription_userId_idx" ON "PushSubscription"("userId")`,
+  `CREATE TABLE "Notification" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "url" TEXT,
+    "readAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt")`,
   `CREATE TABLE "PasswordResetCode" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "email" TEXT NOT NULL,
