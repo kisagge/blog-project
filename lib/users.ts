@@ -72,6 +72,16 @@ export async function authenticateMember(
   return { ok: true, user: { id: user.id, nickname: user.nickname } };
 }
 
+// 회원 본인 닉네임 변경. 변경된 닉네임 반환(세션 갱신용).
+export async function updateNickname(
+  id: string,
+  nickname: string,
+): Promise<string> {
+  const trimmed = nickname.trim();
+  await prisma.user.update({ where: { id }, data: { nickname: trimmed } });
+  return trimmed;
+}
+
 export async function approveUser(id: string) {
   // 승인 시 과거 거절 이력 정리.
   await prisma.user.update({

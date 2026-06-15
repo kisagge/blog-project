@@ -134,6 +134,9 @@ export default function NavDrawer({
               <span className="px-3 py-2 text-zinc-500">
                 {session.nickname}
               </span>
+              <DrawerLink href="/account" onClick={close}>
+                내 정보
+              </DrawerLink>
               <PushToggle vapidKey={vapidKey} />
               <LogoutButton />
             </>
