@@ -47,14 +47,18 @@ export default function CommentSection({
     if (!id) return;
     pendingScroll.current = null;
     requestAnimationFrame(() => {
-      document
-        .getElementById(`comment-${id}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const el = document.getElementById(`comment-${id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightId(id);
+      } else {
+        // 삭제됐거나(답글 없는 댓글 hard delete) 현재 페이지에 없는 댓글로의 딥링크.
+        show("삭제되었거나 찾을 수 없는 댓글입니다.");
+      }
     });
-    setHighlightId(id);
     const t = setTimeout(() => setHighlightId(null), 1600);
     return () => clearTimeout(t);
-  }, [items]);
+  }, [items, show]);
 
   function focusAfterRender(id: string) {
     pendingScroll.current = id;
