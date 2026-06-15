@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { listFeatured } from "@/lib/df-characters";
+import { listFeaturedVisible } from "@/lib/df-characters";
+import { getViewerRole } from "@/lib/dal";
 import { getCharacterInfo, characterImageUrl } from "@/lib/neople";
 
 export const metadata = { title: "던파 캐릭터" };
 
 export default async function DfPage() {
-  const featured = await listFeatured();
+  const role = await getViewerRole();
+  const featured = await listFeaturedVisible(role);
   // 각 캐릭터 기본정보를 병렬 조회. 실패해도 카드가 깨지지 않게 개별 처리.
   const cards = await Promise.all(
     featured.map(async (c) => {
@@ -45,6 +47,11 @@ export default async function DfPage() {
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="truncate font-semibold">
                     {info?.characterName ?? c.characterName}
+                    {c.visibility === "members" && (
+                      <span className="ml-2 align-middle text-xs font-normal text-amber-600 dark:text-amber-500">
+                        회원 공개
+                      </span>
+                    )}
                   </span>
                   {info ? (
                     <>

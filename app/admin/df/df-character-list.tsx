@@ -17,10 +17,26 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { removeDfCharacterAction, reorderDfCharactersAction } from "./actions";
+import {
+  removeDfCharacterAction,
+  reorderDfCharactersAction,
+  cycleDfVisibilityAction,
+} from "./actions";
 import { serverName } from "@/lib/df-servers";
+import { VISIBILITY_LABELS, type Visibility } from "@/lib/visibility";
 
-type Item = { id: string; serverId: string; characterName: string };
+type Item = {
+  id: string;
+  serverId: string;
+  characterName: string;
+  visibility: Visibility;
+};
+
+const NEXT_VIS: Record<Visibility, Visibility> = {
+  public: "members",
+  members: "private",
+  private: "public",
+};
 
 export default function DfCharacterList({ initial }: { initial: Item[] }) {
   const [items, setItems] = useState(initial);
@@ -34,6 +50,16 @@ export default function DfCharacterList({ initial }: { initial: Item[] }) {
 
   if (items.length === 0)
     return <p className="text-sm text-zinc-500">등록된 캐릭터가 없습니다.</p>;
+
+  // 공개 범위 순환(낙관적 갱신 + 서버 저장).
+  function cycleVisibility(id: string) {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id ? { ...i, visibility: NEXT_VIS[i.visibility] } : i,
+      ),
+    );
+    void cycleDfVisibilityAction(id);
+  }
 
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
@@ -60,7 +86,7 @@ export default function DfCharacterList({ initial }: { initial: Item[] }) {
       >
         <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
           {items.map((c) => (
-            <Row key={c.id} item={c} />
+            <Row key={c.id} item={c} onCycle={cycleVisibility} />
           ))}
         </ul>
       </SortableContext>
@@ -68,7 +94,7 @@ export default function DfCharacterList({ initial }: { initial: Item[] }) {
   );
 }
 
-function Row({ item }: { item: Item }) {
+function Row({ item, onCycle }: { item: Item; onCycle: (id: string) => void }) {
   const {
     attributes,
     listeners,
@@ -103,12 +129,22 @@ function Row({ item }: { item: Item }) {
           {item.characterName} · {serverName(item.serverId)}
         </span>
       </span>
-      <form action={removeDfCharacterAction}>
-        <input type="hidden" name="id" value={item.id} />
-        <button className="shrink-0 rounded border border-red-300 px-2 py-1 text-red-600">
-          삭제
+      <span className="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onCycle(item.id)}
+          title="공개 범위 변경(전체→회원→비공개)"
+          className="rounded border border-black/15 px-2 py-1 text-xs dark:border-white/20"
+        >
+          {VISIBILITY_LABELS[item.visibility]}
         </button>
-      </form>
+        <form action={removeDfCharacterAction}>
+          <input type="hidden" name="id" value={item.id} />
+          <button className="rounded border border-red-300 px-2 py-1 text-red-600">
+            삭제
+          </button>
+        </form>
+      </span>
     </li>
   );
 }

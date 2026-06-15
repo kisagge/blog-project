@@ -1,9 +1,35 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 
+// 관리자용: 전체(공개 범위 무관).
 export async function listFeatured() {
   return prisma.dfCharacter.findMany({
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+}
+
+// 공개 목록용: 뷰어 권한으로 볼 수 있는 캐릭터(비공개 제외).
+export async function listFeaturedVisible(role: ViewerRole) {
+  return prisma.dfCharacter.findMany({
+    where: { visibility: { in: listableVisibilities(role) } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+}
+
+// 공개 범위 순환: 전체공개 → 회원공개 → 비공개.
+export async function cycleFeaturedVisibility(id: string) {
+  const c = await prisma.dfCharacter.findUnique({
+    where: { id },
+    select: { visibility: true },
+  });
+  if (!c) return;
+  const order = ["public", "members", "private"] as const;
+  const idx = order.indexOf(c.visibility as (typeof order)[number]);
+  const next = order[(idx + 1) % order.length];
+  await prisma.dfCharacter.update({
+    where: { id },
+    data: { visibility: next },
   });
 }
 

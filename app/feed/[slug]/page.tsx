@@ -4,7 +4,7 @@ import { getViewerRole } from "@/lib/dal";
 import { checkAccess, type Visibility } from "@/lib/visibility";
 import FeedArticle from "@/app/feed/feed-article";
 import FeedEngagement from "@/app/feed/feed-engagement";
-import MemberGate from "@/app/feed/member-gate";
+import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
 
 export async function generateMetadata({
@@ -48,7 +48,17 @@ export default async function FeedDetailPage({
   if (access === "members-only") {
     // 회원 공개 + 비로그인: 안내 + 가입/로그인 유도 + 다른 전체공개 글.
     const { items } = await searchFeeds({ role: "anon", take: 5 });
-    return <MemberGate related={items} />;
+    return (
+      <MemberGate
+        title="회원에게만 공개된 글입니다"
+        related={items.map((f) => ({
+          href: `/feed/${f.slug}`,
+          label: f.title,
+        }))}
+        backHref="/feed"
+        backLabel="피드 목록"
+      />
+    );
   }
 
   const sort = (await searchParams).sort === "newest" ? "newest" : "popular";

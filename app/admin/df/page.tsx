@@ -33,6 +33,7 @@ export default async function AdminDfPage() {
           id: c.id,
           serverId: c.serverId,
           characterName: c.characterName,
+          visibility: c.visibility as "public" | "members" | "private",
         }))}
       />
     </section>
