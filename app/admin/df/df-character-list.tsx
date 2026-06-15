@@ -20,22 +20,17 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   removeDfCharacterAction,
   reorderDfCharactersAction,
-  cycleDfVisibilityAction,
+  setDfVisibilityAction,
 } from "./actions";
 import { serverName } from "@/lib/df-servers";
-import { VISIBILITY_LABELS, type Visibility } from "@/lib/visibility";
+import VisibilityControl from "@/app/admin/visibility-control";
+import { type Visibility } from "@/lib/visibility";
 
 type Item = {
   id: string;
   serverId: string;
   characterName: string;
   visibility: Visibility;
-};
-
-const NEXT_VIS: Record<Visibility, Visibility> = {
-  public: "members",
-  members: "private",
-  private: "public",
 };
 
 export default function DfCharacterList({ initial }: { initial: Item[] }) {
@@ -51,14 +46,12 @@ export default function DfCharacterList({ initial }: { initial: Item[] }) {
   if (items.length === 0)
     return <p className="text-sm text-zinc-500">등록된 캐릭터가 없습니다.</p>;
 
-  // 공개 범위 순환(낙관적 갱신 + 서버 저장).
-  function cycleVisibility(id: string) {
+  // 공개 범위 설정(낙관적 갱신 + 서버 저장).
+  function setVisibility(id: string, v: Visibility) {
     setItems((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, visibility: NEXT_VIS[i.visibility] } : i,
-      ),
+      prev.map((i) => (i.id === id ? { ...i, visibility: v } : i)),
     );
-    void cycleDfVisibilityAction(id);
+    void setDfVisibilityAction(id, v);
   }
 
   function onDragEnd(e: DragEndEvent) {
@@ -86,7 +79,7 @@ export default function DfCharacterList({ initial }: { initial: Item[] }) {
       >
         <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
           {items.map((c) => (
-            <Row key={c.id} item={c} onCycle={cycleVisibility} />
+            <Row key={c.id} item={c} onSet={setVisibility} />
           ))}
         </ul>
       </SortableContext>
@@ -94,7 +87,13 @@ export default function DfCharacterList({ initial }: { initial: Item[] }) {
   );
 }
 
-function Row({ item, onCycle }: { item: Item; onCycle: (id: string) => void }) {
+function Row({
+  item,
+  onSet,
+}: {
+  item: Item;
+  onSet: (id: string, v: Visibility) => void;
+}) {
   const {
     attributes,
     listeners,
@@ -130,14 +129,10 @@ function Row({ item, onCycle }: { item: Item; onCycle: (id: string) => void }) {
         </span>
       </span>
       <span className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onCycle(item.id)}
-          title="공개 범위 변경(전체→회원→비공개)"
-          className="rounded border border-black/15 px-2 py-1 text-xs dark:border-white/20"
-        >
-          {VISIBILITY_LABELS[item.visibility]}
-        </button>
+        <VisibilityControl
+          value={item.visibility}
+          onSelect={(v) => onSet(item.id, v)}
+        />
         <form action={removeDfCharacterAction}>
           <input type="hidden" name="id" value={item.id} />
           <button className="rounded border border-red-300 px-2 py-1 text-red-600">

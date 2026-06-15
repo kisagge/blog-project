@@ -6,7 +6,7 @@ import {
   addFeatured,
   removeFeatured,
   reorderFeatured,
-  cycleFeaturedVisibility,
+  setFeaturedVisibility,
 } from "@/lib/df-characters";
 
 export type DfSearchState =
@@ -56,9 +56,12 @@ export async function reorderDfCharactersAction(orderedIds: string[]) {
   revalidatePath("/df");
 }
 
-export async function cycleDfVisibilityAction(id: string) {
+export async function setDfVisibilityAction(
+  id: string,
+  visibility: "public" | "members" | "private",
+) {
   await verifySession();
-  await cycleFeaturedVisibility(id);
+  await setFeaturedVisibility(id, visibility);
   revalidatePath("/admin/df");
   revalidatePath("/df");
 }
