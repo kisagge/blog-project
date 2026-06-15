@@ -117,6 +117,11 @@ export default function FeedList({
               <Link href={`/feed/${feed.slug}`} className="group block">
                 <h2 className="text-xl font-medium tracking-tight group-hover:underline">
                   {feed.title}
+                  {feed.visibility === "members" && (
+                    <span className="ml-2 align-middle text-xs font-normal text-amber-600 dark:text-amber-500">
+                      회원 공개
+                    </span>
+                  )}
                 </h2>
                 {feed.summary && (
                   <p className="mt-1 text-zinc-600 dark:text-zinc-400">

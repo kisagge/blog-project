@@ -11,21 +11,20 @@ export const FeedFormSchema = z.object({
     ),
   summary: z.string().trim().optional(),
   content: z.string().min(1, "본문을 입력하세요."),
-  published: z.boolean(),
+  visibility: z.enum(["public", "members", "private"]),
 });
 
 export type FeedFormValues = z.infer<typeof FeedFormSchema>;
 
-// FormData → 파싱 입력 객체 (체크박스는 존재 여부로 boolean)
+// FormData → 파싱 입력 객체. visibility는 select 값(없으면 비공개).
 export function feedFormToObject(formData: FormData) {
+  const v = String(formData.get("visibility") ?? "private");
   return {
     title: String(formData.get("title") ?? ""),
     slug: String(formData.get("slug") ?? ""),
     summary: String(formData.get("summary") ?? ""),
     content: String(formData.get("content") ?? ""),
-    published:
-      formData.get("published") === "on" ||
-      formData.get("published") === "true",
+    visibility: v === "public" || v === "members" ? v : "private",
   };
 }
 

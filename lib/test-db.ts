@@ -13,7 +13,7 @@ const SCHEMA = [
     "title" TEXT NOT NULL,
     "summary" TEXT,
     "content" TEXT NOT NULL,
-    "published" BOOLEAN NOT NULL DEFAULT false,
+    "visibility" TEXT NOT NULL DEFAULT 'private',
     "viewCount" INTEGER NOT NULL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL

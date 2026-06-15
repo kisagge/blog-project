@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFeedById } from "@/lib/feeds";
 import FeedArticle from "@/app/feed/feed-article";
+import { VISIBILITY_LABELS, type Visibility } from "@/lib/visibility";
 
 export const metadata = { title: "미리보기 · 관리자" };
 
@@ -20,11 +21,15 @@ export default async function FeedPreviewPage({
         <span>
           미리보기 ·{" "}
           <strong
-            className={feed.published ? "text-emerald-600" : "text-amber-600"}
+            className={
+              feed.visibility === "private"
+                ? "text-amber-600"
+                : "text-emerald-600"
+            }
           >
-            {feed.published ? "공개" : "비공개(초안)"}
+            {VISIBILITY_LABELS[feed.visibility as Visibility]}
           </strong>
-          {feed.published && (
+          {feed.visibility !== "private" && (
             <>
               {" "}
               ·{" "}

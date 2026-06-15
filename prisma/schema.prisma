@@ -18,14 +18,14 @@ model Feed {
   title     String
   summary   String?
   content   String              // 본문 (마크다운/HTML 문자열로 저장)
-  published Boolean  @default(false)   // 초안/공개 토글
+  visibility String  @default("private")   // "public" | "members" | "private"(초안)
   viewCount Int      @default(0)        // 누적 조회수(방문자·하루 단위 중복 제거 후 집계)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   comments  Comment[]
   likes     Like[]
 
-  @@index([published, createdAt])
+  @@index([visibility, createdAt])
 }
 
 // 사이트 전역 설정(싱글톤, id 항상 1).

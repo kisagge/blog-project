@@ -16,7 +16,7 @@ beforeAll(async () => {
   prisma = db.prisma;
   cleanup = db.cleanup;
   const f = await prisma.feed.create({
-    data: { slug: "f", title: "T", content: "x", published: true },
+    data: { slug: "f", title: "T", content: "x", visibility: "public" },
   });
   feedId = f.id;
   u1 = (
