@@ -47,11 +47,6 @@ export default async function DfPage() {
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="truncate font-semibold">
                     {info?.characterName ?? c.characterName}
-                    {c.visibility === "members" && (
-                      <span className="ml-2 align-middle text-xs font-normal text-amber-600 dark:text-amber-500">
-                        회원 공개
-                      </span>
-                    )}
                   </span>
                   {info ? (
                     <>
