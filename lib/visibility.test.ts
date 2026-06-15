@@ -20,9 +20,13 @@ describe("checkAccess", () => {
 });
 
 describe("listableVisibilities", () => {
-  test("anon은 전체공개만, 회원/관리자는 전체+회원(비공개 제외)", () => {
+  test("anon은 전체공개만, 회원은 전체+회원, 관리자는 비공개까지", () => {
     expect(listableVisibilities("anon")).toEqual(["public"]);
     expect(listableVisibilities("member")).toEqual(["public", "members"]);
-    expect(listableVisibilities("admin")).toEqual(["public", "members"]);
+    expect(listableVisibilities("admin")).toEqual([
+      "public",
+      "members",
+      "private",
+    ]);
   });
 });

@@ -124,6 +124,11 @@ export default function FeedList({
                   </p>
                 )}
                 <p className="mt-2 text-sm text-zinc-500">
+                  {feed.visibility === "private" && (
+                    <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                      비공개
+                    </span>
+                  )}
                   <time dateTime={feed.createdAt}>
                     {new Date(feed.createdAt).toLocaleDateString("ko-KR", {
                       timeZone: "Asia/Seoul",
