@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  getCharacterInfo,
   getCharacterStatus,
   getEquipment,
   getAvatar,
@@ -38,16 +39,34 @@ import ShareBar from "@/app/share-bar";
 import { absoluteUrl } from "@/lib/share";
 import Tabs, { type TabItem } from "./tabs";
 
+// 캐릭터 레벨/직업/명성 요약(공유 description·og 공용).
+function dfDescription(d: {
+  level: number;
+  jobGrowName: string;
+  fame?: number;
+}): string {
+  const base = `Lv${d.level} · ${d.jobGrowName}`;
+  return typeof d.fame === "number"
+    ? `${base} · 명성 ${d.fame.toLocaleString()}`
+    : base;
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ server: string; characterId: string }>;
 }) {
   const { server, characterId } = await params;
+  const info = await getCharacterInfo(server, characterId).catch(() => null);
+  const title = info ? `${info.characterName} · 던파` : "캐릭터 상세 · 던파";
+  const description = info ? dfDescription(info) : undefined;
   return {
-    title: "캐릭터 상세 · 던파",
+    title,
+    description,
     openGraph: {
       type: "profile",
+      title,
+      description,
       images: [characterImageUrl(server, characterId, 2)],
     },
   };
@@ -182,6 +201,7 @@ export default async function DfDetailPage({
           <ShareBar
             url={absoluteUrl(`/df/${server}/${characterId}`)}
             title={status.characterName}
+            description={dfDescription(status)}
             kakaoKey={process.env.KAKAO_JS_KEY}
             imageUrl={characterImageUrl(server, characterId, 2)}
           />

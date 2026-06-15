@@ -22,11 +22,13 @@ export default function ShareBar({
   title,
   kakaoKey,
   imageUrl,
+  description,
 }: {
   url: string; // 운영 도메인 기준 정규 URL(서버에서 전달)
   title: string;
   kakaoKey?: string;
   imageUrl?: string; // 공유 카드 이미지(절대 URL)
+  description?: string; // 공유 카드 설명(카카오 feed 템플릿)
 }) {
   const [canShare, setCanShare] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -77,7 +79,7 @@ export default function ShareBar({
       // 이미지가 있으면 카드(feed) 템플릿으로 — 이미지 + 제목 + 버튼.
       window.Kakao.Share.sendDefault({
         objectType: "feed",
-        content: { title, description: title, imageUrl, link },
+        content: { title, description: description ?? title, imageUrl, link },
         buttons: [{ title: "보러가기", link }],
       });
     } else {
