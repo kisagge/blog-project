@@ -18,18 +18,38 @@ export default function DfManager({ servers }: { servers: DfServer[] }) {
   return (
     <div className="flex flex-col gap-3">
       <form action={action} className="flex flex-wrap items-center gap-2">
-        <select name="serverId" className={inputCls} defaultValue="">
-          <option value="" disabled>
-            서버 선택
-          </option>
-          {servers.map((s) => (
-            <option key={s.serverId} value={s.serverId}>
-              {s.serverName}
+        <div className="relative">
+          <select
+            name="serverId"
+            aria-label="서버 선택"
+            defaultValue=""
+            className={`${inputCls} appearance-none pr-9`}
+          >
+            <option value="" disabled>
+              서버 선택
             </option>
-          ))}
-        </select>
+            {servers.map((s) => (
+              <option key={s.serverId} value={s.serverId}>
+                {s.serverName}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="pointer-events-none absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2 text-zinc-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
         <input
           name="characterName"
+          aria-label="캐릭터명"
           placeholder="캐릭터명"
           className={inputCls}
         />

@@ -18,6 +18,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { removeDfCharacterAction, reorderDfCharactersAction } from "./actions";
+import { serverName } from "@/lib/df-servers";
 
 type Item = { id: string; serverId: string; characterName: string };
 
@@ -99,7 +100,7 @@ function Row({ item }: { item: Item }) {
           ⠿
         </button>
         <span className="truncate">
-          {item.characterName} · {item.serverId}
+          {item.characterName} · {serverName(item.serverId)}
         </span>
       </span>
       <form action={removeDfCharacterAction}>
