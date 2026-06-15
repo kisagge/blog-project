@@ -54,6 +54,47 @@ beforeAll(async () => {
     },
   });
 
+  // 회원 작성자 + 회원 글(게시 published, 임시저장 draft).
+  await db.prisma.user.create({
+    data: {
+      id: "u1",
+      email: "u1@x.com",
+      nickname: "유저1",
+      passwordHash: "x",
+      status: "approved",
+      updatedAt: new Date(),
+    },
+  });
+  // 회원 작성 게시글(회원공개, published): 회원 목록 포함, 관리자 CMS/집계 제외.
+  await db.prisma.feed.create({
+    data: {
+      id: "umem-1",
+      slug: "umem-1",
+      title: "회원작성단어 게시글",
+      content: "회원 작성 본문",
+      visibility: "members",
+      status: "published",
+      authorId: "u1",
+      publishedAt: new Date(2026, 1, 3),
+      createdAt: new Date(2026, 1, 3),
+      updatedAt: new Date(2026, 1, 3),
+    },
+  });
+  // 회원 임시저장(draft): 어떤 목록에도 노출 안 됨.
+  await db.prisma.feed.create({
+    data: {
+      id: "udraft-1",
+      slug: "udraft-1",
+      title: "임시저장단어 초안",
+      content: "임시저장 본문",
+      visibility: "members",
+      status: "draft",
+      authorId: "u1",
+      createdAt: new Date(2026, 1, 4),
+      updatedAt: new Date(2026, 1, 4),
+    },
+  });
+
   ({ searchFeeds, countFeeds, getAdminFeedsPage } =
     await import("@/lib/feeds"));
 });
@@ -107,7 +148,22 @@ describe("searchFeeds", () => {
     expect(m.items.map((f) => f.slug)).toEqual(["mem-1"]);
   });
 
-  test("countFeeds: 전체/공개/회원/비공개 집계", async () => {
+  test("임시저장(draft)은 회원·관리자 목록 모두에서 제외", async () => {
+    for (const role of ["member", "admin"] as const) {
+      const { items } = await searchFeeds({ role, q: "임시저장단어" });
+      expect(items).toHaveLength(0);
+    }
+  });
+
+  test("회원 작성 게시글: anon 제외, 회원 목록 포함", async () => {
+    expect(
+      (await searchFeeds({ role: "anon", q: "회원작성단어" })).items,
+    ).toHaveLength(0);
+    const m = await searchFeeds({ role: "member", q: "회원작성단어" });
+    expect(m.items.map((f) => f.slug)).toEqual(["umem-1"]);
+  });
+
+  test("countFeeds: 관리자 글만 집계(회원 글 제외)", async () => {
     expect(await countFeeds()).toEqual({
       total: 14,
       public: 12,
@@ -116,11 +172,15 @@ describe("searchFeeds", () => {
     });
   });
 
-  test("getAdminFeedsPage: 전체 포함 페이지네이션 (총14, size10)", async () => {
+  test("getAdminFeedsPage: 관리자 글만(회원 글 제외), 페이지네이션(총14, size10)", async () => {
     const p1 = await getAdminFeedsPage(1, 10);
     expect(p1.items).toHaveLength(10);
     expect(p1.total).toBe(14);
     const p2 = await getAdminFeedsPage(2, 10);
     expect(p2.items).toHaveLength(4);
+    // 회원 글(authorId 있음)은 관리자 목록에 없음.
+    const allSlugs = [...p1.items, ...p2.items].map((f) => f.slug);
+    expect(allSlugs).not.toContain("umem-1");
+    expect(allSlugs).not.toContain("udraft-1");
   });
 });

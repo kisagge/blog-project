@@ -19,13 +19,18 @@ model Feed {
   summary   String?
   content   String              // 본문 (마크다운/HTML 문자열로 저장)
   visibility String  @default("private")   // "public" | "members" | "private"(초안)
+  status    String   @default("published") // "draft"(임시저장) | "published". 회원 글의 작성 단계
+  authorId  String?              // null=관리자/기존 글, 값=회원 작성자(User.id)
   viewCount Int      @default(0)        // 누적 조회수(방문자·하루 단위 중복 제거 후 집계)
+  publishedAt DateTime?          // 게시(공개 전환) 시각 — 하루 게시 제한·표시용
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  author    User?     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     Like[]
 
   @@index([visibility, createdAt])
+  @@index([authorId, status])
 }
 
 // 사이트 전역 설정(싱글톤, id 항상 1).
@@ -52,6 +57,7 @@ model User {
   commentLikes CommentLike[]
   pushSubscriptions PushSubscription[]
   notifications Notification[]
+  feeds     Feed[]
 }
 
 // 인앱 알림(회원별). 답글 등 이벤트 시 생성, readAt로 읽음 관리.

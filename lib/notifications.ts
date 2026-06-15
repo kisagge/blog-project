@@ -51,8 +51,8 @@ export async function notifyCommentReply(args: {
   await sendToUser(parent.userId, { title: "새 답글", body, url });
 }
 
-// 최상위 댓글 → 글 주인(현재는 관리자)에게 알림. 본인 댓글이면 제외. url은 댓글로 딥링크.
-// 추후 유저 작성 글이 생기면 ensureAdminUser → 글 작성자로 일반화.
+// 최상위 댓글 → 글 주인에게 알림. 회원 글이면 작성자(authorId), 관리자 글이면 예약 관리자.
+// 본인 댓글이면 제외. url은 댓글로 딥링크.
 export async function notifyFeedComment(args: {
   feedId: string;
   commentId: string;
@@ -60,16 +60,16 @@ export async function notifyFeedComment(args: {
   fromUserId: string;
   fromNickname: string;
 }) {
-  const admin = await ensureAdminUser();
-  if (admin.id === args.fromUserId) return;
   const feed = await prisma.feed.findUnique({
     where: { id: args.feedId },
-    select: { title: true },
+    select: { title: true, authorId: true },
   });
+  const ownerId = feed?.authorId ?? (await ensureAdminUser()).id;
+  if (ownerId === args.fromUserId) return;
   const body = `${args.fromNickname}님이 '${feed?.title ?? "글"}'에 댓글을 남겼습니다.`;
   const url = `/feed/${args.slug}?c=${args.commentId}`;
-  await createNotification(admin.id, body, url);
-  await sendToUser(admin.id, { title: "새 댓글", body, url });
+  await createNotification(ownerId, body, url);
+  await sendToUser(ownerId, { title: "새 댓글", body, url });
 }
 
 // 알림 수신자 id: 회원은 본인, 관리자는 예약 관리자 User. 없으면 null.

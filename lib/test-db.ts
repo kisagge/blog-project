@@ -14,11 +14,15 @@ const SCHEMA = [
     "summary" TEXT,
     "content" TEXT NOT NULL,
     "visibility" TEXT NOT NULL DEFAULT 'private',
+    "status" TEXT NOT NULL DEFAULT 'published',
+    "authorId" TEXT,
     "viewCount" INTEGER NOT NULL DEFAULT 0,
+    "publishedAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
   )`,
   `CREATE UNIQUE INDEX "Feed_slug_key" ON "Feed"("slug")`,
+  `CREATE INDEX "Feed_authorId_status_idx" ON "Feed"("authorId", "status")`,
   `CREATE TABLE "View" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "entityType" TEXT NOT NULL,
