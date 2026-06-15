@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { getAdminFeedsPage } from "@/lib/feeds";
-import { cycleFeedVisibility } from "@/app/admin/actions";
 import { DeleteFeedButton } from "@/app/admin/delete-feed-button";
+import FeedVisibilityControl from "@/app/admin/feed-visibility-control";
 import Pager, { parsePage } from "@/app/admin/pager";
-import { VISIBILITY_LABELS, type Visibility } from "@/lib/visibility";
+import { type Visibility } from "@/lib/visibility";
 
 export const metadata = { title: "글 목록 · 관리자" };
 
@@ -44,22 +44,13 @@ export default async function AdminFeedsPage({
             >
               <div className="min-w-0">
                 <p className="truncate font-medium">{feed.title}</p>
-                <p className="truncate text-sm text-zinc-500">
-                  /{feed.slug} ·{" "}
-                  {VISIBILITY_LABELS[feed.visibility as Visibility]}
-                </p>
+                <p className="truncate text-sm text-zinc-500">/{feed.slug}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2 text-sm">
-                <form action={cycleFeedVisibility}>
-                  <input type="hidden" name="id" value={feed.id} />
-                  <button
-                    type="submit"
-                    title="공개 범위 변경(전체→회원→비공개)"
-                    className="rounded border border-black/15 px-2 py-1 dark:border-white/20"
-                  >
-                    범위 변경
-                  </button>
-                </form>
+                <FeedVisibilityControl
+                  id={feed.id}
+                  value={feed.visibility as Visibility}
+                />
                 <Link
                   href={`/admin/${feed.id}/preview`}
                   className="rounded border border-black/15 px-2 py-1 dark:border-white/20"

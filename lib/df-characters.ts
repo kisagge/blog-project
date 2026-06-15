@@ -17,20 +17,11 @@ export async function listFeaturedVisible(role: ViewerRole) {
   });
 }
 
-// 공개 범위 순환: 전체공개 → 회원공개 → 비공개.
-export async function cycleFeaturedVisibility(id: string) {
-  const c = await prisma.dfCharacter.findUnique({
-    where: { id },
-    select: { visibility: true },
-  });
-  if (!c) return;
-  const order = ["public", "members", "private"] as const;
-  const idx = order.indexOf(c.visibility as (typeof order)[number]);
-  const next = order[(idx + 1) % order.length];
-  await prisma.dfCharacter.update({
-    where: { id },
-    data: { visibility: next },
-  });
+export async function setFeaturedVisibility(
+  id: string,
+  visibility: "public" | "members" | "private",
+) {
+  await prisma.dfCharacter.update({ where: { id }, data: { visibility } });
 }
 
 // 등록된 캐릭터 단건(조회수 트래킹·표시용). 미등록이면 null.

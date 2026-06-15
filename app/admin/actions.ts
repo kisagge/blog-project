@@ -67,19 +67,12 @@ export async function deleteFeed(formData: FormData) {
   revalidateFeed();
 }
 
-// 공개 범위 순환: 전체공개 → 회원공개 → 비공개 → 전체공개.
-export async function cycleFeedVisibility(formData: FormData) {
+export async function setFeedVisibility(
+  id: string,
+  visibility: "public" | "members" | "private",
+) {
   await verifySession();
-  const id = String(formData.get("id") ?? "");
-  const feed = await prisma.feed.findUnique({
-    where: { id },
-    select: { visibility: true },
-  });
-  if (!feed) return;
-  const order = ["public", "members", "private"] as const;
-  const idx = order.indexOf(feed.visibility as (typeof order)[number]);
-  const next = order[(idx + 1) % order.length];
-  await prisma.feed.update({ where: { id }, data: { visibility: next } });
+  await prisma.feed.update({ where: { id }, data: { visibility } });
   revalidateFeed();
 }
 
