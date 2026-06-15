@@ -75,6 +75,7 @@ export default async function FeedDetailPage({
         <ShareBar
           url={absoluteUrl(`/feed/${feed.slug}`)}
           title={feed.title}
+          description={feed.summary?.trim() || undefined}
           kakaoKey={process.env.KAKAO_JS_KEY}
           imageUrl={(() => {
             const i = firstContentImage(feed.content);
