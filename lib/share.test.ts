@@ -1,5 +1,27 @@
 import { describe, expect, test } from "vitest";
-import { xIntentUrl, absoluteUrl, SITE_ORIGIN } from "@/lib/share";
+import {
+  xIntentUrl,
+  absoluteUrl,
+  toAbsolute,
+  firstContentImage,
+  SITE_ORIGIN,
+} from "@/lib/share";
+
+describe("toAbsolute / firstContentImage", () => {
+  test("toAbsolute: 절대 URL은 그대로, 상대는 절대화", () => {
+    expect(toAbsolute("https://x.com/a.png")).toBe("https://x.com/a.png");
+    expect(toAbsolute("/uploads/a.png")).toBe(`${SITE_ORIGIN}/uploads/a.png`);
+  });
+  test("firstContentImage: 마크다운/HTML 첫 이미지, 없으면 null", () => {
+    expect(firstContentImage("글 ![alt](/uploads/x.png) 끝")).toBe(
+      "/uploads/x.png",
+    );
+    expect(firstContentImage('<p><img src="https://y/z.jpg"></p>')).toBe(
+      "https://y/z.jpg",
+    );
+    expect(firstContentImage("이미지 없는 본문")).toBeNull();
+  });
+});
 
 describe("absoluteUrl", () => {
   test("운영 도메인 기준 절대 URL 생성(앞 슬래시 유무 무관)", () => {

@@ -7,6 +7,20 @@ export function absoluteUrl(path: string): string {
   return SITE_ORIGIN + (path.startsWith("/") ? path : `/${path}`);
 }
 
+// 이미 절대 URL이면 그대로, 상대 경로면 운영 도메인 기준 절대화.
+export function toAbsolute(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : absoluteUrl(url);
+}
+
+// 마크다운/HTML 본문에서 첫 이미지 URL 추출(OG·공유 카드 이미지용). 없으면 null.
+export function firstContentImage(content: string): string | null {
+  const md = content.match(/!\[[^\]]*\]\(\s*([^)\s]+)/);
+  if (md) return md[1];
+  const html = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (html) return html[1];
+  return null;
+}
+
 export function xIntentUrl(url: string, text: string): string {
   const u = encodeURIComponent(url);
   const t = encodeURIComponent(text);
