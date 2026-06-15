@@ -38,7 +38,7 @@ export default async function FeedDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; c?: string }>;
 }) {
   const { slug } = await params;
   const [feed, role] = await Promise.all([
@@ -65,7 +65,8 @@ export default async function FeedDetailPage({
     );
   }
 
-  const sort = (await searchParams).sort === "newest" ? "newest" : "popular";
+  const sp = await searchParams;
+  const sort = sp.sort === "newest" ? "newest" : "popular";
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
@@ -83,7 +84,12 @@ export default async function FeedDetailPage({
           })()}
         />
       </div>
-      <FeedEngagement feedId={feed.id} slug={feed.slug} sort={sort} />
+      <FeedEngagement
+        feedId={feed.id}
+        slug={feed.slug}
+        sort={sort}
+        highlightCommentId={sp.c}
+      />
     </main>
   );
 }

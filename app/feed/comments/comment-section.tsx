@@ -16,6 +16,7 @@ export default function CommentSection({
   isAdmin,
   initialItems,
   initialTotal,
+  initialHighlightId,
 }: {
   feedId: string;
   slug: string;
@@ -25,13 +26,15 @@ export default function CommentSection({
   isAdmin: boolean;
   initialItems: CommentNode[];
   initialTotal: number;
+  initialHighlightId?: string;
 }) {
   const [items, setItems] = useState<CommentNode[]>(initialItems);
   const [total, setTotal] = useState(initialTotal);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [loadingMore, startMore] = useTransition();
   const [, startDelete] = useTransition();
-  const pendingScroll = useRef<string | null>(null);
+  // 알림 딥링크(?c=)로 들어오면 마운트 시 해당 댓글로 스크롤·하이라이트.
+  const pendingScroll = useRef<string | null>(initialHighlightId ?? null);
   const { toasts, show } = useToast();
 
   const confirmRef = useRef<HTMLDialogElement>(null);
@@ -141,6 +144,7 @@ export default function CommentSection({
               actorUserId={actorUserId}
               isAdmin={isAdmin}
               highlightId={highlightId}
+              initialHighlightId={initialHighlightId}
               onRequestDelete={requestDelete}
               onCreatedReply={onCreatedReply}
             />

@@ -61,23 +61,3 @@ export async function sendToUser(userId: string, payload: Payload) {
     }),
   );
 }
-
-// 답글 → 원댓글 작성자에게 푸시(본인 제외).
-export async function notifyCommentReply(args: {
-  parentId: string;
-  slug: string;
-  fromUserId: string;
-  fromNickname: string;
-  content: string;
-}) {
-  const parent = await prisma.comment.findUnique({
-    where: { id: args.parentId },
-    select: { userId: true },
-  });
-  if (!parent || parent.userId === args.fromUserId) return;
-  await sendToUser(parent.userId, {
-    title: "새 답글",
-    body: `${args.fromNickname}: ${args.content.trim().slice(0, 50)}`,
-    url: `/feed/${args.slug}`,
-  });
-}

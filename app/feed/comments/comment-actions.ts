@@ -12,7 +12,7 @@ import {
 } from "@/lib/comments";
 import { toggleLike } from "@/lib/likes";
 import { toggleCommentLike } from "@/lib/comment-likes";
-import { notifyCommentReply } from "@/lib/push";
+import { notifyCommentReply, notifyFeedComment } from "@/lib/notifications";
 
 export type AddCommentResult = { error: string } | { comment: CommentNode };
 
@@ -35,14 +35,23 @@ export async function addCommentAction(
     parentId: args.parentId ?? null,
   });
   if (!res.ok) return { error: res.error };
+  // 알림(fire-and-forget): 답글 → 원댓글 작성자, 최상위 댓글 → 관리자(글 주인).
   if (args.parentId) {
-    // 답글 → 원댓글 작성자에게 푸시 알림(fire-and-forget).
     void notifyCommentReply({
       parentId: args.parentId,
+      commentId: res.id,
       slug: args.slug,
       fromUserId: actor.userId,
       fromNickname: actor.nickname,
       content,
+    }).catch(() => {});
+  } else {
+    void notifyFeedComment({
+      feedId: args.feedId,
+      commentId: res.id,
+      slug: args.slug,
+      fromUserId: actor.userId,
+      fromNickname: actor.nickname,
     }).catch(() => {});
   }
   revalidate(args.slug);
