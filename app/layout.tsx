@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/dal";
 import NavDrawer from "@/app/nav-drawer";
 import SiteVisitTracker from "@/app/site-visit-tracker";
+import ServiceWorkerRegister from "@/app/service-worker-register";
 import "./globals.css";
 
 // 페인트 전에 data-theme를 확정해 깜빡임 방지 (localStorage 선택 + system은 OS 추종).
@@ -57,6 +58,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col">
+        <ServiceWorkerRegister />
         <SiteVisitTracker />
         <a
           href="#main-content"
