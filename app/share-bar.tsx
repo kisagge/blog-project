@@ -18,20 +18,20 @@ const btn =
 
 // 피드·던파 상세 공유 바. X / 카카오톡 / 기기 네이티브 공유(인스타 등) / URL 복사.
 export default function ShareBar({
+  url,
   title,
   kakaoKey,
 }: {
+  url: string; // 운영 도메인 기준 정규 URL(서버에서 전달)
   title: string;
   kakaoKey?: string;
 }) {
-  const [url, setUrl] = useState("");
   const [canShare, setCanShare] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // 브라우저에서만 가능한 값(현재 URL·공유 지원 여부)을 마운트 후 읽는다.
+    // 공유 지원 여부는 브라우저에서만 알 수 있어 마운트 후 확인.
     /* eslint-disable react-hooks/set-state-in-effect */
-    setUrl(window.location.href);
     setCanShare(typeof navigator !== "undefined" && !!navigator.share);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
@@ -70,10 +70,12 @@ export default function ShareBar({
 
   function shareKakao() {
     if (!window.Kakao?.isInitialized()) return;
+    const link = { mobileWebUrl: url, webUrl: url };
     window.Kakao.Share.sendDefault({
       objectType: "text",
       text: title,
-      link: { mobileWebUrl: url, webUrl: url },
+      link,
+      buttonTitle: "보러가기", // 명시적 링크 버튼
     });
   }
 
