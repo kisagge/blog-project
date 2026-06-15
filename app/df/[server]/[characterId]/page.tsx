@@ -35,6 +35,7 @@ import { checkAccess, type Visibility } from "@/lib/visibility";
 import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
 import ShareBar from "@/app/share-bar";
+import { absoluteUrl } from "@/lib/share";
 import Tabs, { type TabItem } from "./tabs";
 
 export const metadata = { title: "캐릭터 상세 · 던파" };
@@ -166,6 +167,7 @@ export default async function DfDetailPage({
             viewCount={featured?.viewCount}
           />
           <ShareBar
+            url={absoluteUrl(`/df/${server}/${characterId}`)}
             title={status.characterName}
             kakaoKey={process.env.KAKAO_JS_KEY}
           />

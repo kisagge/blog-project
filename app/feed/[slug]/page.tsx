@@ -7,6 +7,7 @@ import FeedEngagement from "@/app/feed/feed-engagement";
 import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
 import ShareBar from "@/app/share-bar";
+import { absoluteUrl } from "@/lib/share";
 
 export async function generateMetadata({
   params,
@@ -69,7 +70,11 @@ export default async function FeedDetailPage({
       <ViewTracker type="feed" id={feed.id} />
       <FeedArticle feed={feed} />
       <div className="mt-6 border-t border-black/[.06] pt-6 dark:border-white/[.1]">
-        <ShareBar title={feed.title} kakaoKey={process.env.KAKAO_JS_KEY} />
+        <ShareBar
+          url={absoluteUrl(`/feed/${feed.slug}`)}
+          title={feed.title}
+          kakaoKey={process.env.KAKAO_JS_KEY}
+        />
       </div>
       <FeedEngagement feedId={feed.id} slug={feed.slug} sort={sort} />
     </main>
