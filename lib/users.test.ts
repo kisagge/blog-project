@@ -138,4 +138,12 @@ describe("users", () => {
     expect(after?.rejectionReason).toBeNull();
     expect(after?.rejectedAt).toBeNull();
   });
+
+  test("updateNickname은 닉네임을 trim해 저장하고 반환", async () => {
+    const u = await m.findUserByEmail("a@x.com");
+    const result = await m.updateNickname(u!.id, "  새닉네임  ");
+    expect(result).toBe("새닉네임");
+    const after = await m.findUserByEmail("a@x.com");
+    expect(after?.nickname).toBe("새닉네임");
+  });
 });
