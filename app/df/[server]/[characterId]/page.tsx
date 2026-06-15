@@ -25,7 +25,14 @@ import {
   type DfBuffSwitching,
 } from "@/lib/neople";
 import { rarityColor } from "@/app/df/rarity";
-import { getFeaturedByCharacter } from "@/lib/df-characters";
+import { notFound } from "next/navigation";
+import {
+  getFeaturedByCharacter,
+  listFeaturedVisible,
+} from "@/lib/df-characters";
+import { getViewerRole } from "@/lib/dal";
+import { checkAccess, type Visibility } from "@/lib/visibility";
+import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
 import Tabs, { type TabItem } from "./tabs";
 
@@ -37,6 +44,29 @@ export default async function DfDetailPage({
   params: Promise<{ server: string; characterId: string }>;
 }) {
   const { server, characterId } = await params;
+  // 등록된 쇼케이스 캐릭터만 상세 노출 + 공개 범위 접근 제어.
+  const [featured, role] = await Promise.all([
+    getFeaturedByCharacter(server, characterId).catch(() => null),
+    getViewerRole(),
+  ]);
+  if (!featured) notFound();
+  const access = checkAccess(featured.visibility as Visibility, role);
+  if (access === "not-found") notFound(); // 비공개: 관리자 외 404
+  if (access === "members-only") {
+    const related = await listFeaturedVisible("anon");
+    return (
+      <MemberGate
+        title="회원에게만 공개된 캐릭터입니다"
+        related={related.map((c) => ({
+          href: `/df/${c.serverId}/${c.characterId}`,
+          label: c.characterName,
+        }))}
+        backHref="/df"
+        backLabel="던파 캐릭터"
+      />
+    );
+  }
+
   const [
     status,
     equipment,
@@ -58,10 +88,6 @@ export default async function DfDetailPage({
     getMistAssimilation(server, characterId).catch(() => null),
     getBuffEquipment(server, characterId).catch(() => null),
   ]);
-  // 등록된 쇼케이스 캐릭터면 조회수 트래킹/표시(미등록이면 null).
-  const featured = await getFeaturedByCharacter(server, characterId).catch(
-    () => null,
-  );
 
   // 데이터가 있는 그룹만 탭으로 노출(세로 길이 절감).
   const hasGear =

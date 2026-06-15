@@ -111,11 +111,9 @@ export default function NavDrawer({ session }: { session: NavSession }) {
           <DrawerLink href="/feed" onClick={close}>
             피드
           </DrawerLink>
-          {(session?.role === "member" || session?.role === "admin") && (
-            <DrawerLink href="/df" onClick={close}>
-              던파
-            </DrawerLink>
-          )}
+          <DrawerLink href="/df" onClick={close}>
+            던파
+          </DrawerLink>
           {session?.role === "admin" && (
             <DrawerLink href="/admin" onClick={close}>
               관리자

@@ -65,6 +65,7 @@ const SCHEMA = [
     "characterName" TEXT NOT NULL,
     "sortOrder" INTEGER NOT NULL DEFAULT 0,
     "viewCount" INTEGER NOT NULL DEFAULT 0,
+    "visibility" TEXT NOT NULL DEFAULT 'private',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE UNIQUE INDEX "DfCharacter_serverId_characterId_key" ON "DfCharacter"("serverId", "characterId")`,

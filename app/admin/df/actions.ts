@@ -6,6 +6,7 @@ import {
   addFeatured,
   removeFeatured,
   reorderFeatured,
+  cycleFeaturedVisibility,
 } from "@/lib/df-characters";
 
 export type DfSearchState =
@@ -51,6 +52,13 @@ export async function removeDfCharacterAction(formData: FormData) {
 export async function reorderDfCharactersAction(orderedIds: string[]) {
   await verifySession();
   await reorderFeatured(orderedIds);
+  revalidatePath("/admin/df");
+  revalidatePath("/df");
+}
+
+export async function cycleDfVisibilityAction(id: string) {
+  await verifySession();
+  await cycleFeaturedVisibility(id);
   revalidatePath("/admin/df");
   revalidatePath("/df");
 }

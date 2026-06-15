@@ -60,6 +60,7 @@ model DfCharacter {
   characterName String
   sortOrder     Int      @default(0)
   viewCount     Int      @default(0)   // 누적 조회수
+  visibility    String   @default("private")   // "public" | "members" | "private"
   createdAt     DateTime @default(now())
 
   @@unique([serverId, characterId])
