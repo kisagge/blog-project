@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/app/theme-toggle";
+import PushToggle from "@/app/push-toggle";
 import { logout } from "@/app/actions/auth";
 
 type NavSession =
@@ -9,7 +10,13 @@ type NavSession =
   | { role: "member"; nickname: string }
   | null;
 
-export default function NavDrawer({ session }: { session: NavSession }) {
+export default function NavDrawer({
+  session,
+  vapidKey,
+}: {
+  session: NavSession;
+  vapidKey?: string;
+}) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -127,6 +134,7 @@ export default function NavDrawer({ session }: { session: NavSession }) {
               <span className="px-3 py-2 text-zinc-500">
                 {session.nickname}
               </span>
+              <PushToggle vapidKey={vapidKey} />
               <LogoutButton />
             </>
           ) : session?.role === "admin" ? (

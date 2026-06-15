@@ -12,6 +12,7 @@ import {
 } from "@/lib/comments";
 import { toggleLike } from "@/lib/likes";
 import { toggleCommentLike } from "@/lib/comment-likes";
+import { notifyCommentReply } from "@/lib/push";
 
 export type AddCommentResult = { error: string } | { comment: CommentNode };
 
@@ -34,6 +35,16 @@ export async function addCommentAction(
     parentId: args.parentId ?? null,
   });
   if (!res.ok) return { error: res.error };
+  if (args.parentId) {
+    // 답글 → 원댓글 작성자에게 푸시 알림(fire-and-forget).
+    void notifyCommentReply({
+      parentId: args.parentId,
+      slug: args.slug,
+      fromUserId: actor.userId,
+      fromNickname: actor.nickname,
+      content,
+    }).catch(() => {});
+  }
   revalidate(args.slug);
   return {
     comment: {
