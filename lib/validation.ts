@@ -54,6 +54,20 @@ const nicknameField = z
 
 export const NicknameSchema = z.object({ nickname: nicknameField });
 
+// 회원 글(임시저장·게시) 입력. 본문은 마크다운(외부 이미지 URL 허용, 업로드 없음).
+export const MemberPostSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "제목을 입력하세요.")
+    .max(120, "제목은 120자 이하여야 합니다."),
+  content: z
+    .string()
+    .trim()
+    .min(1, "본문을 입력하세요.")
+    .max(20000, "본문은 2만 자 이하여야 합니다."),
+});
+
 export const SignupSchema = z.object({
   email: z.string().trim().toLowerCase().email("올바른 이메일을 입력하세요."),
   nickname: nicknameField,

@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 // 공개 상세와 미리보기가 공유하는 글 렌더(제목·작성일·마크다운 본문).
 export default function FeedArticle({
   feed,
+  authorName,
 }: {
   feed: {
     title: string;
@@ -11,12 +12,14 @@ export default function FeedArticle({
     content: string;
     viewCount?: number;
   };
+  authorName?: string;
 }) {
   return (
     <article>
       <header className="mb-8 border-b border-black/[.06] pb-6 dark:border-white/[.1]">
         <h1 className="text-3xl font-semibold tracking-tight">{feed.title}</h1>
         <p className="mt-2 text-sm text-zinc-500">
+          {authorName && <span>{authorName} · </span>}
           <time dateTime={feed.createdAt.toISOString()}>
             {feed.createdAt.toLocaleDateString("ko-KR", {
               timeZone: "Asia/Seoul",

@@ -51,7 +51,10 @@ export async function searchFeeds({
 // 상세: slug로 단건(공개 범위 무관). 접근 제어는 호출부에서 visibility로 판정.
 // cache로 감싸 같은 요청 내 중복 호출(generateMetadata + 페이지 본문)을 1회로 dedupe
 export const getFeedBySlug = cache(async (slug: string) => {
-  return prisma.feed.findUnique({ where: { slug } });
+  return prisma.feed.findUnique({
+    where: { slug },
+    include: { author: { select: { nickname: true } } },
+  });
 });
 
 export const ADMIN_PAGE_SIZE = 20;
