@@ -1,6 +1,8 @@
 "use client";
 import { useActionState, useState } from "react";
 import { submitPost, type PostFormState } from "./actions";
+import MarkdownContent from "@/app/markdown-content";
+import MarkdownHelp from "./markdown-help";
 
 const inputCls =
   "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
@@ -23,6 +25,7 @@ export default function PostEditor({
   const [title, setTitle] = useState(post?.title ?? "");
   const [content, setContent] = useState(post?.content ?? "");
   const [tags, setTags] = useState(post?.tags ?? "");
+  const [tab, setTab] = useState<"write" | "preview">("write");
   const isPublished = post?.status === "published";
   const titleEmpty = title.trim() === "";
   const contentEmpty = content.trim() === "";
@@ -62,29 +65,91 @@ export default function PostEditor({
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-500">본문 (마크다운)</span>
-        <textarea
-          name="content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={16}
-          aria-invalid={state?.errors?.content ? true : undefined}
-          className={`${inputCls} resize-y font-mono`}
-        />
+      <div className="flex flex-col gap-1 text-sm">
+        <div className="flex items-center justify-between">
+          <label htmlFor="post-content" className="text-zinc-500">
+            본문 (마크다운)
+          </label>
+          <div
+            role="tablist"
+            aria-label="본문 보기 전환"
+            className="flex gap-1 text-xs"
+          >
+            <button
+              type="button"
+              role="tab"
+              id="tab-write"
+              aria-selected={tab === "write"}
+              aria-controls="panel-write"
+              onClick={() => setTab("write")}
+              className={`rounded px-2 py-1 ${
+                tab === "write"
+                  ? "bg-black/[.06] font-medium dark:bg-white/[.1]"
+                  : "text-zinc-500"
+              }`}
+            >
+              작성
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-preview"
+              aria-selected={tab === "preview"}
+              aria-controls="panel-preview"
+              onClick={() => setTab("preview")}
+              className={`rounded px-2 py-1 ${
+                tab === "preview"
+                  ? "bg-black/[.06] font-medium dark:bg-white/[.1]"
+                  : "text-zinc-500"
+              }`}
+            >
+              미리보기
+            </button>
+          </div>
+        </div>
+
+        {/* 작성 탭: textarea는 항상 마운트(폼 제출 보존), 미리보기일 땐 hidden */}
+        <div
+          id="panel-write"
+          role="tabpanel"
+          aria-labelledby="tab-write"
+          hidden={tab === "preview"}
+        >
+          <textarea
+            id="post-content"
+            name="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={16}
+            aria-invalid={state?.errors?.content ? true : undefined}
+            className={`${inputCls} w-full resize-y font-mono`}
+          />
+        </div>
+
+        {/* 미리보기 탭: 게시 화면과 동일한 렌더러로 결과 표시 */}
+        {tab === "preview" && (
+          <div
+            id="panel-preview"
+            role="tabpanel"
+            aria-labelledby="tab-preview"
+            className={`${inputCls} min-h-[24rem] overflow-auto`}
+          >
+            {contentEmpty ? (
+              <p className="text-zinc-400">미리볼 내용이 없습니다.</p>
+            ) : (
+              <MarkdownContent content={content} />
+            )}
+          </div>
+        )}
+
         {state?.errors?.content && (
           <span role="alert" className="text-xs text-red-600">
             {state.errors.content[0]}
           </span>
         )}
-      </label>
-      <p className="-mt-2 text-xs text-zinc-500">
-        외부 이미지 URL은{" "}
-        <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">
-          ![](https://…)
-        </code>{" "}
-        로 넣을 수 있어요. 파일 업로드는 지원하지 않습니다.
-      </p>
+      </div>
+
+      <MarkdownHelp />
 
       {state?.error && (
         <p role="alert" className="text-sm text-red-600">
