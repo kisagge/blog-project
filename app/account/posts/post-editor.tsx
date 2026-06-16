@@ -126,21 +126,23 @@ export default function PostEditor({
           />
         </div>
 
-        {/* 미리보기 탭: 게시 화면과 동일한 렌더러로 결과 표시 */}
-        {tab === "preview" && (
-          <div
-            id="panel-preview"
-            role="tabpanel"
-            aria-labelledby="tab-preview"
-            className={`${inputCls} min-h-[24rem] overflow-auto`}
-          >
-            {contentEmpty ? (
+        {/* 미리보기 탭: 게시 화면과 동일한 렌더러로 결과 표시.
+            패널은 항상 마운트(aria-controls 참조 유지) + hidden으로 토글,
+            렌더링은 미리보기일 때만(작성 중 매 타이핑 렌더 방지). */}
+        <div
+          id="panel-preview"
+          role="tabpanel"
+          aria-labelledby="tab-preview"
+          hidden={tab === "write"}
+          className={`${inputCls} min-h-[24rem] overflow-auto`}
+        >
+          {tab === "preview" &&
+            (contentEmpty ? (
               <p className="text-zinc-400">미리볼 내용이 없습니다.</p>
             ) : (
               <MarkdownContent content={content} />
-            )}
-          </div>
-        )}
+            ))}
+        </div>
 
         {state?.errors?.content && (
           <span role="alert" className="text-xs text-red-600">
