@@ -128,6 +128,23 @@ const SCHEMA = [
   `CREATE INDEX "Comment_parentId_idx" ON "Comment"("parentId")`,
   `CREATE UNIQUE INDEX "Like_feedId_userId_key" ON "Like"("feedId", "userId")`,
   `CREATE UNIQUE INDEX "CommentLike_commentId_userId_key" ON "CommentLike"("commentId", "userId")`,
+  `CREATE TABLE "Tag" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX "Tag_slug_key" ON "Tag"("slug")`,
+  `CREATE TABLE "FeedTag" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "feedId" TEXT NOT NULL,
+    "tagId" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "FeedTag_feedId_fkey" FOREIGN KEY ("feedId") REFERENCES "Feed" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "FeedTag_tagId_fkey" FOREIGN KEY ("tagId") REFERENCES "Tag" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX "FeedTag_feedId_tagId_key" ON "FeedTag"("feedId", "tagId")`,
+  `CREATE INDEX "FeedTag_tagId_idx" ON "FeedTag"("tagId")`,
 ];
 
 export async function setupTestDb() {

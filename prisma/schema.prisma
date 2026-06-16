@@ -28,11 +28,34 @@ model Feed {
   author    User?     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     Like[]
+  feedTags  FeedTag[]
 
   // 목록 쿼리(searchFeeds): status=published + visibility IN + createdAt 정렬.
   @@index([status, visibility, createdAt])
   // 내 글/하루 게시(listMyPosts·countPublishedToday): authorId + status + publishedAt.
   @@index([authorId, status, publishedAt])
+}
+
+// 태그 사전. slug로 유니크(한글 보존 정규화 키). name은 표시용 원형.
+model Tag {
+  id        String    @id @default(uuid())
+  name      String              // 표시명 ("개발 후기")
+  slug      String    @unique   // 정규화 키 ("개발-후기")
+  createdAt DateTime  @default(now())
+  feedTags  FeedTag[]
+}
+
+// 글-태그 다대다 조인 (Like/CommentLike 패턴).
+model FeedTag {
+  id        String   @id @default(uuid())
+  feedId    String
+  tagId     String
+  createdAt DateTime @default(now())
+  feed      Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([feedId, tagId])
+  @@index([tagId])
 }
 
 // 사이트 전역 설정(싱글톤, id 항상 1).

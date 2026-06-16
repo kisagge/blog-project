@@ -9,6 +9,7 @@ export type FeedCard = {
   viewCount: number;
   visibility: Visibility;
   authorName: string | null; // 회원 글이면 작성자 닉네임(관리자 글은 null)
+  tags: { name: string; slug: string }[];
 };
 
 // searchFeeds 행 → 직렬화 카드. (관리자 목록·회원 목록·무한스크롤 공용)
@@ -20,6 +21,7 @@ export function toFeedCard(f: {
   viewCount: number;
   visibility: string;
   author: { nickname: string } | null;
+  feedTags?: { tag: { name: string; slug: string } }[];
 }): FeedCard {
   return {
     slug: f.slug,
@@ -29,5 +31,6 @@ export function toFeedCard(f: {
     viewCount: f.viewCount,
     visibility: f.visibility as Visibility,
     authorName: f.author?.nickname ?? null,
+    tags: (f.feedTags ?? []).map((ft) => ft.tag),
   };
 }
