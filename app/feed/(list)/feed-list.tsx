@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadFeeds, type FeedCard } from "./actions";
+import { loadFeeds } from "./actions";
+import type { FeedCard } from "./feed-card";
 
 type Props = {
   initialItems: FeedCard[];
