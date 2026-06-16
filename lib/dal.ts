@@ -40,3 +40,10 @@ export const getMemberSession = cache(async () => {
   });
   return u?.status === "approved" ? s : null;
 });
+
+// 회원 세션 쿠키는 있으나 현재 승인 상태가 아닌(=차단된) 회원인지. 공유 버튼 숨김 등에 사용.
+export const isBlockedMember = cache(async () => {
+  const s = await getSession();
+  if (s?.role !== "member") return false;
+  return (await getMemberSession()) === null;
+});
