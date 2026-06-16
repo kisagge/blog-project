@@ -40,12 +40,11 @@ export async function generateMetadata({
   if (access === "not-found") return { title: "찾을 수 없음" };
   const description =
     access === "ok" ? feed.summary?.trim() || undefined : undefined;
-  const img = access === "ok" ? firstContentImage(feed.content) : null;
-  const images = img ? [toAbsolute(img)] : undefined;
+  // og:image는 파일 기반 opengraph-image.tsx가 동적 생성(전체공개 글만 제목 노출).
   return {
     title: feed.title,
     description,
-    openGraph: { type: "article", title: feed.title, description, images },
+    openGraph: { type: "article", title: feed.title, description },
   };
 }
 

@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description: "생각과 기록을 남기는 개인 공간",
     locale: "ko_KR",
   },
-  twitter: { card: "summary" },
+  twitter: { card: "summary_large_image" },
 };
 
 export default async function RootLayout({
