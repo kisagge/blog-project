@@ -19,10 +19,12 @@ const SCHEMA = [
     "viewCount" INTEGER NOT NULL DEFAULT 0,
     "publishedAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Feed_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
   `CREATE UNIQUE INDEX "Feed_slug_key" ON "Feed"("slug")`,
-  `CREATE INDEX "Feed_authorId_status_idx" ON "Feed"("authorId", "status")`,
+  `CREATE INDEX "Feed_status_visibility_createdAt_idx" ON "Feed"("status", "visibility", "createdAt")`,
+  `CREATE INDEX "Feed_authorId_status_publishedAt_idx" ON "Feed"("authorId", "status", "publishedAt")`,
   `CREATE TABLE "View" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "entityType" TEXT NOT NULL,
@@ -57,7 +59,8 @@ const SCHEMA = [
     "endpoint" TEXT NOT NULL,
     "p256dh" TEXT NOT NULL,
     "auth" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PushSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
   `CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint")`,
   `CREATE INDEX "PushSubscription_userId_idx" ON "PushSubscription"("userId")`,
@@ -67,7 +70,8 @@ const SCHEMA = [
     "body" TEXT NOT NULL,
     "url" TEXT,
     "readAt" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
   `CREATE INDEX "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt")`,
   `CREATE TABLE "PasswordResetCode" (
