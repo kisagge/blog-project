@@ -33,7 +33,15 @@ export default async function EditPostPage({
           </p>
         )}
       </div>
-      <PostEditor post={post} />
+      <PostEditor
+        post={{
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          status: post.status,
+          tags: post.feedTags.map((ft) => ft.tag.name).join(", "),
+        }}
+      />
     </main>
   );
 }

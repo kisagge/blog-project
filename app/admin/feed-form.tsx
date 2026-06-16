@@ -13,6 +13,7 @@ type Props = {
     summary?: string | null;
     content?: string;
     visibility?: "public" | "members" | "private";
+    tags?: string;
   };
   submitLabel: string;
 };
@@ -87,6 +88,14 @@ export default function FeedForm({
           <input
             name="summary"
             defaultValue={d.summary ?? ""}
+            className={inputCls}
+          />
+        </Field>
+        <Field label="태그 (쉼표로 구분, 최대 5개)" error={err.tags}>
+          <input
+            name="tags"
+            defaultValue={d.tags ?? ""}
+            placeholder="던파, 개발 후기"
             className={inputCls}
           />
         </Field>

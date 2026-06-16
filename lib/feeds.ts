@@ -100,9 +100,12 @@ export async function getAdminFeedsPage(
   return { items, total, pageSize: take };
 }
 
-// 관리자용: 공개 여부 무관 단건(id)
+// 관리자용: 공개 여부 무관 단건(id). 편집 폼 prefill용 태그 포함.
 export async function getFeedById(id: string) {
-  return prisma.feed.findUnique({ where: { id } });
+  return prisma.feed.findUnique({
+    where: { id },
+    include: { feedTags: { select: { tag: { select: { name: true } } } } },
+  });
 }
 
 // 관리자 대시보드용: 목록을 다 불러오지 않고 count로 요약.

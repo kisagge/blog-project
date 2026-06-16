@@ -7,6 +7,7 @@ import { setPublicEnabled } from "@/lib/site-config";
 import { setAdminNickname } from "@/lib/comment-actor";
 import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
+import { parseTags, setFeedTags } from "@/lib/tags";
 
 export type FeedFormState =
   | { errors?: Record<string, string[]>; message?: string }
@@ -27,7 +28,9 @@ export async function createFeed(
     return { errors: parsed.error.flatten().fieldErrors };
   }
   try {
-    await prisma.feed.create({ data: parsed.data });
+    const { tags, ...feedData } = parsed.data;
+    const feed = await prisma.feed.create({ data: feedData });
+    await setFeedTags(feed.id, parseTags(tags ?? ""));
   } catch {
     return {
       message: "이미 사용 중인 slug일 수 있습니다.",
@@ -49,7 +52,9 @@ export async function updateFeed(
     return { errors: parsed.error.flatten().fieldErrors };
   }
   try {
-    await prisma.feed.update({ where: { id }, data: parsed.data });
+    const { tags, ...feedData } = parsed.data;
+    await prisma.feed.update({ where: { id }, data: feedData });
+    await setFeedTags(id, parseTags(tags ?? ""));
   } catch {
     return {
       message: "저장 실패(중복 slug 등).",
