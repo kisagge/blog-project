@@ -221,6 +221,28 @@ describe("getCommentsByUser", () => {
     expect(await m.getCommentsByUser(u, 1)).toHaveLength(1); // take 상한
   });
 
+  test("숨김 댓글은 hidden=true·content 비움, 프로필에서 제외", async () => {
+    const f = await prisma.feed.create({
+      data: { slug: "hid", title: "H", content: "c", visibility: "public" },
+    });
+    const r = await m.addComment({
+      feedId: f.id,
+      userId: alice,
+      content: "가려질 댓글",
+    });
+    const id = (r as { ok: true; id: string }).id;
+    await prisma.comment.update({
+      where: { id },
+      data: { hiddenAt: new Date() },
+    });
+    const { items } = await m.getFeedComments(f.id);
+    expect(items[0].hidden).toBe(true);
+    expect(items[0].content).toBe(""); // 본문 비움
+    // 작성자 프로필 "최근 댓글"에서도 제외
+    const profile = await m.getCommentsByUser(alice, 50);
+    expect(profile.some((x) => x.id === id)).toBe(false);
+  });
+
   test("비공개·초안 피드의 댓글은 제외(피드 제목 노출 방지)", async () => {
     const u = (
       await prisma.user.create({
