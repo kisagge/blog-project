@@ -17,7 +17,8 @@ function esc(s: string): string {
 
 export async function GET() {
   const feeds = await prisma.feed.findMany({
-    where: { status: "published", visibility: "public" },
+    // 신고로 가려진 글 제외(모더레이션 일관성).
+    where: { status: "published", visibility: "public", hiddenAt: null },
     orderBy: { createdAt: "desc" },
     take: 20,
     select: { slug: true, title: true, summary: true, createdAt: true },

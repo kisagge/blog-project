@@ -15,7 +15,10 @@ export default async function Image({
   const { slug } = await params;
   const feed = await getFeedBySlug(slug);
   const title =
-    feed && feed.visibility === "public" && feed.status === "published"
+    feed &&
+    feed.visibility === "public" &&
+    feed.status === "published" &&
+    !feed.hiddenAt
       ? feed.title
       : "BY Playground";
   return ogImage(title);

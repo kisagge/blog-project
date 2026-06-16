@@ -9,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 비로그인도 볼 수 있는 전체공개 콘텐츠만 색인 대상(회원공개·비공개 제외).
   const [feeds, dfs] = await Promise.all([
     prisma.feed.findMany({
-      where: { status: "published", visibility: "public" },
+      where: { status: "published", visibility: "public", hiddenAt: null },
       select: { slug: true, updatedAt: true },
     }),
     prisma.dfCharacter.findMany({
