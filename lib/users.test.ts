@@ -169,4 +169,32 @@ describe("users", () => {
     });
     expect(r).toEqual({ ok: false, error: m.NICKNAME_TAKEN_MESSAGE });
   });
+
+  test("차단/차단해제: status 전환 + 로그인 차단 + 목록 노출", async () => {
+    await m.createPendingUser({
+      email: "blk@x.com",
+      nickname: "차단대상",
+      password: "Aa1!aaaa",
+    });
+    const u = await m.findUserByEmail("blk@x.com");
+    await m.approveUser(u!.id);
+
+    // 차단 → blocked, 로그인 불가
+    await m.blockUser(u!.id);
+    expect((await m.findUserByEmail("blk@x.com"))?.status).toBe("blocked");
+    expect(await m.authenticateMember("blk@x.com", "Aa1!aaaa")).toEqual({
+      ok: false,
+      error: "이용이 제한된 계정입니다.",
+    });
+    // 차단 회원도 관리 목록(approved+blocked)에는 보임
+    const listed = await m.listUsersPage(["approved", "blocked"], 1);
+    expect(listed.items.find((x) => x.email === "blk@x.com")?.status).toBe(
+      "blocked",
+    );
+
+    // 차단 해제 → approved 복구 + 로그인 가능
+    await m.unblockUser(u!.id);
+    expect((await m.findUserByEmail("blk@x.com"))?.status).toBe("approved");
+    expect((await m.authenticateMember("blk@x.com", "Aa1!aaaa")).ok).toBe(true);
+  });
 });

@@ -5,7 +5,7 @@ import { getAdminNickname } from "@/lib/comment-actor";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import type { Result } from "@/lib/result";
 
-export type UserStatus = "pending" | "approved" | "rejected";
+export type UserStatus = "pending" | "approved" | "rejected" | "blocked";
 export type UserRole = "member" | "admin";
 
 export const NICKNAME_TAKEN_MESSAGE = "이미 사용 중인 닉네임입니다.";
@@ -89,6 +89,8 @@ export async function authenticateMember(
   if (!user) return { ok: false, error: generic };
   if (!(await verifyPassword(password, user.passwordHash)))
     return { ok: false, error: generic };
+  if (user.status === "blocked")
+    return { ok: false, error: "이용이 제한된 계정입니다." };
   if (user.status !== "approved")
     return { ok: false, error: "관리자 승인 대기 중입니다." };
   return { ok: true, user: { id: user.id, nickname: user.nickname } };
@@ -125,8 +127,14 @@ export async function rejectUser(id: string, reason: string) {
   });
 }
 
-export async function deleteUser(id: string) {
-  await prisma.user.delete({ where: { id } });
+// 차단: 영구 삭제 대신 status=blocked로 두어 로그인·활동을 막는다(되돌리기 가능, 콘텐츠 보존).
+export async function blockUser(id: string) {
+  await prisma.user.update({ where: { id }, data: { status: "blocked" } });
+}
+
+// 차단 해제: 다시 approved로 복구.
+export async function unblockUser(id: string) {
+  await prisma.user.update({ where: { id }, data: { status: "approved" } });
 }
 
 // role: "member"로 예약 admin 작성자(role admin)를 회원 목록/카운트에서 제외.
@@ -152,18 +160,27 @@ export async function countUsersByStatus(status: UserStatus) {
 
 // 관리자용: 상태별 페이지 단위(기본 20). 목록 + 전체 개수 반환.
 export async function listUsersPage(
-  status: UserStatus,
+  status: UserStatus | UserStatus[],
   page: number,
   pageSize = ADMIN_PAGE_SIZE,
 ) {
   const take = pageSize;
   const skip = (Math.max(1, page) - 1) * take;
-  const where = { status, role: "member" as const };
+  const where = {
+    status: Array.isArray(status) ? { in: status } : status,
+    role: "member" as const,
+  };
   const [items, total] = await Promise.all([
     prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      select: { id: true, email: true, nickname: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        nickname: true,
+        status: true,
+        createdAt: true,
+      },
       skip,
       take,
     }),
