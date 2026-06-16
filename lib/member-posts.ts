@@ -1,11 +1,13 @@
 import "server-only";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { kstStartOfTodayUtc } from "@/lib/kst";
 
 // 회원 글 가드.
 export const DRAFT_LIMIT = 3; // 회원당 동시 임시저장 최대 개수
 export const DAILY_PUBLISH_LIMIT = 5; // 회원당 하루 게시 개수
 
+// 성공 시 value를 항상 반환(슬롯 id·slug 등) — value 선택인 공용 Result와 의미가 달라 로컬 유지.
 type Result<T = undefined> =
   | { ok: true; value: T }
   | { ok: false; error: string };
@@ -18,15 +20,6 @@ function genSlug(title: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 30);
   return `${base || "post"}-${randomUUID().replace(/-/g, "").slice(0, 8)}`;
-}
-
-// KST 오늘 0시를 UTC Date로. 하루 게시 제한 경계.
-function kstStartOfTodayUtc(): Date {
-  const kst = new Date(Date.now() + 9 * 3600 * 1000);
-  return new Date(
-    Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()) -
-      9 * 3600 * 1000,
-  );
 }
 
 export async function countMyDrafts(userId: string): Promise<number> {

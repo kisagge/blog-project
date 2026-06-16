@@ -2,6 +2,7 @@ import { vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
+import { makeUser, makeFeed } from "@/lib/test-factories";
 
 type Mod = typeof import("@/lib/likes");
 let m: Mod;
@@ -13,30 +14,9 @@ beforeAll(async () => {
   const db = await setupTestDb();
   prisma = db.prisma;
   cleanup = db.cleanup;
-  const f = await prisma.feed.create({
-    data: { slug: "f", title: "T", content: "c", visibility: "public" },
-  });
-  feedId = f.id;
-  u1 = (
-    await prisma.user.create({
-      data: {
-        email: "1@x.com",
-        nickname: "u1",
-        passwordHash: "-",
-        status: "approved",
-      },
-    })
-  ).id;
-  u2 = (
-    await prisma.user.create({
-      data: {
-        email: "2@x.com",
-        nickname: "u2",
-        passwordHash: "-",
-        status: "approved",
-      },
-    })
-  ).id;
+  feedId = (await makeFeed(prisma)).id;
+  u1 = (await makeUser(prisma)).id;
+  u2 = (await makeUser(prisma)).id;
   m = await import("@/lib/likes");
 });
 afterAll(async () => {

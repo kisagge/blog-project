@@ -15,12 +15,11 @@ import {
   getResetCookie,
   clearResetCookie,
 } from "@/lib/reset-token";
+import type { FormState } from "@/lib/form-state";
 
 export type RequestState = { error?: string } | undefined;
 export type VerifyState = { error?: string } | undefined;
-export type ResetState =
-  | { errors?: Record<string, string[]>; error?: string }
-  | undefined;
+export type ResetState = FormState;
 
 // 1단계: 이메일 입력 → 코드 발송(존재 비노출) → 검증 페이지로.
 export async function requestCode(

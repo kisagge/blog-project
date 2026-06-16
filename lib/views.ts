@@ -2,14 +2,10 @@ import "server-only";
 import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { kstDay } from "@/lib/kst";
 
 const VID = "vid";
 const VID_MAX_AGE = 60 * 60 * 24 * 365; // 1년
-
-// KST 기준 날짜 문자열(YYYY-MM-DD). 하루 단위 중복 제거 키.
-function kstDay(): string {
-  return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
-}
 
 // 익명 방문자 ID(쿠키). 없으면 발급.
 async function visitorId(): Promise<string> {

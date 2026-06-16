@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { getSession } from "@/lib/dal";
+import { getMemberSession } from "@/lib/dal";
 import { NicknameSchema } from "@/lib/validation";
 import {
   updateNickname,
@@ -8,17 +8,16 @@ import {
   NICKNAME_TAKEN_MESSAGE,
 } from "@/lib/users";
 import { createMemberSession } from "@/lib/session";
+import type { FormState } from "@/lib/form-state";
 
-export type AccountState =
-  | { errors?: Record<string, string[]>; error?: string; done?: boolean }
-  | undefined;
+export type AccountState = FormState;
 
 export async function updateNicknameAction(
   _state: AccountState,
   formData: FormData,
 ): Promise<AccountState> {
-  const session = await getSession();
-  if (session?.role !== "member") return { error: "로그인이 필요합니다." };
+  const session = await getMemberSession();
+  if (!session) return { error: "로그인이 필요합니다." };
 
   const parsed = NicknameSchema.safeParse({
     nickname: String(formData.get("nickname") ?? ""),

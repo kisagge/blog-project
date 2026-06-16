@@ -1,10 +1,9 @@
 "use server";
 import { SignupSchema } from "@/lib/validation";
 import { createPendingUser } from "@/lib/users";
+import type { FormState } from "@/lib/form-state";
 
-export type SignupState =
-  | { errors?: Record<string, string[]>; error?: string; done?: boolean }
-  | undefined;
+export type SignupState = FormState;
 
 export async function signup(
   _state: SignupState,

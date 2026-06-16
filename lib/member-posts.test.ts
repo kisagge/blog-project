@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
+import { makeUser } from "@/lib/test-factories";
 
 vi.mock("server-only", () => ({}));
 
@@ -16,14 +17,8 @@ beforeAll(async () => {
   cleanup = db.cleanup;
   prisma = db.prisma as Prisma;
   m = await import("@/lib/member-posts");
-  const u = await prisma.user.create({
-    data: { email: "u@x.com", nickname: "U", passwordHash: "-" },
-  });
-  const o = await prisma.user.create({
-    data: { email: "o@x.com", nickname: "O", passwordHash: "-" },
-  });
-  userId = u.id;
-  otherId = o.id;
+  userId = (await makeUser(prisma)).id;
+  otherId = (await makeUser(prisma)).id;
 });
 afterAll(async () => {
   await cleanup();
@@ -81,9 +76,7 @@ describe("member-posts 게시", () => {
   });
 
   test("하루 게시 제한 초과 시 거부", async () => {
-    const fresh = await prisma.user.create({
-      data: { email: "d@x.com", nickname: "D", passwordHash: "-" },
-    });
+    const fresh = await makeUser(prisma);
     for (let i = 0; i < m.DAILY_PUBLISH_LIMIT; i++) {
       const r = await m.publishPost(fresh.id, {
         title: `글${i}`,
@@ -96,9 +89,7 @@ describe("member-posts 게시", () => {
   });
 
   test("이미 게시된 글 수정은 하루 제한과 무관", async () => {
-    const fresh = await prisma.user.create({
-      data: { email: "e@x.com", nickname: "E", passwordHash: "-" },
-    });
+    const fresh = await makeUser(prisma);
     // 한도까지 게시
     let last = "";
     for (let i = 0; i < m.DAILY_PUBLISH_LIMIT; i++) {
