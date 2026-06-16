@@ -1,6 +1,5 @@
 "use client";
-import { useRef } from "react";
-import { useFormStatus } from "react-dom";
+import { useRef, useTransition } from "react";
 import { blockUserAction, unblockUserAction } from "@/app/admin/actions";
 
 /** 차단/차단 해제 버튼 + 확인 모달. 네이티브 <dialog>로 포커스 트랩·Esc·백드롭 처리. */
@@ -14,19 +13,30 @@ export function BlockUserButton({
   label: string;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [pending, startTransition] = useTransition();
+
+  // 확인 즉시 모달을 닫고 액션 실행. (열린 채로 두면 revalidate 후 blocked가 바뀌어
+  // 모달 내용이 '차단↔차단 해제'로 뒤바뀌는 문제가 있어 닫고 진행한다.)
+  function confirm() {
+    dialogRef.current?.close();
+    const fd = new FormData();
+    fd.set("id", id);
+    startTransition(() => (blocked ? unblockUserAction : blockUserAction)(fd));
+  }
 
   return (
     <>
       <button
         type="button"
+        disabled={pending}
         onClick={() => dialogRef.current?.showModal()}
         className={
           blocked
-            ? "rounded border border-black/15 px-2 py-1 dark:border-white/20"
-            : "rounded border border-red-300 px-2 py-1 text-red-600"
+            ? "rounded border border-black/15 px-2 py-1 disabled:opacity-50 dark:border-white/20"
+            : "rounded border border-red-300 px-2 py-1 text-red-600 disabled:opacity-50"
         }
       >
-        {blocked ? "차단 해제" : "차단"}
+        {pending ? "처리 중…" : blocked ? "차단 해제" : "차단"}
       </button>
 
       <dialog
@@ -50,28 +60,17 @@ export function BlockUserButton({
           >
             취소
           </button>
-          <form action={blocked ? unblockUserAction : blockUserAction}>
-            <input type="hidden" name="id" value={id} />
-            <ConfirmButton blocked={blocked} />
-          </form>
+          <button
+            type="button"
+            onClick={confirm}
+            className={`rounded px-3 py-1.5 font-medium text-white ${
+              blocked ? "bg-zinc-700" : "bg-red-600"
+            }`}
+          >
+            {blocked ? "차단 해제" : "차단"}
+          </button>
         </div>
       </dialog>
     </>
-  );
-}
-
-function ConfirmButton({ blocked }: { blocked: boolean }) {
-  const { pending } = useFormStatus();
-  const label = blocked ? "차단 해제" : "차단";
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className={`rounded px-3 py-1.5 font-medium text-white disabled:opacity-50 ${
-        blocked ? "bg-zinc-700" : "bg-red-600"
-      }`}
-    >
-      {pending ? "처리 중…" : label}
-    </button>
   );
 }
