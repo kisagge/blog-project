@@ -95,6 +95,11 @@ beforeAll(async () => {
     },
   });
 
+  // 태그: 공개 글 pub-3 = 고양이, 비공개 draft-1 = 비밀태그(공개 태그 필터에 안 나와야 함)
+  const { setFeedTags } = await import("@/lib/tags");
+  await setFeedTags("pub-3", ["고양이"]);
+  await setFeedTags("draft-1", ["비밀태그"]);
+
   ({ searchFeeds, countFeeds, getAdminFeedsPage } =
     await import("@/lib/feeds"));
 });
@@ -108,6 +113,20 @@ describe("searchFeeds", () => {
     const { items, hasMore } = await searchFeeds({ role: "anon" });
     expect(items).toHaveLength(10);
     expect(hasMore).toBe(true);
+  });
+
+  test("태그 필터: 해당 태그 글만, 비공개 태그는 공개 필터 제외", async () => {
+    const cat = await searchFeeds({ role: "anon", tag: "고양이" });
+    expect(cat.items.map((f) => f.slug)).toEqual(["pub-3"]);
+    // 카드에 태그가 실려옴
+    expect(cat.items[0].feedTags.map((t) => t.tag.slug)).toEqual(["고양이"]);
+    // draft-1(비공개)의 태그는 anon·회원 모두에게 안 보임
+    expect(
+      (await searchFeeds({ role: "anon", tag: "비밀태그" })).items,
+    ).toHaveLength(0);
+    expect(
+      (await searchFeeds({ role: "member", tag: "비밀태그" })).items,
+    ).toHaveLength(0);
   });
 
   test("skip으로 다음 페이지: 남은 2개 + hasMore=false", async () => {

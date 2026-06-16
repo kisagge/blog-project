@@ -14,12 +14,14 @@ export async function searchFeeds({
   take = FEED_PAGE_SIZE,
   role,
   author,
+  tag,
 }: {
   q?: string;
   skip?: number;
   take?: number;
   role: ViewerRole;
   author?: "admin" | "member"; // 관리자 글(authorId null) vs 회원 글(authorId 있음)
+  tag?: string; // 태그 slug 필터
 }) {
   const term = q.trim();
   const rows = await prisma.feed.findMany({
@@ -31,6 +33,7 @@ export async function searchFeeds({
         : author === "member"
           ? { authorId: { not: null } }
           : {}),
+      ...(tag && { feedTags: { some: { tag: { slug: tag } } } }),
       ...(term && {
         OR: [
           { title: { contains: term } },
@@ -48,6 +51,7 @@ export async function searchFeeds({
       viewCount: true,
       visibility: true,
       author: { select: { nickname: true } },
+      feedTags: { select: { tag: { select: { name: true, slug: true } } } },
     },
     skip,
     take: take + 1,
@@ -61,7 +65,10 @@ export async function searchFeeds({
 export const getFeedBySlug = cache(async (slug: string) => {
   return prisma.feed.findUnique({
     where: { slug },
-    include: { author: { select: { nickname: true } } },
+    include: {
+      author: { select: { nickname: true } },
+      feedTags: { select: { tag: { select: { name: true, slug: true } } } },
+    },
   });
 });
 
