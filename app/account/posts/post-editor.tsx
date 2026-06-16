@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { submitPost, type PostFormState } from "./actions";
 
 const inputCls =
@@ -14,7 +14,14 @@ export default function PostEditor({
     submitPost,
     undefined,
   );
+  const [title, setTitle] = useState(post?.title ?? "");
+  const [content, setContent] = useState(post?.content ?? "");
   const isPublished = post?.status === "published";
+  const titleEmpty = title.trim() === "";
+  const contentEmpty = content.trim() === "";
+  // 제목 없으면 임시저장·게시 모두 불가. 내용 없으면 게시 불가(임시저장은 가능).
+  const draftDisabled = pending || titleEmpty;
+  const publishDisabled = pending || titleEmpty || contentEmpty;
 
   return (
     <form action={action} className="flex w-full max-w-2xl flex-col gap-4">
@@ -24,7 +31,8 @@ export default function PostEditor({
         <span className="text-zinc-500">제목</span>
         <input
           name="title"
-          defaultValue={post?.title}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           maxLength={120}
           aria-invalid={state?.errors?.title ? true : undefined}
           className={inputCls}
@@ -40,7 +48,8 @@ export default function PostEditor({
         <span className="text-zinc-500">본문 (마크다운)</span>
         <textarea
           name="content"
-          defaultValue={post?.content}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
           rows={16}
           aria-invalid={state?.errors?.content ? true : undefined}
           className={`${inputCls} resize-y font-mono`}
@@ -71,7 +80,7 @@ export default function PostEditor({
             type="submit"
             name="intent"
             value="draft"
-            disabled={pending}
+            disabled={draftDisabled}
             className="rounded-full border border-black/15 px-5 py-2.5 text-sm font-medium disabled:opacity-50 dark:border-white/20"
           >
             임시저장
@@ -81,7 +90,7 @@ export default function PostEditor({
           type="submit"
           name="intent"
           value="publish"
-          disabled={pending}
+          disabled={publishDisabled}
           className="bg-foreground text-background rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
         >
           {isPublished ? "저장" : "게시(회원공개)"}
