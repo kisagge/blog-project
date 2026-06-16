@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { setPublicEnabled } from "@/lib/site-config";
 import { setAdminNickname } from "@/lib/comment-actor";
-import { approveUser, deleteUser, rejectUser } from "@/lib/users";
+import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
 
 export type FeedFormState =
@@ -100,10 +100,16 @@ export async function rejectUserAction(formData: FormData) {
   revalidatePath("/admin");
 }
 
-export async function removeUserAction(formData: FormData) {
+export async function blockUserAction(formData: FormData) {
   await verifySession();
-  await deleteUser(String(formData.get("id") ?? ""));
-  revalidatePath("/admin");
+  await blockUser(String(formData.get("id") ?? ""));
+  revalidatePath("/admin/members");
+}
+
+export async function unblockUserAction(formData: FormData) {
+  await verifySession();
+  await unblockUser(String(formData.get("id") ?? ""));
+  revalidatePath("/admin/members");
 }
 
 export async function setAdminNicknameAction(formData: FormData) {

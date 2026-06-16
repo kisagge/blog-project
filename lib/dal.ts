@@ -3,6 +3,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { decrypt } from "@/lib/jwt";
+import { prisma } from "@/lib/prisma";
 import type { ViewerRole } from "@/lib/visibility";
 
 // 세션이 있으면 payload, 없으면 undefined (redirect 안 함)
@@ -28,8 +29,14 @@ export const verifySession = cache(async () => {
   return session;
 });
 
-// 회원 세션이면 그대로(userId·nickname 포함), 아니면 null. 회원 전용 서버 액션 가드 공용.
+// 회원 세션이고 현재도 승인(approved) 상태면 그대로, 아니면 null.
+// 차단(blocked)된 회원은 기존 세션이 남아 있어도 즉시 활동 불가. 회원 전용 액션 가드 공용.
 export const getMemberSession = cache(async () => {
   const s = await getSession();
-  return s?.role === "member" ? s : null;
+  if (s?.role !== "member") return null;
+  const u = await prisma.user.findUnique({
+    where: { id: s.userId },
+    select: { status: true },
+  });
+  return u?.status === "approved" ? s : null;
 });

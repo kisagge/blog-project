@@ -1,5 +1,9 @@
 import { listUsersByStatus, listUsersPage } from "@/lib/users";
-import { approveUserAction, removeUserAction } from "@/app/admin/actions";
+import {
+  approveUserAction,
+  blockUserAction,
+  unblockUserAction,
+} from "@/app/admin/actions";
 import { RejectUserButton } from "@/app/admin/reject-user-button";
 import Pager, { parsePage } from "@/app/admin/pager";
 
@@ -13,7 +17,7 @@ export default async function AdminMembersPage({
   const page = parsePage((await searchParams).page);
   const [pending, members] = await Promise.all([
     listUsersByStatus("pending"),
-    listUsersPage("approved", page),
+    listUsersPage(["approved", "blocked"], page),
   ]);
 
   return (
@@ -71,15 +75,31 @@ export default async function AdminMembersPage({
               key={u.id}
               className="flex items-center justify-between gap-3 py-2 text-sm"
             >
-              <span className="min-w-0 truncate">
-                {u.nickname} · {u.email}
+              <span className="flex min-w-0 items-center gap-2 truncate">
+                <span className="truncate">
+                  {u.nickname} · {u.email}
+                </span>
+                {u.status === "blocked" && (
+                  <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                    차단됨
+                  </span>
+                )}
               </span>
-              <form action={removeUserAction}>
-                <input type="hidden" name="id" value={u.id} />
-                <button className="rounded border border-red-300 px-2 py-1 text-red-600">
-                  삭제
-                </button>
-              </form>
+              {u.status === "blocked" ? (
+                <form action={unblockUserAction}>
+                  <input type="hidden" name="id" value={u.id} />
+                  <button className="rounded border border-black/15 px-2 py-1 dark:border-white/20">
+                    차단 해제
+                  </button>
+                </form>
+              ) : (
+                <form action={blockUserAction}>
+                  <input type="hidden" name="id" value={u.id} />
+                  <button className="rounded border border-red-300 px-2 py-1 text-red-600">
+                    차단
+                  </button>
+                </form>
+              )}
             </li>
           ))}
         </ul>
