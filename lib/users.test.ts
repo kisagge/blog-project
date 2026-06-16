@@ -197,4 +197,22 @@ describe("users", () => {
     expect((await m.findUserByEmail("blk@x.com"))?.status).toBe("approved");
     expect((await m.authenticateMember("blk@x.com", "Aa1!aaaa")).ok).toBe(true);
   });
+
+  test("getMemberProfile: 회원만 반환, admin·없는 id는 null", async () => {
+    await m.createPendingUser({
+      email: "prof@x.com",
+      nickname: "프로필회원",
+      password: "password1",
+    });
+    const u = await m.findUserByEmail("prof@x.com");
+    const p = await m.getMemberProfile(u!.id);
+    expect(p?.nickname).toBe("프로필회원");
+    expect(p).toHaveProperty("createdAt");
+    // 예약 admin(role admin)은 프로필 없음
+    const { ensureAdminUser } = await import("@/lib/comment-actor");
+    const admin = await ensureAdminUser();
+    expect(await m.getMemberProfile(admin.id)).toBeNull();
+    // 없는 id
+    expect(await m.getMemberProfile("nope")).toBeNull();
+  });
 });

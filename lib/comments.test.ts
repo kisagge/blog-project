@@ -160,3 +160,72 @@ describe("comments", () => {
     expect(p2.total).toBe(30);
   });
 });
+
+describe("getCommentsByUser", () => {
+  test("회원 댓글: 삭제 제외·피드정보·최신순·take 상한", async () => {
+    const u = (
+      await prisma.user.create({
+        data: {
+          email: "cu@x.com",
+          nickname: "씨유",
+          passwordHash: "-",
+          status: "approved",
+        },
+      })
+    ).id;
+    await prisma.comment.create({
+      data: { feedId, userId: u, content: "첫", createdAt: new Date(2026, 0, 1) },
+    });
+    await prisma.comment.create({
+      data: { feedId, userId: u, content: "둘", createdAt: new Date(2026, 0, 2) },
+    });
+    await prisma.comment.create({
+      data: {
+        feedId,
+        userId: u,
+        content: "삭제됨",
+        createdAt: new Date(2026, 0, 3),
+        deletedAt: new Date(),
+      },
+    });
+
+    const list = await m.getCommentsByUser(u, 20);
+    expect(list.map((c) => c.content)).toEqual(["둘", "첫"]); // 최신순, 삭제 제외
+    expect(list[0].feed.slug).toBe("f1");
+    expect(list[0].feed.title).toBe("F");
+    expect(await m.getCommentsByUser(u, 1)).toHaveLength(1); // take 상한
+  });
+
+  test("비공개·초안 피드의 댓글은 제외(피드 제목 노출 방지)", async () => {
+    const u = (
+      await prisma.user.create({
+        data: {
+          email: "leak@x.com",
+          nickname: "리크",
+          passwordHash: "-",
+          status: "approved",
+        },
+      })
+    ).id;
+    const priv = await prisma.feed.create({
+      data: { slug: "secret", title: "비밀", content: "c", visibility: "private" },
+    });
+    const draft = await prisma.feed.create({
+      data: {
+        slug: "wip",
+        title: "초안",
+        content: "c",
+        visibility: "members",
+        status: "draft",
+      },
+    });
+    const open = await prisma.feed.create({
+      data: { slug: "open", title: "공개", content: "c", visibility: "members" },
+    });
+    for (const f of [priv.id, draft.id, open.id]) {
+      await prisma.comment.create({ data: { feedId: f, userId: u, content: "x" } });
+    }
+    const list = await m.getCommentsByUser(u, 20);
+    expect(list.map((c) => c.feed.slug)).toEqual(["open"]); // 비공개·초안 제외
+  });
+});

@@ -126,6 +126,7 @@ const SCHEMA = [
   )`,
   `CREATE INDEX "Comment_feedId_idx" ON "Comment"("feedId")`,
   `CREATE INDEX "Comment_parentId_idx" ON "Comment"("parentId")`,
+  `CREATE INDEX "Comment_userId_createdAt_idx" ON "Comment"("userId", "createdAt")`,
   `CREATE UNIQUE INDEX "Like_feedId_userId_key" ON "Like"("feedId", "userId")`,
   `CREATE UNIQUE INDEX "CommentLike_commentId_userId_key" ON "CommentLike"("commentId", "userId")`,
   `CREATE TABLE "Tag" (

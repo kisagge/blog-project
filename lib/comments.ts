@@ -191,3 +191,39 @@ export async function deleteComment(
   }
   return { ok: true };
 }
+
+export type UserCommentItem = {
+  id: string;
+  content: string;
+  createdAt: string;
+  feed: { slug: string; title: string };
+};
+
+// 프로필 "최근 댓글"용: 한 회원의 댓글(삭제 제외, 최신순) + 피드 제목/슬러그.
+export async function getCommentsByUser(
+  userId: string,
+  take = 20,
+): Promise<UserCommentItem[]> {
+  const rows = await prisma.comment.findMany({
+    // 피드가 게시·비공개아님일 때만(비공개/초안 피드 제목·slug 노출 방지).
+    where: {
+      userId,
+      deletedAt: null,
+      feed: { status: "published", visibility: { not: "private" } },
+    },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      feed: { select: { slug: true, title: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    content: r.content,
+    createdAt: r.createdAt.toISOString(),
+    feed: { slug: r.feed.slug, title: r.feed.title },
+  }));
+}

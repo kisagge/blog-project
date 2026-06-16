@@ -137,6 +137,9 @@ export default function NavDrawer({
               <DrawerLink href="/account/posts/new" onClick={close}>
                 글쓰기
               </DrawerLink>
+              <DrawerLink href="/me" onClick={close}>
+                내 프로필
+              </DrawerLink>
               <DrawerLink href="/account" onClick={close}>
                 내 정보
               </DrawerLink>

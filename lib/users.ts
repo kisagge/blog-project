@@ -78,6 +78,24 @@ export async function findUserByEmail(email: string) {
   });
 }
 
+export type MemberProfile = {
+  id: string;
+  nickname: string;
+  createdAt: Date;
+  status: UserStatus;
+};
+
+// 공개 프로필용 단건. 회원(role:"member")만 — 예약 admin/없는 id는 null(→ 라우트 404).
+export async function getMemberProfile(
+  id: string,
+): Promise<MemberProfile | null> {
+  const u = await prisma.user.findFirst({
+    where: { id, role: "member" },
+    select: { id: true, nickname: true, createdAt: true, status: true },
+  });
+  return u ? { ...u, status: u.status as UserStatus } : null;
+}
+
 export type AuthedMember = { id: string; nickname: string };
 
 export async function authenticateMember(
