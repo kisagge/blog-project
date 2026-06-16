@@ -34,6 +34,7 @@ export default async function EditFeedPage({
           summary: feed.summary,
           content: feed.content,
           visibility: feed.visibility as "public" | "members" | "private",
+          tags: feed.feedTags.map((ft) => ft.tag.name).join(", "),
         }}
       />
     </section>

@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { kstStartOfTodayUtc } from "@/lib/kst";
+import { parseTags, setFeedTags } from "@/lib/tags";
 
 // 회원 글 가드.
 export const DRAFT_LIMIT = 3; // 회원당 동시 임시저장 최대 개수
@@ -62,11 +63,18 @@ export async function listMyPosts(userId: string) {
 export async function getMyPost(userId: string, id: string) {
   return prisma.feed.findFirst({
     where: { id, authorId: userId },
-    select: { id: true, title: true, content: true, status: true, slug: true },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      status: true,
+      slug: true,
+      feedTags: { select: { tag: { select: { name: true } } } },
+    },
   });
 }
 
-type Input = { title: string; content: string };
+type Input = { title: string; content: string; tags?: string };
 
 // 임시저장 저장: id 있으면 본인 draft 갱신, 없으면 신규(한도 검사).
 export async function saveDraft(
@@ -83,6 +91,7 @@ export async function saveDraft(
       where: { id: input.id },
       data: { title: input.title, content: input.content },
     });
+    await setFeedTags(input.id, parseTags(input.tags ?? ""));
     return { ok: true, value: { id: input.id } };
   }
   if ((await countMyDrafts(userId)) >= DRAFT_LIMIT) {
@@ -101,6 +110,7 @@ export async function saveDraft(
       authorId: userId,
     },
   });
+  await setFeedTags(feed.id, parseTags(input.tags ?? ""));
   return { ok: true, value: { id: feed.id } };
 }
 
@@ -122,6 +132,7 @@ export async function publishPost(
         where: { id: row.id },
         data: { title: input.title, content: input.content },
       });
+      await setFeedTags(row.id, parseTags(input.tags ?? ""));
       return { ok: true, value: { slug: row.slug } };
     }
     // 임시저장 → 게시.
@@ -137,6 +148,7 @@ export async function publishPost(
         publishedAt: new Date(),
       },
     });
+    await setFeedTags(row.id, parseTags(input.tags ?? ""));
     return { ok: true, value: { slug: row.slug } };
   }
   // 신규 바로 게시.
@@ -154,6 +166,7 @@ export async function publishPost(
       publishedAt: new Date(),
     },
   });
+  await setFeedTags(feed.id, parseTags(input.tags ?? ""));
   return { ok: true, value: { slug: feed.slug } };
 }
 

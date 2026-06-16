@@ -12,6 +12,7 @@ export const FeedFormSchema = z.object({
   summary: z.string().trim().optional(),
   content: z.string().min(1, "본문을 입력하세요."),
   visibility: z.enum(["public", "members", "private"]),
+  tags: z.string().trim().optional(), // 콤마 구분 원본(정규화·상한은 parseTags)
 });
 
 export type FeedFormValues = z.infer<typeof FeedFormSchema>;
@@ -25,6 +26,7 @@ export function feedFormToObject(formData: FormData) {
     summary: String(formData.get("summary") ?? ""),
     content: String(formData.get("content") ?? ""),
     visibility: v === "public" || v === "members" ? v : "private",
+    tags: String(formData.get("tags") ?? ""),
   };
 }
 
@@ -56,6 +58,7 @@ export const NicknameSchema = z.object({ nickname: nicknameField });
 
 // 회원 글(임시저장·게시) 입력. 본문은 마크다운(외부 이미지 URL 허용, 업로드 없음).
 export const MemberPostSchema = z.object({
+  tags: z.string().trim().optional(),
   title: z
     .string()
     .trim()

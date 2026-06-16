@@ -8,7 +8,13 @@ const inputCls =
 export default function PostEditor({
   post,
 }: {
-  post?: { id: string; title: string; content: string; status: string };
+  post?: {
+    id: string;
+    title: string;
+    content: string;
+    status: string;
+    tags?: string;
+  };
 }) {
   const [state, action, pending] = useActionState<PostFormState, FormData>(
     submitPost,
@@ -16,6 +22,7 @@ export default function PostEditor({
   );
   const [title, setTitle] = useState(post?.title ?? "");
   const [content, setContent] = useState(post?.content ?? "");
+  const [tags, setTags] = useState(post?.tags ?? "");
   const isPublished = post?.status === "published";
   const titleEmpty = title.trim() === "";
   const contentEmpty = content.trim() === "";
@@ -42,6 +49,17 @@ export default function PostEditor({
             {state.errors.title[0]}
           </span>
         )}
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-zinc-500">태그 (쉼표로 구분, 최대 5개)</span>
+        <input
+          name="tags"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="던파, 개발 후기"
+          className={inputCls}
+        />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">

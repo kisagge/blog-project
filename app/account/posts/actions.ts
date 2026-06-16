@@ -22,6 +22,7 @@ export async function submitPost(
   const parsed = MemberPostSchema.safeParse({
     title: String(formData.get("title") ?? ""),
     content: String(formData.get("content") ?? ""),
+    tags: String(formData.get("tags") ?? ""),
   });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
 
