@@ -23,8 +23,7 @@ export default async function Home() {
           BY Playground
         </h1>
         <p className="max-w-prose text-lg text-zinc-600 dark:text-zinc-400">
-          생각과 기록을 남기는 개인 공간입니다. 글과 던파 캐릭터 쇼케이스, 회원
-          커뮤니티를 담았습니다.
+          생각과 기록을 남기는 개인 공간입니다.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link
