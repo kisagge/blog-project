@@ -7,17 +7,20 @@ type Props = {
   initialItems: FeedCard[];
   initialHasMore: boolean;
   initialQuery: string;
+  author?: "admin" | "member"; // 어느 목록인지(관리자 글/회원 글) — 무한스크롤에도 전달
 };
 
 export default function FeedList({
   initialItems,
   initialHasMore,
   initialQuery,
+  author,
 }: Props) {
   const [items, setItems] = useState(initialItems);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
+  const basePath = author === "member" ? "/community" : "/feed";
 
   // 최신 상태를 옵저버/비동기 콜백에서 참조하기 위한 ref(스테일 클로저 방지)
   const reqIdRef = useRef(0); // 검색이 바뀔 때마다 증가 → 지난 요청 결과를 폐기
@@ -47,10 +50,10 @@ export default function FeedList({
       setLoading(true);
       loadingRef.current = true;
       const url = query.trim()
-        ? `/feed?q=${encodeURIComponent(query.trim())}`
-        : "/feed";
+        ? `${basePath}?q=${encodeURIComponent(query.trim())}`
+        : basePath;
       window.history.replaceState(null, "", url);
-      const res = await loadFeeds(query, 0);
+      const res = await loadFeeds(query, 0, author);
       if (myReq !== reqIdRef.current) return; // 더 최신 검색이 진행 중이면 폐기
       setItems(res.items);
       setHasMore(res.hasMore);
@@ -58,20 +61,20 @@ export default function FeedList({
       loadingRef.current = false;
     }, 300);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [query, author, basePath]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
     const myReq = reqIdRef.current;
     setLoading(true);
     loadingRef.current = true;
-    const res = await loadFeeds(queryRef.current, itemsLenRef.current);
+    const res = await loadFeeds(queryRef.current, itemsLenRef.current, author);
     if (myReq !== reqIdRef.current) return; // 로드 중 검색이 바뀌면 폐기
     setItems((prev) => [...prev, ...res.items]);
     setHasMore(res.hasMore);
     setLoading(false);
     loadingRef.current = false;
-  }, []);
+  }, [author]);
 
   // 화면 하단 센티넬이 보이면 다음 페이지 로드
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -129,6 +132,7 @@ export default function FeedList({
                       비공개
                     </span>
                   )}
+                  {feed.authorName && <span>{feed.authorName} · </span>}
                   <time dateTime={feed.createdAt}>
                     {new Date(feed.createdAt).toLocaleDateString("ko-KR", {
                       timeZone: "Asia/Seoul",

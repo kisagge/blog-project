@@ -13,17 +13,24 @@ export async function searchFeeds({
   skip = 0,
   take = FEED_PAGE_SIZE,
   role,
+  author,
 }: {
   q?: string;
   skip?: number;
   take?: number;
   role: ViewerRole;
+  author?: "admin" | "member"; // 관리자 글(authorId null) vs 회원 글(authorId 있음)
 }) {
   const term = q.trim();
   const rows = await prisma.feed.findMany({
     where: {
       status: "published", // 임시저장(draft)은 공개 목록에서 제외
       visibility: { in: listableVisibilities(role) },
+      ...(author === "admin"
+        ? { authorId: null }
+        : author === "member"
+          ? { authorId: { not: null } }
+          : {}),
       ...(term && {
         OR: [
           { title: { contains: term } },
@@ -40,6 +47,7 @@ export async function searchFeeds({
       createdAt: true,
       viewCount: true,
       visibility: true,
+      author: { select: { nickname: true } },
     },
     skip,
     take: take + 1,

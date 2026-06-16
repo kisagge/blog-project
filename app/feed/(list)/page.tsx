@@ -1,6 +1,7 @@
 import { searchFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
 import FeedList from "./feed-list";
+import { toFeedCard } from "./feed-card";
 
 export const metadata = {
   title: "피드",
@@ -17,19 +18,16 @@ export default async function FeedListPage({
 }) {
   const q = (await searchParams).q ?? "";
   const role = await getViewerRole();
-  const { items, hasMore } = await searchFeeds({ q, role });
+  const { items, hasMore } = await searchFeeds({ q, role, author: "admin" });
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <h1 className="mb-8 text-2xl font-semibold tracking-tight">피드</h1>
       <FeedList
-        initialItems={items.map((f) => ({
-          ...f,
-          visibility: f.visibility as "public" | "members" | "private",
-          createdAt: f.createdAt.toISOString(),
-        }))}
+        initialItems={items.map(toFeedCard)}
         initialHasMore={hasMore}
         initialQuery={q}
+        author="admin"
       />
     </main>
   );

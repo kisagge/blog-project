@@ -118,6 +118,9 @@ export default function NavDrawer({
           <DrawerLink href="/feed" onClick={close}>
             피드
           </DrawerLink>
+          <DrawerLink href="/community" onClick={close}>
+            커뮤니티
+          </DrawerLink>
           <DrawerLink href="/df" onClick={close}>
             던파
           </DrawerLink>
