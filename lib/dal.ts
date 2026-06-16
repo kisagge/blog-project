@@ -27,3 +27,9 @@ export const verifySession = cache(async () => {
   if (session?.role !== "admin") redirect("/login");
   return session;
 });
+
+// 회원 세션이면 그대로(userId·nickname 포함), 아니면 null. 회원 전용 서버 액션 가드 공용.
+export const getMemberSession = cache(async () => {
+  const s = await getSession();
+  return s?.role === "member" ? s : null;
+});

@@ -3,13 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE } from "@/lib/feeds";
 import { getAdminNickname } from "@/lib/comment-actor";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import type { Result } from "@/lib/result";
 
 export type UserStatus = "pending" | "approved" | "rejected";
 export type UserRole = "member" | "admin";
-
-type Result<T = undefined> =
-  | { ok: true; value?: T }
-  | { ok: false; error: string };
 
 export const NICKNAME_TAKEN_MESSAGE = "이미 사용 중인 닉네임입니다.";
 

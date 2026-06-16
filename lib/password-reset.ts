@@ -3,12 +3,11 @@ import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { sendPasswordResetCode } from "@/lib/mailer";
+import type { Result } from "@/lib/result";
 
 const CODE_TTL_MS = 3 * 60 * 1000; // 코드 유효시간 3분
 const MAX_ATTEMPTS = 5; // 검증 시도 제한
 const VERIFY_GRACE_MS = 15 * 60 * 1000; // 검증 후 새 비번 입력 허용 시간
-
-type OkOr = { ok: true } | { ok: false; error: string };
 
 function generateCode(): string {
   return String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -52,7 +51,7 @@ export async function requestPasswordReset(
 export async function verifyResetCode(
   email: string,
   code: string,
-): Promise<OkOr> {
+): Promise<Result> {
   const normalized = email.trim().toLowerCase();
   const rec = await prisma.passwordResetCode.findFirst({
     where: { email: normalized, consumedAt: null },
@@ -81,7 +80,7 @@ export async function verifyResetCode(
 export async function resetPassword(
   email: string,
   newPassword: string,
-): Promise<OkOr> {
+): Promise<Result> {
   const normalized = email.trim().toLowerCase();
   const rec = await prisma.passwordResetCode.findFirst({
     where: { email: normalized, consumedAt: null, verifiedAt: { not: null } },
