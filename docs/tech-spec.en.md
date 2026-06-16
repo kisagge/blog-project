@@ -76,7 +76,7 @@ Extended auth from a single password-only admin to external members with a signu
 
 - **Union session**: the cookie payload is modeled as `{role:"admin"} | {role:"member", userId, nickname}`. A distributive `Omit` utility serializes it without losing member-only fields.
 - **Approval flow**: signup creates a `pending` user; an admin approval flips it to `approved`. Rejection keeps the row as `rejected` with a reason — re-applying with the same email reverts that row to `pending`, preserving the prior reason for the admin.
-- **Password reset**: a 6-digit code is emailed (stored as a scrypt hash, never in plaintext), with a 3-minute expiry and an attempt limit. With no SMTP configured it falls back to a console log so local dev isn't blocked.
+- **Password reset**: a 6-digit code is emailed (stored as a scrypt hash, never in plaintext), with a 3-minute expiry, an attempt limit, and a resend cooldown (anti email-bomb). With no SMTP configured it falls back to a console log so local dev isn't blocked.
 - Password hashing is implemented with the standard-library `scrypt` (`salt:hash`), verified without external dependencies.
 
 ### 4.5 Three-tier visibility & access control (shared by feed and DFO)
@@ -126,7 +126,7 @@ Combines title/body/summary substring search with 10-item infinite scroll.
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 191**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 192**.
 
 ### 4.12 Content reporting & moderation
 
@@ -142,5 +142,5 @@ Added user reporting of member content (comments and member posts) with admin mo
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 191); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 192); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

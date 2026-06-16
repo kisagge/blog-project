@@ -137,11 +137,16 @@ describe("password-reset", () => {
     expect(await pr.verifyResetCode("fail@x.com", code)).toEqual({ ok: true });
   });
 
-  test("재요청 시 이전 코드는 폐기되고 새 코드만 유효", async () => {
+  test("재요청 시(쿨다운 경과 후) 이전 코드는 폐기되고 새 코드만 유효", async () => {
     await approvedMember("re@x.com");
     sendMock.mockClear();
     await pr.requestPasswordReset("re@x.com");
     const old = sendMock.mock.calls[0][1] as string;
+    // 쿨다운 경과를 흉내내기 위해 직전 코드의 createdAt을 과거로.
+    await prisma.passwordResetCode.updateMany({
+      where: { email: "re@x.com", consumedAt: null },
+      data: { createdAt: new Date(Date.now() - 2 * 60 * 1000) },
+    });
     await pr.requestPasswordReset("re@x.com");
     const fresh = sendMock.mock.calls[1][1] as string;
     // 이전 코드는 더 이상 매칭되지 않음(폐기). 새 코드만 유효.
@@ -149,5 +154,25 @@ describe("password-reset", () => {
       expect((await pr.verifyResetCode("re@x.com", old)).ok).toBe(false);
     }
     expect(await pr.verifyResetCode("re@x.com", fresh)).toEqual({ ok: true });
+  });
+
+  test("재발송 쿨다운: 쿨다운 내 재요청은 발송·코드 교체 없이 기존 유지(스팸 방지)", async () => {
+    await approvedMember("cool@x.com");
+    sendMock.mockClear();
+    const first = await pr.requestPasswordReset("cool@x.com");
+    expect(sendMock).toHaveBeenCalledTimes(1);
+    const before = await prisma.passwordResetCode.findFirst({
+      where: { email: "cool@x.com", consumedAt: null },
+      orderBy: { createdAt: "desc" },
+    });
+    // 곧바로 재요청(재전송 난타) → 쿨다운으로 추가 발송·코드 교체 없음.
+    const second = await pr.requestPasswordReset("cool@x.com");
+    expect(sendMock).toHaveBeenCalledTimes(1);
+    expect(second.expiresAt.toISOString()).toBe(first.expiresAt.toISOString());
+    const after = await prisma.passwordResetCode.findFirst({
+      where: { email: "cool@x.com", consumedAt: null },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(after!.id).toBe(before!.id);
   });
 });

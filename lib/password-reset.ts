@@ -8,6 +8,7 @@ import type { Result } from "@/lib/result";
 const CODE_TTL_MS = 3 * 60 * 1000; // 코드 유효시간 3분
 const MAX_ATTEMPTS = 5; // 검증 시도 제한
 const VERIFY_GRACE_MS = 15 * 60 * 1000; // 검증 후 새 비번 입력 허용 시간
+const RESEND_COOLDOWN_MS = 60 * 1000; // 같은 이메일 재발송 최소 간격(메일 폭탄 방지)
 
 function generateCode(): string {
   return String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -25,6 +26,16 @@ export async function requestPasswordReset(
     select: { role: true, status: true },
   });
   if (user && user.role === "member" && user.status === "approved") {
+    // 재발송 쿨다운: 최근 미사용 코드가 쿨다운 내면 새 코드·메일을 보내지 않음
+    // (재전송 난타로 인한 메일 폭탄 방지). 기존 만료시각을 그대로 반환해 타이머 유지.
+    const recent = await prisma.passwordResetCode.findFirst({
+      where: { email: normalized, consumedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true, expiresAt: true },
+    });
+    if (recent && Date.now() - recent.createdAt.getTime() < RESEND_COOLDOWN_MS) {
+      return { expiresAt: recent.expiresAt };
+    }
     const code = generateCode();
     // 이메일별 미사용 코드는 폐기하고 새로 발급(최신 1건만 유효).
     await prisma.passwordResetCode.deleteMany({
