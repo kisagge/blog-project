@@ -77,6 +77,7 @@ export default async function FeedDetailPage({
         <FeedArticle
           feed={feed}
           authorName={feed.author?.nickname}
+          authorId={feed.authorId}
           tags={feed.feedTags.map((ft) => ft.tag)}
         />
         <div className="mt-6">
@@ -121,6 +122,7 @@ export default async function FeedDetailPage({
       <FeedArticle
         feed={feed}
         authorName={authorName}
+        authorId={feed.authorId}
         tags={feed.feedTags.map((ft) => ft.tag)}
       />
       {/* 비공개(초안)는 공유해도 타인에겐 404, 차단 회원은 공유 불가 — 공유 버튼 비노출. */}

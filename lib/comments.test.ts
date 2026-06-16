@@ -53,6 +53,31 @@ describe("comments", () => {
     expect(items[0].nickname).toBe("앨리스");
     expect(items[0].replies).toHaveLength(0);
   });
+  test("authorRole: 회원 댓글은 member, 관리자 댓글은 admin", async () => {
+    const f = await prisma.feed.create({
+      data: { slug: "fr", title: "FR", content: "c", visibility: "public" },
+    });
+    const adminU = await prisma.user.create({
+      data: {
+        email: "admin2@x.com",
+        nickname: "관리",
+        passwordHash: "-",
+        status: "approved",
+        role: "admin",
+      },
+    });
+    await m.addComment({ feedId: f.id, userId: alice, content: "회원댓글" });
+    await m.addComment({ feedId: f.id, userId: adminU.id, content: "관리자댓글" });
+    const byContent = new Map(
+      (await m.getFeedComments(f.id, { sort: "newest" })).items.map((c) => [
+        c.content,
+        c.authorRole,
+      ]),
+    );
+    expect(byContent.get("회원댓글")).toBe("member");
+    expect(byContent.get("관리자댓글")).toBe("admin");
+  });
+
   test("대댓글(2뎁스)은 허용", async () => {
     const top = (await m.getFeedComments(feedId)).items[0];
     const r = await m.addComment({

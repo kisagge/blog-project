@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import CommentBody from "./comment-body";
 import CommentForm from "./comment-form";
 import CommentLikeButton from "./comment-like-button";
@@ -52,9 +53,18 @@ export default function CommentItem({
       }`}
     >
       <div className="flex items-center gap-2 text-sm">
-        <span className="font-medium">
-          {node.deleted ? "—" : node.nickname}
-        </span>
+        {node.deleted ? (
+          <span className="font-medium">—</span>
+        ) : node.authorRole === "member" ? (
+          <Link
+            href={`/u/${node.userId}`}
+            className="font-medium hover:underline"
+          >
+            {node.nickname}
+          </Link>
+        ) : (
+          <span className="font-medium">{node.nickname}</span>
+        )}
         <time className="text-xs text-zinc-400">
           {new Date(node.createdAt).toLocaleString("ko-KR", {
             timeZone: "Asia/Seoul",
