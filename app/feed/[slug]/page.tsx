@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFeedBySlug, searchFeeds } from "@/lib/feeds";
-import { getViewerRole, getSession } from "@/lib/dal";
+import { getViewerRole, getSession, isBlockedMember } from "@/lib/dal";
 import { getAdminNickname } from "@/lib/comment-actor";
 import { checkAccess, type Visibility } from "@/lib/visibility";
 import FeedArticle from "@/app/feed/feed-article";
@@ -110,13 +110,14 @@ export default async function FeedDetailPage({
   const sort = sp.sort === "newest" ? "newest" : "popular";
   // 작성자 표시: 회원 글이면 작성자 닉네임, 관리자 글이면 관리자 닉네임.
   const authorName = feed.author?.nickname ?? (await getAdminNickname());
+  const blocked = await isBlockedMember(); // 차단 회원은 공유 버튼 비노출
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <ViewTracker type="feed" id={feed.id} />
       <FeedArticle feed={feed} authorName={authorName} />
-      {/* 비공개(초안)는 공유해도 타인에겐 404 — 공유 버튼 비노출. */}
-      {feed.visibility !== "private" && (
+      {/* 비공개(초안)는 공유해도 타인에겐 404, 차단 회원은 공유 불가 — 공유 버튼 비노출. */}
+      {feed.visibility !== "private" && !blocked && (
         <div className="mt-6 border-t border-black/[.06] pt-6 dark:border-white/[.1]">
           <ShareBar
             url={absoluteUrl(`/feed/${feed.slug}`)}

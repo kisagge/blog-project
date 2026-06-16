@@ -20,7 +20,7 @@ export default async function AdminDashboardPage() {
     countFeeds(),
     getPublicEnabled(),
     countUsersByStatus("pending"),
-    countUsersByStatus("approved"),
+    countUsersByStatus(["approved", "blocked"]),
     listFeatured(),
     countTodayVisitors(),
   ]);
@@ -39,18 +39,13 @@ export default async function AdminDashboardPage() {
           sub={`공개 ${feeds.public} · 회원 ${feeds.members} · 비공개 ${feeds.private}`}
         />
         <Card
-          href="/admin/members"
+          href="/admin/members/pending"
           label="가입 대기"
           value={`${pendingCount}`}
           sub={pendingCount > 0 ? "승인 필요" : "없음"}
           highlight={pendingCount > 0}
         />
-        <Card
-          href="/admin/members"
-          label="회원"
-          value={`${memberCount}`}
-          sub="승인됨"
-        />
+        <Card href="/admin/members" label="회원" value={`${memberCount}`} />
         <Card
           href="/admin/df"
           label="던파 캐릭터"
@@ -85,7 +80,7 @@ function Card({
   href: string;
   label: string;
   value: string;
-  sub: string;
+  sub?: string;
   highlight?: boolean;
 }) {
   return (
@@ -99,7 +94,7 @@ function Card({
     >
       <span className="text-sm text-zinc-500">{label}</span>
       <span className="text-2xl font-semibold tracking-tight">{value}</span>
-      <span className="text-xs text-zinc-500">{sub}</span>
+      {sub && <span className="text-xs text-zinc-500">{sub}</span>}
     </Link>
   );
 }

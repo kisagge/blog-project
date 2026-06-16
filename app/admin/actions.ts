@@ -88,7 +88,7 @@ export async function setSitePublic(formData: FormData) {
 export async function approveUserAction(formData: FormData) {
   await verifySession();
   await approveUser(String(formData.get("id") ?? ""));
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout"); // 회원 관리 탭(대기/회원) 모두 갱신
 }
 
 export async function rejectUserAction(formData: FormData) {
@@ -97,7 +97,7 @@ export async function rejectUserAction(formData: FormData) {
     String(formData.get("id") ?? ""),
     String(formData.get("reason") ?? ""),
   );
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 export async function blockUserAction(formData: FormData) {

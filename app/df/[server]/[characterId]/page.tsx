@@ -31,7 +31,7 @@ import {
   getFeaturedByCharacter,
   listFeaturedVisible,
 } from "@/lib/df-characters";
-import { getViewerRole } from "@/lib/dal";
+import { getViewerRole, isBlockedMember } from "@/lib/dal";
 import { checkAccess, type Visibility } from "@/lib/visibility";
 import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
@@ -79,9 +79,10 @@ export default async function DfDetailPage({
 }) {
   const { server, characterId } = await params;
   // 등록된 쇼케이스 캐릭터만 상세 노출 + 공개 범위 접근 제어.
-  const [featured, role] = await Promise.all([
+  const [featured, role, blocked] = await Promise.all([
     getFeaturedByCharacter(server, characterId).catch(() => null),
     getViewerRole(),
+    isBlockedMember(),
   ]);
   if (!featured) notFound();
   const access = checkAccess(featured.visibility as Visibility, role);
@@ -198,8 +199,8 @@ export default async function DfDetailPage({
             characterId={characterId}
             viewCount={featured?.viewCount}
           />
-          {/* 비공개(초안)는 공유해도 타인에겐 404 — 공유 버튼 비노출. */}
-          {featured?.visibility !== "private" && (
+          {/* 비공개(초안)는 404, 차단 회원은 공유 불가 — 공유 버튼 비노출. */}
+          {featured?.visibility !== "private" && !blocked && (
             <ShareBar
               url={absoluteUrl(`/df/${server}/${characterId}`)}
               title={status.characterName}

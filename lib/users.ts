@@ -154,8 +154,13 @@ export async function listUsersByStatus(status: UserStatus) {
 }
 
 // 관리자 대시보드용 카운트.
-export async function countUsersByStatus(status: UserStatus) {
-  return prisma.user.count({ where: { status, role: "member" } });
+export async function countUsersByStatus(status: UserStatus | UserStatus[]) {
+  return prisma.user.count({
+    where: {
+      status: Array.isArray(status) ? { in: status } : status,
+      role: "member",
+    },
+  });
 }
 
 // 관리자용: 상태별 페이지 단위(기본 20). 목록 + 전체 개수 반환.
