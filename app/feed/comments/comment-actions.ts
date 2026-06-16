@@ -60,6 +60,7 @@ export async function addCommentAction(
       id: res.id,
       userId: actor.userId,
       nickname: actor.nickname,
+      authorRole: actor.role,
       content: content.trim(),
       deleted: false,
       createdAt: new Date().toISOString(),

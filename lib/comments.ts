@@ -47,6 +47,7 @@ export type CommentNode = {
   id: string;
   nickname: string;
   userId: string;
+  authorRole: "member" | "admin"; // 회원 작성자만 프로필 링크 노출용
   content: string;
   deleted: boolean;
   createdAt: string;
@@ -62,7 +63,7 @@ function toNode(
     content: string;
     deletedAt: Date | null;
     createdAt: Date;
-    user: { nickname: string };
+    user: { nickname: string; role: string };
     _count: { commentLikes: number };
   },
   likedIds: Set<string>,
@@ -72,6 +73,7 @@ function toNode(
     id: c.id,
     userId: c.userId,
     nickname: c.user.nickname,
+    authorRole: c.user.role === "admin" ? "admin" : "member",
     content: deleted ? "" : c.content,
     deleted,
     createdAt: c.createdAt.toISOString(),
@@ -89,7 +91,7 @@ const NODE_SELECT = {
   deletedAt: true,
   createdAt: true,
   parentId: true,
-  user: { select: { nickname: true } },
+  user: { select: { nickname: true, role: true } },
   _count: { select: { commentLikes: true } },
 } as const;
 

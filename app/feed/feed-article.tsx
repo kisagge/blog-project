@@ -9,6 +9,7 @@ import Toc from "@/app/feed/toc";
 export default function FeedArticle({
   feed,
   authorName,
+  authorId,
   tags = [],
 }: {
   feed: {
@@ -18,6 +19,7 @@ export default function FeedArticle({
     viewCount?: number;
   };
   authorName?: string;
+  authorId?: string | null; // 회원 글이면 작성자 id(프로필 링크). 관리자 글은 null/undefined.
   tags?: { name: string; slug: string }[];
 }) {
   const minutes = readingTimeMinutes(feed.content);
@@ -27,7 +29,17 @@ export default function FeedArticle({
       <header className="mb-8 border-b border-black/[.06] pb-6 dark:border-white/[.1]">
         <h1 className="text-3xl font-semibold tracking-tight">{feed.title}</h1>
         <p className="mt-2 text-sm text-zinc-500">
-          {authorName && <span>{authorName} · </span>}
+          {authorName &&
+            (authorId ? (
+              <span>
+                <Link href={`/u/${authorId}`} className="hover:underline">
+                  {authorName}
+                </Link>{" "}
+                ·{" "}
+              </span>
+            ) : (
+              <span>{authorName} · </span>
+            ))}
           <time dateTime={feed.createdAt.toISOString()}>
             {feed.createdAt.toLocaleDateString("ko-KR", {
               timeZone: "Asia/Seoul",

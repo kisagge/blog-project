@@ -50,7 +50,7 @@ export async function searchFeeds({
       createdAt: true,
       viewCount: true,
       visibility: true,
-      author: { select: { nickname: true } },
+      author: { select: { id: true, nickname: true } },
       feedTags: { select: { tag: { select: { name: true, slug: true } } } },
     },
     skip,
@@ -66,7 +66,7 @@ export const getFeedBySlug = cache(async (slug: string) => {
   return prisma.feed.findUnique({
     where: { slug },
     include: {
-      author: { select: { nickname: true } },
+      author: { select: { id: true, nickname: true } },
       feedTags: { select: { tag: { select: { name: true, slug: true } } } },
     },
   });

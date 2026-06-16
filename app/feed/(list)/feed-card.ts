@@ -9,6 +9,7 @@ export type FeedCard = {
   viewCount: number;
   visibility: Visibility;
   authorName: string | null; // 회원 글이면 작성자 닉네임(관리자 글은 null)
+  authorId: string | null; // 회원 글이면 작성자 id(프로필 링크), 관리자 글은 null
   tags: { name: string; slug: string }[];
 };
 
@@ -20,7 +21,7 @@ export function toFeedCard(f: {
   createdAt: Date;
   viewCount: number;
   visibility: string;
-  author: { nickname: string } | null;
+  author: { id: string; nickname: string } | null;
   feedTags?: { tag: { name: string; slug: string } }[];
 }): FeedCard {
   return {
@@ -31,6 +32,7 @@ export function toFeedCard(f: {
     viewCount: f.viewCount,
     visibility: f.visibility as Visibility,
     authorName: f.author?.nickname ?? null,
+    authorId: f.author?.id ?? null,
     tags: (f.feedTags ?? []).map((ft) => ft.tag),
   };
 }

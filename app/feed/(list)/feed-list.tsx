@@ -142,6 +142,7 @@ export default function FeedList({
               key={feed.slug}
               className="border-b border-black/[.06] pb-6 dark:border-white/[.1]"
             >
+              {/* 카드 링크는 제목·요약만 감싼다(작성자 프로필 링크와 앵커 중첩 방지). */}
               <Link href={`/feed/${feed.slug}`} className="group block">
                 <h2 className="text-xl font-medium tracking-tight group-hover:underline">
                   {feed.title}
@@ -151,21 +152,34 @@ export default function FeedList({
                     {feed.summary}
                   </p>
                 )}
-                <p className="mt-2 text-sm text-zinc-500">
-                  {feed.visibility === "private" && (
-                    <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                      비공개
-                    </span>
-                  )}
-                  {feed.authorName && <span>{feed.authorName} · </span>}
-                  <time dateTime={feed.createdAt}>
-                    {new Date(feed.createdAt).toLocaleDateString("ko-KR", {
-                      timeZone: "Asia/Seoul",
-                    })}
-                  </time>
-                  <span> · 조회 {feed.viewCount.toLocaleString()}</span>
-                </p>
               </Link>
+              <p className="mt-2 text-sm text-zinc-500">
+                {feed.visibility === "private" && (
+                  <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                    비공개
+                  </span>
+                )}
+                {feed.authorName &&
+                  (feed.authorId ? (
+                    <span>
+                      <Link
+                        href={`/u/${feed.authorId}`}
+                        className="hover:underline"
+                      >
+                        {feed.authorName}
+                      </Link>{" "}
+                      ·{" "}
+                    </span>
+                  ) : (
+                    <span>{feed.authorName} · </span>
+                  ))}
+                <time dateTime={feed.createdAt}>
+                  {new Date(feed.createdAt).toLocaleDateString("ko-KR", {
+                    timeZone: "Asia/Seoul",
+                  })}
+                </time>
+                <span> · 조회 {feed.viewCount.toLocaleString()}</span>
+              </p>
               {feed.tags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {feed.tags.map((t) => (
