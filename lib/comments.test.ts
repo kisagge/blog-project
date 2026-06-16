@@ -195,4 +195,37 @@ describe("getCommentsByUser", () => {
     expect(list[0].feed.title).toBe("F");
     expect(await m.getCommentsByUser(u, 1)).toHaveLength(1); // take 상한
   });
+
+  test("비공개·초안 피드의 댓글은 제외(피드 제목 노출 방지)", async () => {
+    const u = (
+      await prisma.user.create({
+        data: {
+          email: "leak@x.com",
+          nickname: "리크",
+          passwordHash: "-",
+          status: "approved",
+        },
+      })
+    ).id;
+    const priv = await prisma.feed.create({
+      data: { slug: "secret", title: "비밀", content: "c", visibility: "private" },
+    });
+    const draft = await prisma.feed.create({
+      data: {
+        slug: "wip",
+        title: "초안",
+        content: "c",
+        visibility: "members",
+        status: "draft",
+      },
+    });
+    const open = await prisma.feed.create({
+      data: { slug: "open", title: "공개", content: "c", visibility: "members" },
+    });
+    for (const f of [priv.id, draft.id, open.id]) {
+      await prisma.comment.create({ data: { feedId: f, userId: u, content: "x" } });
+    }
+    const list = await m.getCommentsByUser(u, 20);
+    expect(list.map((c) => c.feed.slug)).toEqual(["open"]); // 비공개·초안 제외
+  });
 });

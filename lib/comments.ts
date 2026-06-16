@@ -205,7 +205,12 @@ export async function getCommentsByUser(
   take = 20,
 ): Promise<UserCommentItem[]> {
   const rows = await prisma.comment.findMany({
-    where: { userId, deletedAt: null },
+    // 피드가 게시·비공개아님일 때만(비공개/초안 피드 제목·slug 노출 방지).
+    where: {
+      userId,
+      deletedAt: null,
+      feed: { status: "published", visibility: { not: "private" } },
+    },
     orderBy: { createdAt: "desc" },
     take,
     select: {
