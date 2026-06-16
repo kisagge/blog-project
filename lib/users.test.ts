@@ -146,4 +146,27 @@ describe("users", () => {
     const after = await m.findUserByEmail("a@x.com");
     expect(after?.nickname).toBe("새닉네임");
   });
+
+  test("isNicknameTaken: 다른 회원·관리자 닉네임은 taken, 본인·미사용은 아님", async () => {
+    await m.createPendingUser({
+      email: "nick-x@x.com",
+      nickname: "중복닉",
+      password: "password1",
+    });
+    const x = await m.findUserByEmail("nick-x@x.com");
+    expect(await m.isNicknameTaken("중복닉")).toBe(true);
+    expect(await m.isNicknameTaken("  중복닉  ")).toBe(true); // trim 비교
+    expect(await m.isNicknameTaken("중복닉", x!.id)).toBe(false); // 본인 제외
+    expect(await m.isNicknameTaken("관리자")).toBe(true); // 예약 관리자 기본 닉네임
+    expect(await m.isNicknameTaken("아무도안쓰는닉")).toBe(false);
+  });
+
+  test("가입 시 중복 닉네임은 거부", async () => {
+    const r = await m.createPendingUser({
+      email: "nick-dup@x.com",
+      nickname: "중복닉",
+      password: "password1",
+    });
+    expect(r).toEqual({ ok: false, error: m.NICKNAME_TAKEN_MESSAGE });
+  });
 });

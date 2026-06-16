@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE } from "@/lib/feeds";
+import { getAdminNickname } from "@/lib/comment-actor";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
 export type UserStatus = "pending" | "approved" | "rejected";
@@ -9,6 +10,26 @@ export type UserRole = "member" | "admin";
 type Result<T = undefined> =
   | { ok: true; value?: T }
   | { ok: false; error: string };
+
+export const NICKNAME_TAKEN_MESSAGE = "이미 사용 중인 닉네임입니다.";
+
+// 닉네임 중복(다른 회원 + 예약 관리자 닉네임, 행 미존재 시 기본값 포함). exceptUserId는 본인 제외.
+export async function isNicknameTaken(
+  nickname: string,
+  exceptUserId?: string,
+): Promise<boolean> {
+  const trimmed = nickname.trim();
+  // 관리자 닉네임 선점 방지(관리자 User 행이 없을 때의 기본값까지 차단).
+  if (trimmed === (await getAdminNickname()).trim()) return true;
+  const found = await prisma.user.findFirst({
+    where: {
+      nickname: trimmed,
+      ...(exceptUserId ? { id: { not: exceptUserId } } : {}),
+    },
+    select: { id: true },
+  });
+  return found !== null;
+}
 
 export async function createPendingUser(input: {
   email: string;
@@ -28,6 +49,8 @@ export async function createPendingUser(input: {
       };
     if (existing.status === "approved")
       return { ok: false, error: "이미 가입된 이메일입니다." };
+    if (await isNicknameTaken(input.nickname, existing.id))
+      return { ok: false, error: NICKNAME_TAKEN_MESSAGE };
     // rejected → 재신청: 같은 행을 pending으로 되돌리고 새 입력값으로 갱신.
     // 이전 rejectionReason/rejectedAt는 보존(관리자가 과거 거절 사유 참고).
     await prisma.user.update({
@@ -40,6 +63,8 @@ export async function createPendingUser(input: {
     });
     return { ok: true };
   }
+  if (await isNicknameTaken(input.nickname))
+    return { ok: false, error: NICKNAME_TAKEN_MESSAGE };
   await prisma.user.create({
     data: {
       email,

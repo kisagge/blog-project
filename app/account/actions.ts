@@ -2,7 +2,11 @@
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/dal";
 import { NicknameSchema } from "@/lib/validation";
-import { updateNickname } from "@/lib/users";
+import {
+  updateNickname,
+  isNicknameTaken,
+  NICKNAME_TAKEN_MESSAGE,
+} from "@/lib/users";
 import { createMemberSession } from "@/lib/session";
 
 export type AccountState =
@@ -20,6 +24,9 @@ export async function updateNicknameAction(
     nickname: String(formData.get("nickname") ?? ""),
   });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+
+  if (await isNicknameTaken(parsed.data.nickname, session.userId))
+    return { errors: { nickname: [NICKNAME_TAKEN_MESSAGE] } };
 
   const nickname = await updateNickname(session.userId, parsed.data.nickname);
   await createMemberSession(session.userId, nickname); // 세션 닉네임 갱신

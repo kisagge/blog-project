@@ -30,7 +30,7 @@ afterAll(async () => {
 async function approvedMember(email: string) {
   await users.createPendingUser({
     email,
-    nickname: "n",
+    nickname: email.split("@")[0], // 닉네임 고유 규칙 — 이메일 로컬파트로 구분
     password: "Aa1!aaaa",
   });
   const u = await users.findUserByEmail(email);

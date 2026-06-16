@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { updateNicknameAction, type AccountState } from "./actions";
 
 const inputCls =
@@ -16,6 +16,9 @@ export default function AccountForm({
     updateNicknameAction,
     undefined,
   );
+  const [value, setValue] = useState(nickname);
+  // 변경 없음(기존과 동일) 또는 빈 값이면 저장 비활성.
+  const dirty = value.trim() !== nickname.trim() && value.trim() !== "";
 
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
@@ -28,12 +31,17 @@ export default function AccountForm({
         <span className="text-zinc-500">닉네임</span>
         <input
           name="nickname"
-          defaultValue={nickname}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
           maxLength={20}
+          aria-invalid={state?.errors?.nickname ? true : undefined}
+          aria-describedby={
+            state?.errors?.nickname ? "nickname-error" : undefined
+          }
           className={inputCls}
         />
         {state?.errors?.nickname && (
-          <span className="text-xs text-red-600">
+          <span id="nickname-error" className="text-xs text-red-600">
             {state.errors.nickname[0]}
           </span>
         )}
@@ -52,7 +60,7 @@ export default function AccountForm({
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || !dirty}
         className="bg-foreground text-background rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
       >
         {pending ? "저장 중…" : "저장"}
