@@ -163,6 +163,36 @@ describe("searchFeeds", () => {
     expect(m.items.map((f) => f.slug)).toEqual(["umem-1"]);
   });
 
+  test("author=admin: 관리자 글만(회원 글 제외)", async () => {
+    // 회원 작성 글은 author=admin에 안 나옴
+    expect(
+      (await searchFeeds({ role: "member", q: "회원작성단어", author: "admin" }))
+        .items,
+    ).toHaveLength(0);
+    // 관리자 회원공개 글은 나옴
+    const a = await searchFeeds({
+      role: "member",
+      q: "회원전용단어",
+      author: "admin",
+    });
+    expect(a.items.map((f) => f.slug)).toEqual(["mem-1"]);
+  });
+
+  test("author=member: 회원 글만(관리자 글 제외)", async () => {
+    // 회원 글만 나옴(작성자 닉네임 포함)
+    const m = await searchFeeds({ role: "member", author: "member" });
+    expect(m.items.every((f) => f.slug === "umem-1")).toBe(true);
+    expect(m.items.map((f) => f.slug)).toContain("umem-1");
+    // 관리자 회원공개 글(mem-1)은 회원 목록에 없음
+    expect(
+      (await searchFeeds({ role: "member", q: "회원전용단어", author: "member" }))
+        .items,
+    ).toHaveLength(0);
+    // 작성자 닉네임이 실려옴
+    const card = m.items.find((f) => f.slug === "umem-1");
+    expect(card?.author?.nickname).toBe("유저1");
+  });
+
   test("countFeeds: 관리자 글만 집계(회원 글 제외)", async () => {
     expect(await countFeeds()).toEqual({
       total: 14,
