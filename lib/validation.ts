@@ -38,6 +38,18 @@ export const CommentSchema = z.object({
     .max(2000, "댓글은 2000자 이하여야 합니다."),
 });
 
+// 콘텐츠 신고: 사유(필수) + 상세(선택, 500자).
+export const ReportSchema = z.object({
+  reason: z.enum(["spam", "abuse", "illegal", "etc"], {
+    message: "신고 사유를 선택하세요.",
+  }),
+  detail: z
+    .string()
+    .trim()
+    .max(500, "상세 설명은 500자 이하여야 합니다.")
+    .optional(),
+});
+
 // 비밀번호 규칙: 8자 이상 + 소문자·대문자·숫자·특수문자 각 1개 이상. 가입·재설정 공용.
 const passwordField = z
   .string()

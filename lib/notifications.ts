@@ -72,6 +72,18 @@ export async function notifyFeedComment(args: {
   await sendToUser(ownerId, { title: "새 댓글", body, url });
 }
 
+// 새 신고 접수 → 예약 관리자에게 인앱 알림 + 푸시. 신고 큐로 딥링크.
+export async function notifyAdminReport(args: {
+  targetType: "comment" | "feed";
+}) {
+  const adminId = (await ensureAdminUser()).id;
+  const what = args.targetType === "comment" ? "댓글" : "글";
+  const body = `새 ${what} 신고가 접수되었습니다.`;
+  const url = "/admin/reports";
+  await createNotification(adminId, body, url);
+  await sendToUser(adminId, { title: "새 신고", body, url });
+}
+
 // 알림 수신자 id: 회원은 본인, 관리자는 예약 관리자 User. 없으면 null.
 export async function notificationRecipientId(): Promise<string | null> {
   const s = await getSession();

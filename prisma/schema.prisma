@@ -23,6 +23,7 @@ model Feed {
   authorId  String?              // null=관리자/기존 글, 값=회원 작성자(User.id)
   viewCount Int      @default(0)        // 누적 조회수(방문자·하루 단위 중복 제거 후 집계)
   publishedAt DateTime?          // 게시(공개 전환) 시각 — 하루 게시 제한·표시용
+  hiddenAt  DateTime?            // 신고로 가려진(모더레이션 숨김) 시각. null=정상. 사용자 삭제와 별개·복구 가능
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   author    User?     @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -83,6 +84,7 @@ model User {
   pushSubscriptions PushSubscription[]
   notifications Notification[]
   feeds     Feed[]
+  reports   Report[]
 }
 
 // 인앱 알림(회원별). 답글 등 이벤트 시 생성, readAt로 읽음 관리.
@@ -159,6 +161,7 @@ model Comment {
   parentId  String?
   content   String
   deletedAt DateTime?
+  hiddenAt  DateTime?           // 신고로 가려진(모더레이션 숨김) 시각. null=정상. 사용자 삭제(deletedAt)와 별개·복구 가능
   createdAt DateTime  @default(now())
   feed      Feed      @relation(fields: [feedId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])
@@ -169,6 +172,23 @@ model Comment {
   @@index([feedId])
   @@index([parentId])
   @@index([userId, createdAt])
+}
+
+// 콘텐츠 신고(댓글·회원 글). 관리자가 큐에서 검토해 숨김/기각.
+model Report {
+  id         String    @id @default(uuid())
+  targetType String              // "comment" | "feed"
+  targetId   String              // 대상 Comment.id / Feed.id
+  reporterId String              // 신고한 회원(User.id)
+  reason     String              // "spam" | "abuse" | "illegal" | "etc"
+  detail     String?             // 선택 상세 설명(최대 500자)
+  status     String    @default("pending") // "pending" | "resolved"(숨김 처리) | "dismissed"(기각)
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  reporter   User      @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([targetType, targetId, reporterId]) // 같은 회원의 동일 대상 중복 신고 방지
+  @@index([status, createdAt])                  // 큐 조회
 }
 
 model CommentLike {

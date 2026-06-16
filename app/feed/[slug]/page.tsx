@@ -9,6 +9,7 @@ import FeedEngagement from "@/app/feed/feed-engagement";
 import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
 import ShareBar from "@/app/share-bar";
+import ReportButton from "@/app/report/report-button";
 import { absoluteUrl, firstContentImage, toAbsolute } from "@/lib/share";
 
 // 임시저장(draft) 글은 작성자 본인(또는 관리자)만 볼 수 있다.
@@ -115,6 +116,11 @@ export default async function FeedDetailPage({
   // 작성자 표시: 회원 글이면 작성자 닉네임, 관리자 글이면 관리자 닉네임.
   const authorName = feed.author?.nickname ?? (await getAdminNickname());
   const blocked = await isBlockedMember(); // 차단 회원은 공유 버튼 비노출
+  // 신고: 회원이 본인 아닌 회원 글에만(관리자 글·본인 글 제외).
+  const canReportFeed =
+    session?.role === "member" &&
+    !!feed.authorId &&
+    session.userId !== feed.authorId;
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
@@ -138,6 +144,11 @@ export default async function FeedDetailPage({
               return i ? toAbsolute(i) : undefined;
             })()}
           />
+        </div>
+      )}
+      {canReportFeed && (
+        <div className="mt-4 text-right text-xs text-zinc-400">
+          <ReportButton targetType="feed" targetId={feed.id} />
         </div>
       )}
       <FeedEngagement

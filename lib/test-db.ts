@@ -18,6 +18,7 @@ const SCHEMA = [
     "authorId" TEXT,
     "viewCount" INTEGER NOT NULL DEFAULT 0,
     "publishedAt" DATETIME,
+    "hiddenAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "Feed_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -103,6 +104,7 @@ const SCHEMA = [
     "parentId" TEXT,
     "content" TEXT NOT NULL,
     "deletedAt" DATETIME,
+    "hiddenAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Comment_feedId_fkey" FOREIGN KEY ("feedId") REFERENCES "Feed" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "Comment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -129,6 +131,20 @@ const SCHEMA = [
   `CREATE INDEX "Comment_userId_createdAt_idx" ON "Comment"("userId", "createdAt")`,
   `CREATE UNIQUE INDEX "Like_feedId_userId_key" ON "Like"("feedId", "userId")`,
   `CREATE UNIQUE INDEX "CommentLike_commentId_userId_key" ON "CommentLike"("commentId", "userId")`,
+  `CREATE TABLE "Report" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "targetType" TEXT NOT NULL,
+    "targetId" TEXT NOT NULL,
+    "reporterId" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "detail" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "resolvedAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Report_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE INDEX "Report_status_createdAt_idx" ON "Report"("status", "createdAt")`,
+  `CREATE UNIQUE INDEX "Report_targetType_targetId_reporterId_key" ON "Report"("targetType", "targetId", "reporterId")`,
   `CREATE TABLE "Tag" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
