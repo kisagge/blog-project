@@ -14,20 +14,29 @@ export const dynamic = "force-dynamic";
 export default async function FeedListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; tag?: string }>;
 }) {
-  const q = (await searchParams).q ?? "";
+  const sp = await searchParams;
+  const q = sp.q ?? "";
+  const tag = sp.tag || undefined;
   const role = await getViewerRole();
-  const { items, hasMore } = await searchFeeds({ q, role, author: "admin" });
+  const { items, hasMore } = await searchFeeds({
+    q,
+    role,
+    author: "admin",
+    tag,
+  });
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <h1 className="mb-8 text-2xl font-semibold tracking-tight">피드</h1>
       <FeedList
+        key={tag ?? ""}
         initialItems={items.map(toFeedCard)}
         initialHasMore={hasMore}
         initialQuery={q}
         author="admin"
+        initialTag={tag}
       />
     </main>
   );

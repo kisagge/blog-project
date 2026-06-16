@@ -9,6 +9,7 @@ type Props = {
   initialHasMore: boolean;
   initialQuery: string;
   author?: "admin" | "member"; // 어느 목록인지(관리자 글/회원 글) — 무한스크롤에도 전달
+  initialTag?: string; // 태그 slug 필터(URL ?tag=). 변경 시 page에서 key로 remount.
 };
 
 export default function FeedList({
@@ -16,12 +17,14 @@ export default function FeedList({
   initialHasMore,
   initialQuery,
   author,
+  initialTag,
 }: Props) {
   const [items, setItems] = useState(initialItems);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
   const basePath = author === "member" ? "/community" : "/feed";
+  const tag = initialTag; // 마운트 동안 고정(태그 변경은 key remount로 처리)
 
   // 최신 상태를 옵저버/비동기 콜백에서 참조하기 위한 ref(스테일 클로저 방지)
   const reqIdRef = useRef(0); // 검색이 바뀔 때마다 증가 → 지난 요청 결과를 폐기
@@ -50,11 +53,12 @@ export default function FeedList({
       const myReq = ++reqIdRef.current;
       setLoading(true);
       loadingRef.current = true;
-      const url = query.trim()
-        ? `${basePath}?q=${encodeURIComponent(query.trim())}`
-        : basePath;
-      window.history.replaceState(null, "", url);
-      const res = await loadFeeds(query, 0, author);
+      const params = new URLSearchParams();
+      if (query.trim()) params.set("q", query.trim());
+      if (tag) params.set("tag", tag);
+      const qs = params.toString();
+      window.history.replaceState(null, "", qs ? `${basePath}?${qs}` : basePath);
+      const res = await loadFeeds(query, 0, author, tag);
       if (myReq !== reqIdRef.current) return; // 더 최신 검색이 진행 중이면 폐기
       setItems(res.items);
       setHasMore(res.hasMore);
@@ -62,20 +66,25 @@ export default function FeedList({
       loadingRef.current = false;
     }, 300);
     return () => clearTimeout(t);
-  }, [query, author, basePath]);
+  }, [query, author, basePath, tag]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
     const myReq = reqIdRef.current;
     setLoading(true);
     loadingRef.current = true;
-    const res = await loadFeeds(queryRef.current, itemsLenRef.current, author);
+    const res = await loadFeeds(
+      queryRef.current,
+      itemsLenRef.current,
+      author,
+      tag,
+    );
     if (myReq !== reqIdRef.current) return; // 로드 중 검색이 바뀌면 폐기
     setItems((prev) => [...prev, ...res.items]);
     setHasMore(res.hasMore);
     setLoading(false);
     loadingRef.current = false;
-  }, [author]);
+  }, [author, tag]);
 
   // 화면 하단 센티넬이 보이면 다음 페이지 로드
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -94,6 +103,21 @@ export default function FeedList({
 
   return (
     <>
+      {tag && (
+        <div className="mb-4 flex items-center gap-2 text-sm">
+          <span className="text-zinc-500">태그</span>
+          <span className="rounded bg-amber-100 px-2 py-0.5 font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+            #{tag}
+          </span>
+          <Link
+            href={basePath}
+            aria-label="태그 필터 해제"
+            className="text-zinc-500 hover:underline"
+          >
+            ✕ 해제
+          </Link>
+        </div>
+      )}
       <div className="relative mb-8">
         <input
           type="search"
@@ -142,6 +166,19 @@ export default function FeedList({
                   <span> · 조회 {feed.viewCount.toLocaleString()}</span>
                 </p>
               </Link>
+              {feed.tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {feed.tags.map((t) => (
+                    <Link
+                      key={t.slug}
+                      href={`${basePath}?tag=${encodeURIComponent(t.slug)}`}
+                      className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+                    >
+                      #{t.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </li>
           ))}
         </ul>

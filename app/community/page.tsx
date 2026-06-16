@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function CommunityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; tag?: string }>;
 }) {
   await guardPublicAccess(); // 점검 모드: 비어드민 차단
   const role = await getViewerRole();
@@ -40,18 +40,27 @@ export default async function CommunityPage({
     );
   }
 
-  const q = (await searchParams).q ?? "";
-  const { items, hasMore } = await searchFeeds({ q, role, author: "member" });
+  const sp = await searchParams;
+  const q = sp.q ?? "";
+  const tag = sp.tag || undefined;
+  const { items, hasMore } = await searchFeeds({
+    q,
+    role,
+    author: "member",
+    tag,
+  });
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <h1 className="mb-2 text-2xl font-semibold tracking-tight">커뮤니티</h1>
       <p className="mb-8 text-sm text-zinc-500">회원들이 작성한 글</p>
       <FeedList
+        key={tag ?? ""}
         initialItems={items.map(toFeedCard)}
         initialHasMore={hasMore}
         initialQuery={q}
         author="member"
+        initialTag={tag}
       />
     </main>
   );
