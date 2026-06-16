@@ -29,8 +29,10 @@ model Feed {
   comments  Comment[]
   likes     Like[]
 
-  @@index([visibility, createdAt])
-  @@index([authorId, status])
+  // 목록 쿼리(searchFeeds): status=published + visibility IN + createdAt 정렬.
+  @@index([status, visibility, createdAt])
+  // 내 글/하루 게시(listMyPosts·countPublishedToday): authorId + status + publishedAt.
+  @@index([authorId, status, publishedAt])
 }
 
 // 사이트 전역 설정(싱글톤, id 항상 1).
