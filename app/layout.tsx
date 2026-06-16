@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://by-jang-blog.xyz"),
   title: { default: "BY Playground", template: "%s · BY Playground" },
   description: "생각과 기록을 남기는 개인 공간",
+  alternates: {
+    types: { "application/rss+xml": "/rss.xml" },
+  },
   openGraph: {
     type: "website",
     siteName: "BY Playground",
