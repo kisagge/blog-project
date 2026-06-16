@@ -52,14 +52,14 @@ describe("createReport", () => {
       targetId: commentId,
       reason: "spam",
     });
-    expect(r1).toEqual({ ok: true, created: true });
+    expect(r1).toEqual({ ok: true, created: true, firstForTarget: true });
     const r2 = await m.createReport({
       reporterId: reporter,
       targetType: "comment",
       targetId: commentId,
       reason: "abuse", // 사유 달라도 같은 (대상,신고자)면 무시
     });
-    expect(r2).toEqual({ ok: true, created: false });
+    expect(r2).toEqual({ ok: true, created: false, firstForTarget: false });
     expect(
       await prisma.report.count({
         where: { targetType: "comment", targetId: commentId },
@@ -97,6 +97,25 @@ describe("createReport", () => {
     expect(r.ok).toBe(false);
   });
 
+  test("관리자 댓글은 신고 대상 아님", async () => {
+    const admin = await makeUser(prisma, {
+      email: "adm@test.local",
+      nickname: "관리",
+      role: "admin",
+    });
+    const feed = await makeFeed(prisma, { slug: "ac-feed" });
+    const ac = await makeComment(prisma, feed.id, admin.id, {
+      content: "관리자 댓글",
+    });
+    const r = await m.createReport({
+      reporterId: reporter,
+      targetType: "comment",
+      targetId: ac.id,
+      reason: "spam",
+    });
+    expect(r).toEqual({ ok: false, error: "신고할 수 없는 콘텐츠입니다." });
+  });
+
   test("회원 글 신고는 적재", async () => {
     const r = await m.createReport({
       reporterId: reporter,
@@ -105,11 +124,26 @@ describe("createReport", () => {
       reason: "etc",
       detail: "  설명  ",
     });
-    expect(r).toEqual({ ok: true, created: true });
+    expect(r).toEqual({ ok: true, created: true, firstForTarget: true });
     const row = await prisma.report.findFirst({
       where: { targetType: "feed", targetId: memberFeedId },
     });
     expect(row?.detail).toBe("설명"); // trim
+  });
+
+  test("두 번째 신고자는 firstForTarget=false(별도 행)", async () => {
+    const r = await m.createReport({
+      reporterId: other,
+      targetType: "feed",
+      targetId: memberFeedId,
+      reason: "spam",
+    });
+    expect(r).toEqual({ ok: true, created: true, firstForTarget: false });
+    expect(
+      await prisma.report.count({
+        where: { targetType: "feed", targetId: memberFeedId },
+      }),
+    ).toBe(2);
   });
 });
 
@@ -182,7 +216,7 @@ describe("queue · 모더레이션 전이", () => {
       await prisma.report.count({
         where: { targetType: "feed", targetId: memberFeedId, status: "dismissed" },
       }),
-    ).toBe(1);
+    ).toBe(2); // reporter + other 두 신고 모두 기각
   });
 
   test("countPendingReportTargets: pending 걸린 고유 대상 수", async () => {

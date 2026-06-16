@@ -26,8 +26,8 @@ export async function submitReportAction(
     detail: parsed.data.detail,
   });
   if (!res.ok) return { error: res.error };
-  // 새 신고일 때만 관리자 알림(중복 신고는 무음).
-  if (res.created)
+  // 대상의 첫 신고일 때만 관리자 알림(중복·후속 신고는 무음, 누적은 큐에서 확인).
+  if (res.firstForTarget)
     void notifyAdminReport({ targetType: args.targetType }).catch(() => {});
   return { ok: true };
 }

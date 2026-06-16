@@ -10,23 +10,30 @@ type CreateInput = {
   detail?: string | null;
 };
 type CreateResult =
-  | { ok: true; created: boolean }
+  | { ok: true; created: boolean; firstForTarget: boolean }
   | { ok: false; error: string };
 
-// 신고 적재. 대상 존재·본인 아님·미숨김 확인 후 중복 무시 적재.
-// created=false면 같은 회원의 중복 신고(알림 생략 판단용).
+// 신고 적재. 대상 존재·본인 아님·미숨김·회원 콘텐츠 확인 후 중복 무시 적재.
+// created=false면 같은 회원의 중복 신고, firstForTarget면 이 대상의 첫 신고(알림 판단용).
 export async function createReport(input: CreateInput): Promise<CreateResult> {
   const { reporterId, targetType, targetId, reason, detail } = input;
 
-  // 대상별 작성자·숨김 여부 확인(회원 콘텐츠만 신고 가능).
+  // 대상별 작성자·숨김 여부 확인(회원 콘텐츠만 신고 가능 — 관리자 콘텐츠 제외).
   let ownerId: string | null;
   let hidden: boolean;
   if (targetType === "comment") {
     const c = await prisma.comment.findUnique({
       where: { id: targetId },
-      select: { userId: true, hiddenAt: true, deletedAt: true },
+      select: {
+        userId: true,
+        hiddenAt: true,
+        deletedAt: true,
+        user: { select: { role: true } },
+      },
     });
     if (!c || c.deletedAt) return { ok: false, error: "대상을 찾을 수 없습니다." };
+    if (c.user.role === "admin")
+      return { ok: false, error: "신고할 수 없는 콘텐츠입니다." };
     ownerId = c.userId;
     hidden = c.hiddenAt !== null;
   } else {
@@ -50,10 +57,14 @@ export async function createReport(input: CreateInput): Promise<CreateResult> {
     await prisma.report.create({
       data: { reporterId, targetType, targetId, reason, detail: detail?.trim() || null },
     });
-    return { ok: true, created: true };
+    // 이 대상의 첫 pending 신고면 관리자 알림 1회만(브리게이딩 스팸 완화).
+    const pendingCount = await prisma.report.count({
+      where: { targetType, targetId, status: "pending" },
+    });
+    return { ok: true, created: true, firstForTarget: pendingCount === 1 };
   } catch (e) {
     if ((e as { code?: string }).code === "P2002")
-      return { ok: true, created: false };
+      return { ok: true, created: false, firstForTarget: false };
     throw e;
   }
 }

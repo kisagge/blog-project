@@ -107,10 +107,11 @@ export default function CommentItem({
             삭제
           </button>
         )}
-        {/* 신고: 로그인 회원(관리자 제외)이 타인의 살아있는 댓글에만. */}
+        {/* 신고: 로그인 회원(관리자 제외)이 타인의 살아있는 '회원' 댓글에만(관리자 댓글 제외). */}
         {canParticipate &&
           !isAdmin &&
           !node.deleted &&
+          node.authorRole === "member" &&
           !!actorUserId &&
           actorUserId !== node.userId && (
             <ReportButton targetType="comment" targetId={node.id} />
