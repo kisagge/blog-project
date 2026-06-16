@@ -160,3 +160,39 @@ describe("comments", () => {
     expect(p2.total).toBe(30);
   });
 });
+
+describe("getCommentsByUser", () => {
+  test("회원 댓글: 삭제 제외·피드정보·최신순·take 상한", async () => {
+    const u = (
+      await prisma.user.create({
+        data: {
+          email: "cu@x.com",
+          nickname: "씨유",
+          passwordHash: "-",
+          status: "approved",
+        },
+      })
+    ).id;
+    await prisma.comment.create({
+      data: { feedId, userId: u, content: "첫", createdAt: new Date(2026, 0, 1) },
+    });
+    await prisma.comment.create({
+      data: { feedId, userId: u, content: "둘", createdAt: new Date(2026, 0, 2) },
+    });
+    await prisma.comment.create({
+      data: {
+        feedId,
+        userId: u,
+        content: "삭제됨",
+        createdAt: new Date(2026, 0, 3),
+        deletedAt: new Date(),
+      },
+    });
+
+    const list = await m.getCommentsByUser(u, 20);
+    expect(list.map((c) => c.content)).toEqual(["둘", "첫"]); // 최신순, 삭제 제외
+    expect(list[0].feed.slug).toBe("f1");
+    expect(list[0].feed.title).toBe("F");
+    expect(await m.getCommentsByUser(u, 1)).toHaveLength(1); // take 상한
+  });
+});

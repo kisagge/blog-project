@@ -59,6 +59,21 @@ export async function listMyPosts(userId: string) {
   });
 }
 
+// 공개 프로필용: 임의 작성자의 게시(회원공개) 글. 본인 확인 없음(공개 읽기).
+export async function listMemberPosts(authorId: string) {
+  return prisma.feed.findMany({
+    where: { authorId, status: "published", visibility: "members" },
+    orderBy: { publishedAt: "desc" },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      viewCount: true,
+      publishedAt: true,
+    },
+  });
+}
+
 // 편집용 단건(본인 글만). 없거나 타인 글이면 null.
 export async function getMyPost(userId: string, id: string) {
   return prisma.feed.findFirst({

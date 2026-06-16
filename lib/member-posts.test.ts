@@ -118,6 +118,19 @@ describe("member-posts 게시", () => {
       expect(row?.authorId).toBe(otherId);
     }
   });
+
+  test("listMemberPosts: 해당 작성자의 게시 회원글만(초안·타인 제외)", async () => {
+    const author = (await makeUser(prisma)).id;
+    await m.publishPost(author, { title: "공개글1", content: "c" });
+    await m.saveDraft(author, { title: "내초안", content: "c" }); // 초안 제외
+    await m.publishPost((await makeUser(prisma)).id, { title: "타인글", content: "c" }); // 타인 제외
+
+    const list = await m.listMemberPosts(author);
+    expect(list).toHaveLength(1);
+    expect(list[0].title).toBe("공개글1");
+    expect(list[0]).toHaveProperty("slug");
+    expect(list[0]).toHaveProperty("viewCount");
+  });
 });
 
 describe("member-posts 삭제", () => {
