@@ -27,6 +27,7 @@ export async function searchFeeds({
   const rows = await prisma.feed.findMany({
     where: {
       status: "published", // 임시저장(draft)은 공개 목록에서 제외
+      hiddenAt: null, // 신고로 가려진 글 제외
       visibility: { in: listableVisibilities(role) },
       ...(author === "admin"
         ? { authorId: null }

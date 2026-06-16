@@ -259,3 +259,65 @@ export async function countPendingReportTargets(): Promise<number> {
   });
   return groups.length;
 }
+
+export type HiddenTargetItem = {
+  targetType: ReportTargetType;
+  targetId: string;
+  preview: string;
+  slug: string;
+  authorNickname: string;
+  authorId: string | null;
+  hiddenAt: string; // ISO
+};
+
+// 현재 가려진(hiddenAt) 댓글·회원 글 — 관리자가 숨김 해제(복구)하는 목록.
+export async function listHiddenTargets(): Promise<HiddenTargetItem[]> {
+  const [comments, feeds] = await Promise.all([
+    prisma.comment.findMany({
+      where: { hiddenAt: { not: null } },
+      orderBy: { hiddenAt: "desc" },
+      select: {
+        id: true,
+        content: true,
+        hiddenAt: true,
+        userId: true,
+        user: { select: { nickname: true } },
+        feed: { select: { slug: true } },
+      },
+    }),
+    prisma.feed.findMany({
+      where: { hiddenAt: { not: null }, authorId: { not: null } },
+      orderBy: { hiddenAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        hiddenAt: true,
+        authorId: true,
+        author: { select: { nickname: true } },
+      },
+    }),
+  ]);
+  const items: HiddenTargetItem[] = [
+    ...comments.map((c) => ({
+      targetType: "comment" as const,
+      targetId: c.id,
+      preview: c.content,
+      slug: c.feed.slug,
+      authorNickname: c.user.nickname,
+      authorId: c.userId,
+      hiddenAt: c.hiddenAt!.toISOString(),
+    })),
+    ...feeds.map((f) => ({
+      targetType: "feed" as const,
+      targetId: f.id,
+      preview: f.title,
+      slug: f.slug,
+      authorNickname: f.author?.nickname ?? "알 수 없음",
+      authorId: f.authorId,
+      hiddenAt: f.hiddenAt!.toISOString(),
+    })),
+  ];
+  items.sort((a, b) => b.hiddenAt.localeCompare(a.hiddenAt));
+  return items;
+}

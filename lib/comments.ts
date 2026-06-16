@@ -50,6 +50,7 @@ export type CommentNode = {
   authorRole: "member" | "admin"; // 회원 작성자만 프로필 링크 노출용
   content: string;
   deleted: boolean;
+  hidden: boolean; // 신고로 가려짐(모더레이션). content는 비움.
   createdAt: string;
   likeCount: number;
   liked: boolean;
@@ -62,6 +63,7 @@ function toNode(
     userId: string;
     content: string;
     deletedAt: Date | null;
+    hiddenAt: Date | null;
     createdAt: Date;
     user: { nickname: string; role: string };
     _count: { commentLikes: number };
@@ -69,13 +71,15 @@ function toNode(
   likedIds: Set<string>,
 ): Omit<CommentNode, "replies"> {
   const deleted = c.deletedAt !== null;
+  const hidden = c.hiddenAt !== null;
   return {
     id: c.id,
     userId: c.userId,
     nickname: c.user.nickname,
     authorRole: c.user.role === "admin" ? "admin" : "member",
-    content: deleted ? "" : c.content,
+    content: deleted || hidden ? "" : c.content,
     deleted,
+    hidden,
     createdAt: c.createdAt.toISOString(),
     likeCount: c._count.commentLikes,
     liked: likedIds.has(c.id),
@@ -89,6 +93,7 @@ const NODE_SELECT = {
   userId: true,
   content: true,
   deletedAt: true,
+  hiddenAt: true,
   createdAt: true,
   parentId: true,
   user: { select: { nickname: true, role: true } },
@@ -211,6 +216,7 @@ export async function getCommentsByUser(
     where: {
       userId,
       deletedAt: null,
+      hiddenAt: null,
       feed: { status: "published", visibility: { not: "private" } },
     },
     orderBy: { createdAt: "desc" },

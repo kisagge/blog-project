@@ -37,6 +37,7 @@ export async function generateMetadata({
   if (!feed) return { title: "찾을 수 없음" };
   if (!canViewDraft(feed, session)) return { title: "찾을 수 없음" };
   if (feed.status === "draft") return { title: feed.title }; // 본인 임시저장
+  if (feed.hiddenAt && role !== "admin") return { title: "찾을 수 없음" }; // 신고 숨김
   const access = checkAccess(feed.visibility as Visibility, role);
   if (access === "not-found") return { title: "찾을 수 없음" };
   const description =
@@ -92,6 +93,9 @@ export default async function FeedDetailPage({
       </main>
     );
   }
+
+  // 신고로 가려진 글: 관리자만 열람(검토용), 그 외엔 404.
+  if (feed.hiddenAt && role !== "admin") notFound();
 
   const access = checkAccess(feed.visibility as Visibility, role);
   if (access === "not-found") notFound(); // 비공개: 관리자 외 404

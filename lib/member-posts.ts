@@ -62,7 +62,12 @@ export async function listMyPosts(userId: string) {
 // 공개 프로필용: 임의 작성자의 게시(회원공개) 글. 본인 확인 없음(공개 읽기).
 export async function listMemberPosts(authorId: string) {
   return prisma.feed.findMany({
-    where: { authorId, status: "published", visibility: "members" },
+    where: {
+      authorId,
+      status: "published",
+      visibility: "members",
+      hiddenAt: null, // 신고로 가려진 글 제외
+    },
     orderBy: { publishedAt: "desc" },
     select: {
       id: true,

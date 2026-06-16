@@ -131,6 +131,20 @@ describe("member-posts 게시", () => {
     expect(list[0]).toHaveProperty("slug");
     expect(list[0]).toHaveProperty("viewCount");
   });
+
+  test("listMemberPosts: 신고로 가려진 글 제외", async () => {
+    const author = (await makeUser(prisma)).id;
+    await m.publishPost(author, { title: "숨길글", content: "c" });
+    const row = await prisma.feed.findFirst({
+      where: { authorId: author, title: "숨길글" },
+    });
+    await prisma.feed.update({
+      where: { id: row!.id },
+      data: { hiddenAt: new Date() },
+    });
+    const list = await m.listMemberPosts(author);
+    expect(list.some((p) => p.title === "숨길글")).toBe(false);
+  });
 });
 
 describe("member-posts 삭제", () => {

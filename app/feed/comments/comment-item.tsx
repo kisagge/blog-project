@@ -39,9 +39,9 @@ export default function CommentItem({
       !!initialHighlightId &&
       node.replies.some((r) => r.id === initialHighlightId),
   );
+  const gone = node.deleted || node.hidden; // 삭제·숨김이면 액션 비노출
   const canDelete =
-    !node.deleted &&
-    (isAdmin || (!!actorUserId && actorUserId === node.userId));
+    !gone && (isAdmin || (!!actorUserId && actorUserId === node.userId));
   const replyCount = node.replies.length;
 
   return (
@@ -54,7 +54,7 @@ export default function CommentItem({
       }`}
     >
       <div className="flex items-center gap-2 text-sm">
-        {node.deleted ? (
+        {node.deleted || node.hidden ? (
           <span className="font-medium">—</span>
         ) : node.authorRole === "member" ? (
           <Link
@@ -74,13 +74,15 @@ export default function CommentItem({
       </div>
       {node.deleted ? (
         <p className="mt-1 text-sm text-zinc-400">삭제된 댓글입니다.</p>
+      ) : node.hidden ? (
+        <p className="mt-1 text-sm text-zinc-400">신고로 가려진 댓글입니다.</p>
       ) : (
         <div className="mt-1">
           <CommentBody content={node.content} />
         </div>
       )}
       <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
-        {!node.deleted && (
+        {!gone && (
           <CommentLikeButton
             commentId={node.id}
             slug={slug}
@@ -89,7 +91,7 @@ export default function CommentItem({
             canParticipate={canParticipate}
           />
         )}
-        {!isReply && !node.deleted && (
+        {!isReply && !gone && (
           <button
             type="button"
             onClick={() => setReplying((v) => !v)}
@@ -110,7 +112,7 @@ export default function CommentItem({
         {/* 신고: 로그인 회원(관리자 제외)이 타인의 살아있는 '회원' 댓글에만(관리자 댓글 제외). */}
         {canParticipate &&
           !isAdmin &&
-          !node.deleted &&
+          !gone &&
           node.authorRole === "member" &&
           !!actorUserId &&
           actorUserId !== node.userId && (

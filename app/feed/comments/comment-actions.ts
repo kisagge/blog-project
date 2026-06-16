@@ -63,6 +63,7 @@ export async function addCommentAction(
       authorRole: actor.role,
       content: content.trim(),
       deleted: false,
+      hidden: false,
       createdAt: new Date().toISOString(),
       likeCount: 0,
       liked: false,

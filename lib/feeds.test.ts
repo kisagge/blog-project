@@ -8,10 +8,12 @@ let searchFeeds: Feeds["searchFeeds"];
 let countFeeds: Feeds["countFeeds"];
 let getAdminFeedsPage: Feeds["getAdminFeedsPage"];
 let cleanup: () => Promise<void>;
+let prisma: Awaited<ReturnType<typeof setupTestDb>>["prisma"];
 
 beforeAll(async () => {
   const db = await setupTestDb();
   cleanup = db.cleanup;
+  prisma = db.prisma;
 
   // 전체공개 글 12개(오래된→최신). pub-12가 최신.
   for (let i = 1; i <= 12; i++) {
@@ -113,6 +115,30 @@ describe("searchFeeds", () => {
     const { items, hasMore } = await searchFeeds({ role: "anon" });
     expect(items).toHaveLength(10);
     expect(hasMore).toBe(true);
+  });
+
+  test("신고로 가려진(hiddenAt) 글은 목록·검색에서 제외", async () => {
+    await prisma.feed.create({
+      data: {
+        id: "hidden-1",
+        slug: "hidden-1",
+        title: "가려진고유단어 글",
+        content: "본문",
+        visibility: "public",
+        hiddenAt: new Date(),
+      },
+    });
+    const all = await searchFeeds({ role: "anon", q: "가려진고유단어" });
+    expect(all.items).toHaveLength(0);
+    // 숨김 해제하면 다시 보임
+    await prisma.feed.update({
+      where: { id: "hidden-1" },
+      data: { hiddenAt: null },
+    });
+    const after = await searchFeeds({ role: "anon", q: "가려진고유단어" });
+    expect(after.items.map((f) => f.slug)).toEqual(["hidden-1"]);
+    // 공유 DB 오염 방지: 다른 테스트의 카운트·정렬에 영향 없도록 제거.
+    await prisma.feed.delete({ where: { id: "hidden-1" } });
   });
 
   test("태그 필터: 해당 태그 글만, 비공개 태그는 공개 필터 제외", async () => {
