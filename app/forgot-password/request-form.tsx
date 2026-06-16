@@ -1,16 +1,20 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import Link from "next/link";
 import { requestCode, type RequestState } from "./actions";
+import TurnstileWidget from "@/app/turnstile-widget";
 
 const inputCls =
   "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
 
-export default function RequestForm() {
+export default function RequestForm({ siteKey }: { siteKey?: string }) {
   const [state, action, pending] = useActionState<RequestState, FormData>(
     requestCode,
     undefined,
   );
+  useEffect(() => {
+    if (state?.error) window.turnstile?.reset();
+  }, [state]);
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -30,6 +34,7 @@ export default function RequestForm() {
           {state.error}
         </p>
       )}
+      <TurnstileWidget siteKey={siteKey} />
       <button
         type="submit"
         disabled={pending}

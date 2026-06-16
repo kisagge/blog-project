@@ -17,7 +17,7 @@
 - **PWA**: 설치형 + 오프라인(서비스 워커·manifest·아이콘)
 - **SNS 공유**: X · 카카오톡 · 네이티브 공유 · URL 복사 (og:image 포함)
 - **관리자 CMS**: 글·던파 캐릭터 CRUD, 회원 승인/거절·차단, 신고 처리(숨김/기각), 본문 이미지 업로드, 공개 범위 모달, 점검 모드
-- **어뷰징 방지**: `proxy`에서 IP당 전역 요청 속도 제한(429)
+- **어뷰징 방지**: `proxy`에서 IP당 전역 요청 속도 제한(429) + 가입·로그인·비밀번호 재설정에 **Cloudflare Turnstile CAPTCHA**(무료, 키 설정 시 활성)
 - **점검 모드**: 관리자가 공개 사이트를 외부 방문자에게 on/off (비어드민은 `/maintenance`로)
 
 ## 기술 스택
@@ -51,6 +51,7 @@ pnpm dev                      # http://localhost:3010
 | `KAKAO_JS_KEY`                                                  |      | 카카오 JS 키 (없으면 카카오 공유 버튼 비노출)        |
 | `VAPID_PUBLIC_KEY` / `_PRIVATE_KEY` / `_SUBJECT`                |      | 웹 푸시 알림 키 (`npx web-push generate-vapid-keys`) |
 | `SMTP_HOST` / `_PORT` / `_USER` / `_PASS` / `_FROM` / `_SECURE` |      | 비밀번호 재설정 메일 발송(미설정 시 콘솔 로그)       |
+| `TURNSTILE_SITE_KEY` / `_SECRET_KEY`                            |      | Cloudflare Turnstile CAPTCHA(무료, 미설정 시 비활성) |
 
 ## 스크립트
 

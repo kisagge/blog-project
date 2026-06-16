@@ -1,4 +1,5 @@
 import RequestForm from "./request-form";
+import { turnstileSiteKey } from "@/lib/turnstile";
 
 export const metadata = { title: "비밀번호 찾기" };
 
@@ -9,7 +10,7 @@ export default function ForgotPasswordPage() {
       <p className="-mt-4 text-sm text-zinc-500">
         가입한 이메일로 6자리 인증 코드를 보내드립니다.
       </p>
-      <RequestForm />
+      <RequestForm siteKey={turnstileSiteKey()} />
     </main>
   );
 }

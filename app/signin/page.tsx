@@ -1,4 +1,5 @@
 import SigninForm from "./signin-form";
+import { turnstileSiteKey } from "@/lib/turnstile";
 
 export const metadata = { title: "로그인" };
 
@@ -16,7 +17,7 @@ export default async function SigninPage({
           비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.
         </p>
       )}
-      <SigninForm />
+      <SigninForm siteKey={turnstileSiteKey()} />
     </main>
   );
 }

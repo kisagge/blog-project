@@ -108,6 +108,7 @@ To curb general request floods, `proxy.ts` applies a fixed-window per-IP counter
 
 - Confirmed from the docs that the Next 16 proxy runs on the **Node runtime**, so in-memory `Map` state persists within the single-instance (`next start`) process — reliable without an external store.
 - The matcher covers dynamic requests broadly but excludes static assets, images, and uploads so normal traffic (prefetch, images) doesn't consume the budget.
+- For human/bot separation on **signup, login, and password-reset requests**, an optional **Cloudflare Turnstile CAPTCHA** is added and verified in the server action. With no secret configured the widget isn't shown and verification passes — **fully inert** (the same graceful degradation as SMTP/TOTP). Tokens are single-use, so the widget resets on a failed verification.
 
 ### 4.9 Maintenance mode
 
@@ -125,7 +126,7 @@ Combines title/body/summary substring search with 10-item infinite scroll.
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 177**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 191**.
 
 ### 4.12 Content reporting & moderation
 
@@ -141,5 +142,5 @@ Added user reporting of member content (comments and member posts) with admin mo
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 177); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 191); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

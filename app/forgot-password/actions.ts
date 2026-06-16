@@ -1,5 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { verifyTurnstile } from "@/lib/turnstile";
 import {
   ResetEmailSchema,
   ResetCodeSchema,
@@ -26,6 +28,15 @@ export async function requestCode(
   _state: RequestState,
   formData: FormData,
 ): Promise<RequestState> {
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (
+    !(await verifyTurnstile(
+      String(formData.get("cf-turnstile-response") ?? ""),
+      ip,
+    ))
+  )
+    return { error: "사람 확인에 실패했습니다. 다시 시도해 주세요." };
+
   const parsed = ResetEmailSchema.safeParse({
     email: String(formData.get("email") ?? ""),
   });
