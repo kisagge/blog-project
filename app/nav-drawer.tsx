@@ -134,9 +134,6 @@ export default function NavDrawer({
 
           {session?.role === "member" ? (
             <>
-              <span className="px-3 py-2 text-zinc-500">
-                {session.nickname}
-              </span>
               <DrawerLink href="/account/posts/new" onClick={close}>
                 글쓰기
               </DrawerLink>
