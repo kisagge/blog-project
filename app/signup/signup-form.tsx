@@ -1,16 +1,21 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import Link from "next/link";
 import { signup, type SignupState } from "./actions";
+import TurnstileWidget from "@/app/turnstile-widget";
 
 const inputCls =
   "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
 
-export default function SignupForm() {
+export default function SignupForm({ siteKey }: { siteKey?: string }) {
   const [state, action, pending] = useActionState<SignupState, FormData>(
     signup,
     undefined,
   );
+  // 검증 실패 시 위젯 토큰을 리셋(단일 사용 → 재시도 시 신규 토큰).
+  useEffect(() => {
+    if (state?.error) window.turnstile?.reset();
+  }, [state]);
   if (state?.done) {
     return (
       <div className="w-full max-w-sm text-center">
@@ -46,6 +51,7 @@ export default function SignupForm() {
           {state.error}
         </p>
       )}
+      <TurnstileWidget siteKey={siteKey} />
       <button
         type="submit"
         disabled={pending}
