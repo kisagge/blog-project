@@ -74,7 +74,11 @@ export default async function FeedDetailPage({
         >
           임시저장 미리보기입니다. 게시 전에는 본인만 볼 수 있어요.
         </p>
-        <FeedArticle feed={feed} authorName={feed.author?.nickname} />
+        <FeedArticle
+          feed={feed}
+          authorName={feed.author?.nickname}
+          tags={feed.feedTags.map((ft) => ft.tag)}
+        />
         <div className="mt-6">
           <Link
             href={`/account/posts/${feed.id}/edit`}
@@ -114,7 +118,11 @@ export default async function FeedDetailPage({
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <ViewTracker type="feed" id={feed.id} />
-      <FeedArticle feed={feed} authorName={authorName} />
+      <FeedArticle
+        feed={feed}
+        authorName={authorName}
+        tags={feed.feedTags.map((ft) => ft.tag)}
+      />
       {/* 비공개(초안)는 공유해도 타인에겐 404, 차단 회원은 공유 불가 — 공유 버튼 비노출. */}
       {feed.visibility !== "private" && !blocked && (
         <div className="mt-6 border-t border-black/[.06] pt-6 dark:border-white/[.1]">

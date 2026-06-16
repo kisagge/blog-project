@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -5,6 +6,7 @@ import remarkGfm from "remark-gfm";
 export default function FeedArticle({
   feed,
   authorName,
+  tags = [],
 }: {
   feed: {
     title: string;
@@ -13,6 +15,7 @@ export default function FeedArticle({
     viewCount?: number;
   };
   authorName?: string;
+  tags?: { name: string; slug: string }[];
 }) {
   return (
     <article>
@@ -29,6 +32,19 @@ export default function FeedArticle({
             <span> · 조회 {feed.viewCount.toLocaleString()}</span>
           )}
         </p>
+        {tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <Link
+                key={t.slug}
+                href={`/feed?tag=${encodeURIComponent(t.slug)}`}
+                className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+              >
+                #{t.name}
+              </Link>
+            ))}
+          </div>
+        )}
       </header>
       <div className="flex flex-col gap-4 leading-7 [&_a]:underline [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 dark:[&_code]:bg-zinc-800 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:text-xl [&_h2]:font-semibold [&_img]:my-4 [&_img]:max-w-full [&_img]:rounded [&_li]:ml-5 [&_li]:list-disc [&_table]:w-full [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
