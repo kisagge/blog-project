@@ -87,11 +87,12 @@ Public / members-only / private (draft), implemented as an app-layer union type 
 - Private returns a **404** to non-admins (hiding even its existence); members-only shows a **signup gate** to anonymous visitors; the admin can see private drafts in both lists and detail (with a "private" badge in lists). Private posts hide their share buttons to avoid surfacing dead external links.
 - Migrations preserve the meaning of existing data (e.g. moving existing items to the appropriate tier) via hand-written data-conversion SQL.
 
-### 4.6 Comments & likes
+### 4.6 Comments, likes & bookmarks
 
-Two-level comments (replies) plus feed and comment likes, built on Server Actions.
+Two-level comments (replies), feed/comment likes, and personal bookmarks, built on Server Actions.
 
 - Replies are allowed only on top-level comments (depth check); deletion branches soft/hard depending on whether children exist. Likes toggle with a `(user, target)` unique constraint. Authors can edit their own comments (`editedAt` recorded → "(edited)" marker, propagated live via SSE). Under popular sort, deleted comments sink to the bottom regardless of likes (`deletedAt` nulls-first).
+- **Bookmarks**: isomorphic to likes (`Bookmark` `(user, feed)` unique toggle) but **member-only and personal**, so no public count or real-time (SSE) — just an optimistic toggle with debounce (admin is excluded from the button/action since there's no admin saved list). Viewed newest-saved-first at `/account/saved` (the list card markup is shared with public listings via `FeedCardItem`); posts that became private/hidden after saving are filtered out by member-visibility rules.
 - To receive notifications for admin-authored posts, a non-loginable **reserved admin User** (singleton) lets an admin — who has no `userId` in the session — be represented as author/recipient in the domain model.
 
 ### 4.7 PWA + web push + in-app notifications
@@ -130,7 +131,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 235**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 239**.
 
 ### 4.12 Content reporting & moderation
 
@@ -146,5 +147,5 @@ Added user reporting of member content (comments and member posts) with admin mo
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 235); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 239); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

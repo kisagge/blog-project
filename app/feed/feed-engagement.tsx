@@ -2,7 +2,9 @@ import { getSession, getViewerRole } from "@/lib/dal";
 import { getCommentActor } from "@/lib/comment-actor";
 import { getFeedComments, type CommentSort } from "@/lib/comments";
 import { getLikeSummary } from "@/lib/likes";
+import { getBookmarkStatus } from "@/lib/bookmarks";
 import LikeButton from "./like-button";
+import BookmarkButton from "./bookmark-button";
 import CommentSection from "./comments/comment-section";
 import { FeedEventsProvider } from "./feed-events-context";
 
@@ -24,22 +26,35 @@ export default async function FeedEngagement({
   const canParticipate = !!actor;
   // 비회원(anon) 뷰어에겐 작성자 닉네임을 평문으로(막다른 프로필 링크 제거).
   const linkAuthors = role !== "anon";
-  const [page, like] = await Promise.all([
+  const [page, like, bookmarked] = await Promise.all([
     getFeedComments(feedId, { sort, viewerUserId: actor?.userId }),
     getLikeSummary(feedId, actor?.userId),
+    getBookmarkStatus(feedId, actor?.userId),
   ]);
 
   return (
     <section className="mt-10 border-t border-black/[.08] pt-6 dark:border-white/[.145]">
       {/* 댓글·좋아요가 피드 SSE 연결 1개를 공유 */}
       <FeedEventsProvider feedId={feedId}>
-        <LikeButton
-          feedId={feedId}
-          slug={slug}
-          initialCount={like.count}
-          initialLiked={like.liked}
-          canParticipate={canParticipate}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <LikeButton
+            feedId={feedId}
+            slug={slug}
+            initialCount={like.count}
+            initialLiked={like.liked}
+            canParticipate={canParticipate}
+          />
+          {/* 북마크는 회원 전용(저장 목록도 회원 전용) → admin에겐 미노출.
+              개인 저장이라 SSE 무관(provider 안에 있어도 미사용). */}
+          {!isAdmin && (
+            <BookmarkButton
+              feedId={feedId}
+              slug={slug}
+              initialBookmarked={bookmarked}
+              canParticipate={canParticipate}
+            />
+          )}
+        </div>
         {/* 정렬 변경(URL) 시 새 초기 데이터로 다시 마운트 */}
         <CommentSection
           key={sort}

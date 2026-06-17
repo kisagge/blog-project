@@ -5,7 +5,8 @@ import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 
 export const FEED_PAGE_SIZE = 10;
 
-const FEED_LIST_SELECT = {
+// 목록 카드(toFeedCard) 호환 select — searchFeeds·저장 목록 등 공용.
+export const FEED_LIST_SELECT = {
   id: true, // FTS rank 재정렬·id 매핑용(toFeedCard는 무시 → 카드 출력엔 영향 없음)
   slug: true,
   title: true,

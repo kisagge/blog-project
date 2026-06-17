@@ -140,6 +140,9 @@ export default function NavDrawer({
               <DrawerLink href="/me" onClick={close}>
                 내 프로필
               </DrawerLink>
+              <DrawerLink href="/account/saved" onClick={close}>
+                저장한 글
+              </DrawerLink>
               <DrawerLink href="/account" onClick={close}>
                 내 정보
               </DrawerLink>
