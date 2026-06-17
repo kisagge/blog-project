@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getFeedBySlug, searchFeeds } from "@/lib/feeds";
+import { getFeedBySlug, getRelatedFeeds, searchFeeds } from "@/lib/feeds";
 import { getViewerRole, getSession, isBlockedMember } from "@/lib/dal";
 import { getAdminNickname } from "@/lib/comment-actor";
 import { checkAccess, type Visibility } from "@/lib/visibility";
 import FeedArticle from "@/app/feed/feed-article";
 import FeedEngagement from "@/app/feed/feed-engagement";
+import RelatedFeeds from "@/app/feed/related-feeds";
 import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
 import ShareBar from "@/app/share-bar";
@@ -162,6 +163,14 @@ export default async function FeedDetailPage({
         slug={feed.slug}
         sort={sort}
         highlightCommentId={sp.c}
+      />
+      <RelatedFeeds
+        items={await getRelatedFeeds(
+          feed.id,
+          feed.feedTags.map((ft) => ft.tag.slug),
+          role,
+          5,
+        )}
       />
     </main>
   );

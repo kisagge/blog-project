@@ -118,6 +118,49 @@ export async function searchFeeds({
   return { items: hasMore ? rows.slice(0, take) : rows, hasMore };
 }
 
+export type RelatedFeed = { slug: string; title: string; viewCount: number };
+
+// 관련 글: 현재 글과 태그를 공유하는 다른 게시·미숨김 글을 뷰어 가시 범위로 추천.
+// 공유 태그 수 desc → 최신 desc 순(관련도 우선). 태그 없으면 빈 배열.
+export async function getRelatedFeeds(
+  feedId: string,
+  tagSlugs: string[],
+  role: ViewerRole,
+  take = 5,
+): Promise<RelatedFeed[]> {
+  if (tagSlugs.length === 0) return [];
+  const candidates = await prisma.feed.findMany({
+    where: {
+      id: { not: feedId },
+      status: "published",
+      hiddenAt: null,
+      visibility: { in: listableVisibilities(role) },
+      feedTags: { some: { tag: { slug: { in: tagSlugs } } } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: Math.max(take * 4, 20), // 공유 태그 수로 재정렬할 후보 여유
+    select: {
+      slug: true,
+      title: true,
+      viewCount: true,
+      createdAt: true,
+      feedTags: { select: { tag: { select: { slug: true } } } },
+    },
+  });
+  const wanted = new Set(tagSlugs);
+  return candidates
+    .map((f) => ({
+      slug: f.slug,
+      title: f.title,
+      viewCount: f.viewCount,
+      createdAt: f.createdAt,
+      shared: f.feedTags.filter((ft) => wanted.has(ft.tag.slug)).length,
+    }))
+    .sort((a, b) => b.shared - a.shared || +b.createdAt - +a.createdAt)
+    .slice(0, take)
+    .map(({ slug, title, viewCount }) => ({ slug, title, viewCount }));
+}
+
 // 상세: slug로 단건(공개 범위 무관). 접근 제어는 호출부에서 visibility로 판정.
 // cache로 감싸 같은 요청 내 중복 호출(generateMetadata + 페이지 본문)을 1회로 dedupe
 export const getFeedBySlug = cache(async (slug: string) => {
