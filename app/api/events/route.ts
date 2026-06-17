@@ -24,23 +24,40 @@ export async function GET(req: Request) {
           // 이미 닫힌 컨트롤러 — 무시(정리는 cleanup이 담당).
         }
       };
-      send(": connected\n\n");
-      send(`event: unread\ndata: ${await countUnread(userId)}\n\n`);
-
-      unsubscribe = subscribeUnread(userId, (n) => {
-        send(`event: unread\ndata: ${n}\n\n`);
-      });
-      heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
-
-      // 클라이언트 연결 종료 시 정리(누수 방지).
-      req.signal.addEventListener("abort", () => {
+      const onAbort = () => {
         cleanup();
         try {
           controller.close();
         } catch {
           // 이미 닫힘
         }
+      };
+
+      // abort 리스너를 await 이전에 등록(초기 쿼리 중 연결이 끊겨도 정리되도록).
+      // 이미 끊긴 연결이면 즉시 종료(구독·인터벌 시작 안 함).
+      if (req.signal.aborted) {
+        try {
+          controller.close();
+        } catch {
+          // 이미 닫힘
+        }
+        return;
+      }
+      req.signal.addEventListener("abort", onAbort);
+
+      send(": connected\n\n");
+      send(`event: unread\ndata: ${await countUnread(userId)}\n\n`);
+
+      // 초기 쿼리(await) 동안 끊겼을 수 있으니 구독 전에 재확인.
+      if (req.signal.aborted) {
+        cleanup();
+        return;
+      }
+
+      unsubscribe = subscribeUnread(userId, (n) => {
+        send(`event: unread\ndata: ${n}\n\n`);
       });
+      heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
     },
     cancel() {
       cleanup();
