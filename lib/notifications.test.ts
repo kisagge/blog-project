@@ -187,3 +187,103 @@ describe("notifications", () => {
     ).toBe(before + 1);
   });
 });
+
+describe("notification prefs", () => {
+  test("getNotificationPrefs 기본값 true, setNotificationPrefs 갱신", async () => {
+    const u = await prisma.user.create({
+      data: { email: "pref@x.com", nickname: "P", passwordHash: "-" },
+    });
+    expect(await m.getNotificationPrefs(u.id)).toEqual({
+      onReply: true,
+      onComment: true,
+    });
+    await m.setNotificationPrefs(u.id, { onReply: false, onComment: true });
+    expect(await m.getNotificationPrefs(u.id)).toEqual({
+      onReply: false,
+      onComment: true,
+    });
+  });
+
+  test("notifyCommentReply: 수신자가 답글 알림 off면 미생성(on이면 생성)", async () => {
+    const recipient = await prisma.user.create({
+      data: {
+        email: "r1@x.com",
+        nickname: "R1",
+        passwordHash: "-",
+        notifyOnReply: false,
+      },
+    });
+    const sender = await prisma.user.create({
+      data: { email: "s1@x.com", nickname: "S1", passwordHash: "-" },
+    });
+    const feed = await prisma.feed.create({
+      data: { slug: "pf1", title: "T", content: "c", visibility: "public" },
+    });
+    const parent = await prisma.comment.create({
+      data: { feedId: feed.id, userId: recipient.id, content: "원댓글" },
+    });
+    sendNotification.mockClear();
+    await m.notifyCommentReply({
+      parentId: parent.id,
+      commentId: "rx",
+      slug: "pf1",
+      fromUserId: sender.id,
+      fromNickname: "S1",
+      content: "답글",
+    });
+    expect(
+      await prisma.notification.count({ where: { userId: recipient.id } }),
+    ).toBe(0);
+    expect(sendNotification).not.toHaveBeenCalled();
+    // 켜면 생성됨
+    await m.setNotificationPrefs(recipient.id, {
+      onReply: true,
+      onComment: true,
+    });
+    await m.notifyCommentReply({
+      parentId: parent.id,
+      commentId: "ry",
+      slug: "pf1",
+      fromUserId: sender.id,
+      fromNickname: "S1",
+      content: "답글2",
+    });
+    expect(
+      await prisma.notification.count({ where: { userId: recipient.id } }),
+    ).toBe(1);
+  });
+
+  test("notifyFeedComment: 글 주인이 댓글 알림 off면 미생성", async () => {
+    const owner = await prisma.user.create({
+      data: {
+        email: "o1@x.com",
+        nickname: "O1",
+        passwordHash: "-",
+        notifyOnComment: false,
+      },
+    });
+    const commenter = await prisma.user.create({
+      data: { email: "c1@x.com", nickname: "C1", passwordHash: "-" },
+    });
+    const feed = await prisma.feed.create({
+      data: {
+        slug: "pf2",
+        title: "T",
+        content: "c",
+        visibility: "members",
+        status: "published",
+        authorId: owner.id,
+      },
+    });
+    await m.notifyFeedComment({
+      feedId: feed.id,
+      commentId: "tx",
+      slug: "pf2",
+      fromUserId: commenter.id,
+      fromNickname: "C1",
+    });
+    expect(
+      await prisma.notification.count({ where: { userId: owner.id } }),
+    ).toBe(0);
+  });
+});
