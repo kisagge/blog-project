@@ -131,8 +131,17 @@ const SCHEMA = [
   `CREATE INDEX "Comment_feedId_idx" ON "Comment"("feedId")`,
   `CREATE INDEX "Comment_parentId_idx" ON "Comment"("parentId")`,
   `CREATE INDEX "Comment_userId_createdAt_idx" ON "Comment"("userId", "createdAt")`,
+  `CREATE TABLE "Bookmark" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "feedId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Bookmark_feedId_fkey" FOREIGN KEY ("feedId") REFERENCES "Feed" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Bookmark_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+  )`,
   `CREATE UNIQUE INDEX "Like_feedId_userId_key" ON "Like"("feedId", "userId")`,
   `CREATE UNIQUE INDEX "CommentLike_commentId_userId_key" ON "CommentLike"("commentId", "userId")`,
+  `CREATE UNIQUE INDEX "Bookmark_feedId_userId_key" ON "Bookmark"("feedId", "userId")`,
   `CREATE TABLE "Report" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "targetType" TEXT NOT NULL,

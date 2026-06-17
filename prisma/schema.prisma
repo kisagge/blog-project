@@ -29,6 +29,7 @@ model Feed {
   author    User?     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     Like[]
+  bookmarks Bookmark[]
   feedTags  FeedTag[]
 
   // 목록 쿼리(searchFeeds): status=published + visibility IN + createdAt 정렬.
@@ -80,6 +81,7 @@ model User {
   updatedAt    DateTime @updatedAt
   comments  Comment[]
   likes     Like[]
+  bookmarks Bookmark[]
   commentLikes CommentLike[]
   pushSubscriptions PushSubscription[]
   notifications Notification[]
@@ -205,6 +207,18 @@ model CommentLike {
 }
 
 model Like {
+  id        String   @id @default(uuid())
+  feedId    String
+  userId    String
+  createdAt DateTime @default(now())
+  feed      Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([feedId, userId])
+}
+
+// 북마크(개인 저장). 좋아요와 동형이나 공개 카운트·실시간 없는 개인용. createdAt=저장 시각.
+model Bookmark {
   id        String   @id @default(uuid())
   feedId    String
   userId    String
