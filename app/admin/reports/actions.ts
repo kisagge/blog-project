@@ -1,7 +1,13 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { verifySession } from "@/lib/dal";
-import { hideTarget, unhideTarget, dismissReports } from "@/lib/reports";
+import {
+  hideTarget,
+  unhideTarget,
+  dismissReports,
+  countPendingReportTargets,
+} from "@/lib/reports";
+import { publishReports } from "@/lib/events";
 
 type ReportTargetType = "comment" | "feed";
 
@@ -10,8 +16,14 @@ function isTargetType(v: string): v is ReportTargetType {
 }
 
 function revalidate(slug: string) {
-  revalidatePath("/admin/reports");
+  revalidatePath("/admin/reports"); // 대기 탭
+  revalidatePath("/admin/reports/hidden"); // 가려진 탭(숨김/복구로 양쪽 변동)
   revalidatePath(`/feed/${slug}`); // 숨김/복구 즉시 공개 화면 반영
+}
+
+// pending 대상 수를 관리자 라이브 배지로 전파.
+async function broadcastReportCount() {
+  publishReports(await countPendingReportTargets());
 }
 
 // 대상 숨김(신고 resolved 처리).
@@ -24,9 +36,10 @@ export async function hideTargetAction(
   if (!isTargetType(targetType)) return;
   await hideTarget(targetType, targetId);
   revalidate(slug);
+  await broadcastReportCount();
 }
 
-// 숨김 해제(복구).
+// 숨김 해제(복구). pending 수는 불변(신고는 이미 resolved).
 export async function unhideTargetAction(
   targetType: string,
   targetId: string,
@@ -48,4 +61,5 @@ export async function dismissReportsAction(
   if (!isTargetType(targetType)) return;
   await dismissReports(targetType, targetId);
   revalidate(slug);
+  await broadcastReportCount();
 }

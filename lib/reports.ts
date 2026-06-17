@@ -260,6 +260,15 @@ export async function countPendingReportTargets(): Promise<number> {
   return groups.length;
 }
 
+// 가려진(hiddenAt) 댓글 + 회원 글 수(신고 탭 라벨용).
+export async function countHiddenTargets(): Promise<number> {
+  const [comments, feeds] = await Promise.all([
+    prisma.comment.count({ where: { hiddenAt: { not: null } } }),
+    prisma.feed.count({ where: { hiddenAt: { not: null }, authorId: { not: null } } }),
+  ]);
+  return comments + feeds;
+}
+
 export type HiddenTargetItem = {
   targetType: ReportTargetType;
   targetId: string;

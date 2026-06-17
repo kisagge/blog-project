@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -17,6 +18,17 @@ export default function AdminNav({
   pendingReports?: number;
 }) {
   const pathname = usePathname();
+  // 미처리 신고 수를 SSE로 라이브 갱신(초기값은 서버 prop). EventSource는 쿠키 자동 전송.
+  const [reports, setReports] = useState(pendingReports);
+  useEffect(() => {
+    const es = new EventSource("/api/events");
+    es.addEventListener("reports", (e) => {
+      const n = Number((e as MessageEvent).data);
+      if (Number.isFinite(n)) setReports(n);
+    });
+    return () => es.close();
+  }, []);
+
   return (
     <nav className="flex gap-4 text-sm">
       {TABS.map((tab) => {
@@ -24,7 +36,7 @@ export default function AdminNav({
           tab.href === "/admin"
             ? pathname === "/admin"
             : pathname.startsWith(tab.href);
-        const badge = tab.href === "/admin/reports" && pendingReports > 0;
+        const badge = tab.href === "/admin/reports" && reports > 0;
         return (
           <Link
             key={tab.href}
@@ -38,10 +50,10 @@ export default function AdminNav({
             {tab.label}
             {badge && (
               <span
-                aria-label={`미처리 신고 ${pendingReports}건`}
+                aria-label={`미처리 신고 ${reports}건`}
                 className="ml-1 inline-flex min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white"
               >
-                {pendingReports}
+                {reports}
               </span>
             )}
           </Link>

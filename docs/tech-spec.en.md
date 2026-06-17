@@ -128,7 +128,7 @@ Combines title/body/summary substring search with 10-item infinite scroll.
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 216**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 218**.
 
 ### 4.12 Content reporting & moderation
 
@@ -136,7 +136,7 @@ Added user reporting of member content (comments and member posts) with admin mo
 
 - **Report ingestion**: `Report(targetType,targetId,reporterId,reason,detail,status)` with `@@unique([targetType,targetId,reporterId])` for **one report per member per target**. The server rejects own content, admin content, and already-hidden targets; since SQLite lacks `createMany.skipDuplicates`, duplicates are de-duped by **catching the unique-violation (P2002)**. Only the first report of a new target notifies the reserved admin (in-app + push), curbing brigading spam.
 - **Reversible hiding**: a separate `hiddenAt` (on Comment and Feed), distinct from user deletion (`deletedAt`), represents moderation hiding; hiding marks that target's pending reports `resolved`. Hidden content is filtered out of **every consumer** — listings (searchFeeds), profiles (listMemberPosts, getCommentsByUser), detail (admin-only view), and the comment tree (body blanked) — and the admin can restore it anytime.
-- **Admin queue** (`/admin/reports`): groups reports per target with count, reasons, and a preview; hide/dismiss, plus an unhide list for hidden content. The pending count shows as an admin-nav badge.
+- **Admin queue** (`/admin/reports`): split into "pending"/"hidden" **sub-tabs**. Groups reports per target with count, reasons, and a preview; hide/dismiss, plus an unhide list for hidden content. The pending count shows as an admin-nav badge — **updated live via SSE (`reports` channel)** on new reports/resolution without a refresh.
 
 ## 5. Outcomes
 
@@ -144,5 +144,5 @@ Added user reporting of member content (comments and member posts) with admin mo
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 216); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 218); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
