@@ -84,7 +84,10 @@ export default async function RootLayout({
             </Link>
             {notifId && (
               <div className="ml-auto">
-                <NotificationBell initialUnread={unread} />
+                <NotificationBell
+                  initialUnread={unread}
+                  isMember={navSession?.role === "member"}
+                />
               </div>
             )}
             {!navSession && (
