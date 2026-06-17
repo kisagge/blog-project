@@ -138,6 +138,7 @@ model View {
 
   @@unique([entityType, entityId, visitorId, day])
   @@index([entityType, entityId])
+  @@index([entityType, day]) // countTodayVisitors(entityType="site", day) 커버
 }
 
 // 회원 비밀번호 재설정 6자리 코드(해시 저장). 이메일별 최신 1건만 유효.

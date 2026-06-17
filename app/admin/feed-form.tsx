@@ -1,4 +1,5 @@
 "use client";
+import { INPUT_CLASS } from "@/lib/ui";
 import { useActionState, useRef, useState } from "react";
 import type { FeedFormState } from "@/app/admin/actions";
 import { uploadImage } from "@/app/admin/upload-action";
@@ -151,8 +152,7 @@ export default function FeedForm({
   );
 }
 
-const inputCls =
-  "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
+const inputCls = INPUT_CLASS;
 
 function Field({
   label,

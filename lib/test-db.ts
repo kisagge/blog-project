@@ -35,6 +35,7 @@ const SCHEMA = [
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX "View_entityType_entityId_idx" ON "View"("entityType", "entityId")`,
+  `CREATE INDEX "View_entityType_day_idx" ON "View"("entityType", "day")`,
   `CREATE UNIQUE INDEX "View_entityType_entityId_visitorId_day_key" ON "View"("entityType", "entityId", "visitorId", "day")`,
   `CREATE TABLE "SiteConfig" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,

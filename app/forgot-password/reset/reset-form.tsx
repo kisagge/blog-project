@@ -1,9 +1,9 @@
 "use client";
+import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState } from "react";
 import { submitNewPassword, type ResetState } from "../actions";
 
-const inputCls =
-  "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
+const inputCls = INPUT_CLASS;
 
 export default function ResetForm() {
   const [state, action, pending] = useActionState<ResetState, FormData>(
@@ -33,7 +33,7 @@ export default function ResetForm() {
       <button
         type="submit"
         disabled={pending}
-        className="bg-foreground text-background rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+        className={PRIMARY_BTN}
       >
         {pending ? "변경 중…" : "비밀번호 변경"}
       </button>

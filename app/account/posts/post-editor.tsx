@@ -1,11 +1,11 @@
 "use client";
+import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState, useState } from "react";
 import { submitPost, type PostFormState } from "./actions";
 import MarkdownContent from "@/app/markdown-content";
 import MarkdownHelp from "./markdown-help";
 
-const inputCls =
-  "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
+const inputCls = INPUT_CLASS;
 
 export default function PostEditor({
   post,
@@ -176,7 +176,7 @@ export default function PostEditor({
           name="intent"
           value="publish"
           disabled={publishDisabled}
-          className="bg-foreground text-background rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+          className={PRIMARY_BTN}
         >
           {isPublished ? "저장" : "게시(회원공개)"}
         </button>

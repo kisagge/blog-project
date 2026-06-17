@@ -1,9 +1,9 @@
 "use client";
+import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState, useState } from "react";
 import { updateNicknameAction, type AccountState } from "./actions";
 
-const inputCls =
-  "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
+const inputCls = INPUT_CLASS;
 
 export default function AccountForm({
   email,
@@ -61,7 +61,7 @@ export default function AccountForm({
       <button
         type="submit"
         disabled={pending || !dirty}
-        className="bg-foreground text-background rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+        className={PRIMARY_BTN}
       >
         {pending ? "저장 중…" : "저장"}
       </button>
