@@ -29,6 +29,33 @@ export function applyCreated(
   return inserted ? { items: next, total } : { items, total };
 }
 
+// 좋아요 수 병합. 상위/대댓글의 likeCount를 서버 truth로 갱신(viewer의 liked는 불변).
+export function applyLikeCount(
+  items: CommentNode[],
+  total: number,
+  id: string,
+  count: number,
+): Tree {
+  let changed = false;
+  const next = items.map((t) => {
+    if (t.id === id) {
+      changed = true;
+      return { ...t, likeCount: count };
+    }
+    if (t.replies.some((r) => r.id === id)) {
+      changed = true;
+      return {
+        ...t,
+        replies: t.replies.map((r) =>
+          r.id === id ? { ...r, likeCount: count } : r,
+        ),
+      };
+    }
+    return t;
+  });
+  return changed ? { items: next, total } : { items, total };
+}
+
 // loadMore로 받은 다음 페이지를 이어붙이되, 실시간(SSE)으로 이미 들어온 상위 댓글과의
 // 중복 제거. 정렬(인기순) 차이로 prepend된 신규 댓글이 다음 페이지에 다시 올 수 있어 필요.
 export function appendLoaded(

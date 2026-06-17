@@ -62,6 +62,7 @@ export type CommentNode = {
 export type CommentEvent =
   | { kind: "created"; parentId: string | null; node: CommentNode }
   | { kind: "edited"; id: string; content: string }
+  | { kind: "likeCount"; id: string; count: number }
   | { kind: "deleted"; id: string };
 
 function toNode(
