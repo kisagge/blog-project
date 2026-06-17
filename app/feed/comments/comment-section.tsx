@@ -13,7 +13,11 @@ import {
   applyLikeCount,
   appendLoaded,
 } from "./merge";
-import { deleteCommentAction, loadMoreCommentsAction } from "./comment-actions";
+import {
+  deleteCommentAction,
+  loadMoreCommentsAction,
+  resyncCommentsAction,
+} from "./comment-actions";
 
 export default function CommentSection({
   feedId,
@@ -78,6 +82,16 @@ export default function CommentSection({
   // 본인 낙관적 삽입은 applyCreated의 id dedup으로 중복 흡수. 원격 이벤트는 스크롤 없음.
   // feedLike(글 좋아요)는 좋아요 버튼 몫이라 무시. (끊긴 동안 생성분은 새로고침/더보기로 재동기화.)
   useFeedEvent((ev) => {
+    // 재접속: 끊긴 동안의 유실을 메우려 현재 로드량만큼 다시 받아 트리 교체(스크롤 없음).
+    if (ev.kind === "resync") {
+      // 로드량만큼(액션이 최소 한 페이지로 하한 보정) 다시 받아 트리 교체.
+      // 리페치 await 중 도착한 라이브 이벤트가 직후 결과로 덮일 수 있으나(창이 짧음),
+      // 다음 이벤트/재접속/더보기로 자가복구 — 기존 v1 한계와 동급으로 수용.
+      void resyncCommentsAction(feedId, sort, items.length).then((page) =>
+        setTree({ items: page.items, total: page.total }),
+      );
+      return;
+    }
     if (ev.kind === "feedLike") return;
     setTree((t) => {
       if (ev.kind === "created")

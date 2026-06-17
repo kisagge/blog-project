@@ -7,11 +7,12 @@ import {
   deleteComment,
   editComment,
   getFeedComments,
+  COMMENT_PAGE_SIZE,
   type CommentNode,
   type CommentPage,
   type CommentSort,
 } from "@/lib/comments";
-import { toggleLike } from "@/lib/likes";
+import { toggleLike, getLikeSummary } from "@/lib/likes";
 import { toggleCommentLike } from "@/lib/comment-likes";
 import { notifyCommentReply, notifyFeedComment } from "@/lib/notifications";
 import { publishComment, publishFeedLike } from "@/lib/events";
@@ -88,6 +89,30 @@ export async function loadMoreCommentsAction(
 ): Promise<CommentPage> {
   const actor = await getCommentActor();
   return getFeedComments(feedId, { sort, skip, viewerUserId: actor?.userId });
+}
+
+// SSE 재접속 재동기화용: 현재 로드량(loaded)만큼 처음부터 다시 조회해 트리 교체.
+// 최소 한 페이지는 보장(끊긴 동안 첫 댓글이 생겼을 수도 있어 loaded=0이어도 조회).
+export async function resyncCommentsAction(
+  feedId: string,
+  sort: CommentSort,
+  loaded: number,
+): Promise<CommentPage> {
+  const actor = await getCommentActor();
+  return getFeedComments(feedId, {
+    sort,
+    skip: 0,
+    take: Math.max(loaded, COMMENT_PAGE_SIZE),
+    viewerUserId: actor?.userId,
+  });
+}
+
+// SSE 재접속 재동기화용: 좋아요 수+본인 누름 여부를 서버 truth로 재조회.
+export async function getLikeSummaryAction(
+  feedId: string,
+): Promise<{ count: number; liked: boolean }> {
+  const actor = await getCommentActor();
+  return getLikeSummary(feedId, actor?.userId);
 }
 
 export async function deleteCommentAction(
