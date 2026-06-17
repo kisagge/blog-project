@@ -132,7 +132,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 246**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 250**.
 
 ### 4.12 Content reporting & moderation
 
@@ -142,11 +142,18 @@ Added user reporting of member content (comments and member posts) with admin mo
 - **Reversible hiding**: a separate `hiddenAt` (on Comment and Feed), distinct from user deletion (`deletedAt`), represents moderation hiding; hiding marks that target's pending reports `resolved`. Hidden content is filtered out of **every consumer** — listings (searchFeeds), profiles (listMemberPosts, getCommentsByUser), detail (admin-only view), and the comment tree (body blanked) — and the admin can restore it anytime.
 - **Admin queue** (`/admin/reports`): split into "pending"/"hidden" **sub-tabs**. Groups reports per target with count, reasons, and a preview; hide/dismiss, plus an unhide list for hidden content. The pending count shows as an admin-nav badge — **updated live via SSE (`reports` channel)** on new reports/resolution without a refresh.
 
+### 4.13 Admin stats dashboard
+
+`/admin/stats` adds view/signup trends, top posts, and headline numbers (CSS bars, no charting library).
+
+- **KST-correct aggregation**: `View.day` is already a KST `YYYY-MM-DD` **string**, so `view.groupBy(by:["day"])` gives daily view counts with no raw SQL (lexical = chronological order). `User.createdAt`, however, is a `DateTime`, so daily signups use **raw SQL `date(createdAt, '+9 hours')`** to extract the KST day (Prisma `groupBy` would split the timestamp by the second). Both trends build a recent-N-day KST window and **fill missing days with 0**.
+- Top posts use cumulative `Feed.viewCount desc` (one view = one unique View row). Access inherits the `/admin` layout's `verifySession()`. Bars keep the label and value as real text with the bar itself `aria-hidden`, so the chart is screen-reader accessible.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 246); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 250); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
