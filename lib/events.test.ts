@@ -48,3 +48,41 @@ describe("events bus (unread)", () => {
     expect(() => m.publishUnread("nobody", 9)).not.toThrow();
   });
 });
+
+describe("events bus (comments)", () => {
+  const ev = (id: string) =>
+    ({ kind: "deleted" as const, id });
+
+  test("feed 구독자는 해당 feed 이벤트만 받는다(feed 간 격리)", () => {
+    const a: string[] = [];
+    const b: string[] = [];
+    const offA = m.subscribeComment("feedA", (e) =>
+      a.push(e.kind === "deleted" ? e.id : e.node.id),
+    );
+    const offB = m.subscribeComment("feedB", (e) =>
+      b.push(e.kind === "deleted" ? e.id : e.node.id),
+    );
+    m.publishComment("feedA", ev("c1"));
+    m.publishComment("feedB", ev("c2"));
+    expect(a).toEqual(["c1"]);
+    expect(b).toEqual(["c2"]); // feedA 이벤트는 feedB에 안 감
+    offA();
+    offB();
+  });
+
+  test("unsubscribe 후 미수신, unread 채널과 독립", () => {
+    const got: string[] = [];
+    const offC = m.subscribeComment("f", (e) =>
+      got.push(e.kind === "deleted" ? e.id : "?"),
+    );
+    const unread: number[] = [];
+    const offU = m.subscribeUnread("f", (n) => unread.push(n)); // 같은 키라도 채널 분리
+    m.publishComment("f", ev("x"));
+    m.publishUnread("f", 7);
+    offC();
+    m.publishComment("f", ev("y"));
+    offU();
+    expect(got).toEqual(["x"]); // offC 이후 미수신
+    expect(unread).toEqual([7]); // comment publish가 unread 구독자에 안 감
+  });
+});

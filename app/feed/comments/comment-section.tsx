@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import type { CommentNode, CommentSort } from "@/lib/comments";
+import type { CommentNode, CommentSort, CommentEvent } from "@/lib/comments";
 import { ToastViewport, useToast } from "@/app/toast";
 import CommentForm from "./comment-form";
 import CommentItem from "./comment-item";
+import { applyCreated, applyDeleted, appendLoaded } from "./merge";
 import { deleteCommentAction, loadMoreCommentsAction } from "./comment-actions";
 
 export default function CommentSection({
@@ -28,8 +29,12 @@ export default function CommentSection({
   initialTotal: number;
   initialHighlightId?: string;
 }) {
-  const [items, setItems] = useState<CommentNode[]>(initialItems);
-  const [total, setTotal] = useState(initialTotal);
+  // items + total을 한 상태로 묶어 merge 헬퍼(낙관적·SSE 공용)가 원자적으로 갱신.
+  const [tree, setTree] = useState({
+    items: initialItems,
+    total: initialTotal,
+  });
+  const { items, total } = tree;
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [loadingMore, startMore] = useTransition();
   const [, startDelete] = useTransition();
@@ -60,22 +65,39 @@ export default function CommentSection({
     return () => clearTimeout(t);
   }, [items, show]);
 
+  // 실시간(SSE): 같은 글을 보는 다른 뷰어의 댓글·삭제를 트리에 병합.
+  // 본인 낙관적 삽입은 applyCreated의 id dedup으로 중복 흡수. 원격 이벤트는 스크롤 없음.
+  // (연결이 끊긴 동안 생성된 댓글은 라이브로 못 받음 — 새로고침/더보기로 재동기화.)
+  useEffect(() => {
+    const es = new EventSource(`/api/feed-events?feed=${feedId}`);
+    es.onmessage = (e) => {
+      let ev: CommentEvent;
+      try {
+        ev = JSON.parse(e.data) as CommentEvent;
+      } catch {
+        return;
+      }
+      setTree((t) =>
+        ev.kind === "created"
+          ? applyCreated(t.items, t.total, ev.parentId, ev.node)
+          : applyDeleted(t.items, t.total, ev.id),
+      );
+    };
+    return () => es.close();
+  }, [feedId]);
+
   function focusAfterRender(id: string) {
     pendingScroll.current = id;
   }
 
+  // 본인 작성분: 트리에 병합 + 해당 댓글로 스크롤.
   function onCreatedTop(comment: CommentNode) {
-    setItems((prev) => [comment, ...prev]);
-    setTotal((t) => t + 1);
+    setTree((t) => applyCreated(t.items, t.total, null, comment));
     focusAfterRender(comment.id);
   }
 
   function onCreatedReply(parentId: string, reply: CommentNode) {
-    setItems((prev) =>
-      prev.map((c) =>
-        c.id === parentId ? { ...c, replies: [...c.replies, reply] } : c,
-      ),
-    );
+    setTree((t) => applyCreated(t.items, t.total, parentId, reply));
     focusAfterRender(reply.id);
   }
 
@@ -90,28 +112,19 @@ export default function CommentSection({
     if (!id) return;
     deleteIdRef.current = null;
 
-    const top = items.find((t) => t.id === id);
-    if (top && top.replies.length === 0) setTotal((t) => t - 1);
-    setItems((prev) =>
-      prev.flatMap((t) => {
-        if (t.id === id)
-          return t.replies.length > 0
-            ? [{ ...t, deleted: true, content: "" }]
-            : [];
-        if (t.replies.some((r) => r.id === id))
-          return [{ ...t, replies: t.replies.filter((r) => r.id !== id) }];
-        return [t];
-      }),
-    );
-    startDelete(() => deleteCommentAction(id, slug));
+    setTree((t) => applyDeleted(t.items, t.total, id));
+    startDelete(() => deleteCommentAction(id, feedId, slug));
     show("댓글이 삭제되었습니다.", "success");
   }
 
   function loadMore() {
     startMore(async () => {
       const res = await loadMoreCommentsAction(feedId, sort, items.length);
-      setItems((prev) => [...prev, ...res.items]);
-      setTotal(res.total);
+      // 실시간으로 이미 들어온 댓글이 다음 페이지에 중복으로 올 수 있어 dedup.
+      setTree((t) => ({
+        items: appendLoaded(t.items, res.items),
+        total: res.total,
+      }));
     });
   }
 

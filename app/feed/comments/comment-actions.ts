@@ -13,6 +13,7 @@ import {
 import { toggleLike } from "@/lib/likes";
 import { toggleCommentLike } from "@/lib/comment-likes";
 import { notifyCommentReply, notifyFeedComment } from "@/lib/notifications";
+import { publishComment } from "@/lib/events";
 
 export type AddCommentResult = { error: string } | { comment: CommentNode };
 
@@ -55,21 +56,27 @@ export async function addCommentAction(
     }).catch(() => {});
   }
   revalidate(args.slug);
-  return {
-    comment: {
-      id: res.id,
-      userId: actor.userId,
-      nickname: actor.nickname,
-      authorRole: actor.role,
-      content: content.trim(),
-      deleted: false,
-      hidden: false,
-      createdAt: new Date().toISOString(),
-      likeCount: 0,
-      liked: false,
-      replies: [],
-    },
+  const node: CommentNode = {
+    id: res.id,
+    userId: actor.userId,
+    nickname: actor.nickname,
+    authorRole: actor.role,
+    content: content.trim(),
+    deleted: false,
+    hidden: false,
+    createdAt: new Date().toISOString(),
+    likeCount: 0,
+    liked: false,
+    replies: [],
   };
+  // 실시간(SSE): 같은 글을 보는 다른 뷰어에게 새 댓글 전파(본인은 dedup으로 흡수).
+  // liked:false·likeCount:0은 갓 생성된 댓글이라 모든 뷰어에 정확.
+  publishComment(args.feedId, {
+    kind: "created",
+    parentId: args.parentId ?? null,
+    node,
+  });
+  return { comment: node };
 }
 
 export async function loadMoreCommentsAction(
@@ -81,12 +88,22 @@ export async function loadMoreCommentsAction(
   return getFeedComments(feedId, { sort, skip, viewerUserId: actor?.userId });
 }
 
-export async function deleteCommentAction(commentId: string, slug: string) {
+export async function deleteCommentAction(
+  commentId: string,
+  feedId: string,
+  slug: string,
+) {
   const actor = await getCommentActor();
   if (!actor) return;
   const session = await getSession();
-  await deleteComment(commentId, actor.userId, session?.role === "admin");
+  const res = await deleteComment(
+    commentId,
+    actor.userId,
+    session?.role === "admin",
+  );
+  if (!res.ok) return; // 권한 없음 등 — 전파/리밸리데이트 생략
   revalidate(slug);
+  publishComment(feedId, { kind: "deleted", id: commentId }); // 실시간 전파
 }
 
 export async function toggleLikeAction(feedId: string, slug: string) {
