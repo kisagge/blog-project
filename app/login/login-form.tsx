@@ -1,4 +1,5 @@
 "use client";
+import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState } from "react";
 import { login, type LoginState } from "@/app/actions/auth";
 
@@ -21,7 +22,7 @@ export default function LoginForm({
         name="password"
         type="password"
         autoComplete="current-password"
-        className="rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20"
+        className={INPUT_CLASS}
       />
       {otpEnabled && (
         <>
@@ -50,7 +51,7 @@ export default function LoginForm({
       <button
         type="submit"
         disabled={pending}
-        className="bg-foreground text-background rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+        className={PRIMARY_BTN}
       >
         {pending ? "확인 중…" : "로그인"}
       </button>

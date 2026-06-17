@@ -1,9 +1,9 @@
 "use client";
+import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState, useEffect, useState } from "react";
 import { verifyCode, resendCode, type VerifyState } from "../actions";
 
-const inputCls =
-  "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
+const inputCls = INPUT_CLASS;
 
 function useCountdown(expiresAtMs: number) {
   const [remaining, setRemaining] = useState(() =>
@@ -67,7 +67,7 @@ export default function VerifyForm({ expiresAt }: { expiresAt: string }) {
         <button
           type="submit"
           disabled={pending || expired}
-          className="bg-foreground text-background rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+          className={PRIMARY_BTN}
         >
           {pending ? "확인 중…" : "확인"}
         </button>

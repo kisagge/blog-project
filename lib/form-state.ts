@@ -3,3 +3,6 @@
 export type FormState =
   | { errors?: Record<string, string[]>; error?: string; done?: boolean }
   | undefined;
+
+// 일반 에러만 다루는 액션(로그인·코드요청 등) 공용 상태.
+export type SimpleFormState = { error?: string } | undefined;

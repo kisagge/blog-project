@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { getClientIp } from "@/lib/client-ip";
 import {
   ResetEmailSchema,
   ResetCodeSchema,
@@ -17,10 +17,10 @@ import {
   getResetCookie,
   clearResetCookie,
 } from "@/lib/reset-token";
-import type { FormState } from "@/lib/form-state";
+import type { FormState, SimpleFormState } from "@/lib/form-state";
 
-export type RequestState = { error?: string } | undefined;
-export type VerifyState = { error?: string } | undefined;
+export type RequestState = SimpleFormState;
+export type VerifyState = SimpleFormState;
 export type ResetState = FormState;
 
 // 1단계: 이메일 입력 → 코드 발송(존재 비노출) → 검증 페이지로.
@@ -28,11 +28,10 @@ export async function requestCode(
   _state: RequestState,
   formData: FormData,
 ): Promise<RequestState> {
-  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim();
   if (
     !(await verifyTurnstile(
       String(formData.get("cf-turnstile-response") ?? ""),
-      ip,
+      await getClientIp(),
     ))
   )
     return { error: "사람 확인에 실패했습니다. 다시 시도해 주세요." };

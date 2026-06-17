@@ -1,21 +1,18 @@
 "use client";
-import { useActionState, useEffect } from "react";
+import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
+import { useActionState } from "react";
 import Link from "next/link";
 import { signup, type SignupState } from "./actions";
-import TurnstileWidget from "@/app/turnstile-widget";
+import TurnstileWidget, { useTurnstileReset } from "@/app/turnstile-widget";
 
-const inputCls =
-  "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
+const inputCls = INPUT_CLASS;
 
 export default function SignupForm({ siteKey }: { siteKey?: string }) {
   const [state, action, pending] = useActionState<SignupState, FormData>(
     signup,
     undefined,
   );
-  // 검증 실패 시 위젯 토큰을 리셋(단일 사용 → 재시도 시 신규 토큰).
-  useEffect(() => {
-    if (state?.error) window.turnstile?.reset();
-  }, [state]);
+  useTurnstileReset(state); // 검증 실패 시 위젯 토큰 리셋(단일 사용)
   if (state?.done) {
     return (
       <div className="w-full max-w-sm text-center">
@@ -55,7 +52,7 @@ export default function SignupForm({ siteKey }: { siteKey?: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="bg-foreground text-background rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+        className={PRIMARY_BTN}
       >
         {pending ? "신청 중…" : "가입 신청"}
       </button>
