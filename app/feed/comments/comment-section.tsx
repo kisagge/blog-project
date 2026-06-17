@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import type { CommentNode, CommentSort, CommentEvent } from "@/lib/comments";
+import type { CommentNode, CommentSort } from "@/lib/comments";
 import { ToastViewport, useToast } from "@/app/toast";
+import { useFeedEvent } from "../feed-events-context";
 import CommentForm from "./comment-form";
 import CommentItem from "./comment-item";
 import {
@@ -71,30 +72,21 @@ export default function CommentSection({
     return () => clearTimeout(t);
   }, [items, show]);
 
-  // 실시간(SSE): 같은 글을 보는 다른 뷰어의 댓글·삭제를 트리에 병합.
+  // 실시간(SSE): 같은 글을 보는 다른 뷰어의 댓글·삭제를 트리에 병합(피드 연결 공유).
   // 본인 낙관적 삽입은 applyCreated의 id dedup으로 중복 흡수. 원격 이벤트는 스크롤 없음.
-  // (연결이 끊긴 동안 생성된 댓글은 라이브로 못 받음 — 새로고침/더보기로 재동기화.)
-  useEffect(() => {
-    const es = new EventSource(`/api/feed-events?feed=${feedId}`);
-    es.onmessage = (e) => {
-      let ev: CommentEvent;
-      try {
-        ev = JSON.parse(e.data) as CommentEvent;
-      } catch {
-        return;
-      }
-      setTree((t) => {
-        if (ev.kind === "created")
-          return applyCreated(t.items, t.total, ev.parentId, ev.node);
-        if (ev.kind === "edited")
-          return applyEdited(t.items, t.total, ev.id, ev.content);
-        if (ev.kind === "likeCount")
-          return applyLikeCount(t.items, t.total, ev.id, ev.count);
-        return applyDeleted(t.items, t.total, ev.id);
-      });
-    };
-    return () => es.close();
-  }, [feedId]);
+  // feedLike(글 좋아요)는 좋아요 버튼 몫이라 무시. (끊긴 동안 생성분은 새로고침/더보기로 재동기화.)
+  useFeedEvent((ev) => {
+    if (ev.kind === "feedLike") return;
+    setTree((t) => {
+      if (ev.kind === "created")
+        return applyCreated(t.items, t.total, ev.parentId, ev.node);
+      if (ev.kind === "edited")
+        return applyEdited(t.items, t.total, ev.id, ev.content);
+      if (ev.kind === "likeCount")
+        return applyLikeCount(t.items, t.total, ev.id, ev.count);
+      return applyDeleted(t.items, t.total, ev.id);
+    });
+  });
 
   function focusAfterRender(id: string) {
     pendingScroll.current = id;
