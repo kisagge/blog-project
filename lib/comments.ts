@@ -57,6 +57,11 @@ export type CommentNode = {
   replies: CommentNode[];
 };
 
+// 실시간(SSE) 댓글 이벤트 — 서버 액션이 publish, 클라이언트가 트리에 병합.
+export type CommentEvent =
+  | { kind: "created"; parentId: string | null; node: CommentNode }
+  | { kind: "deleted"; id: string };
+
 function toNode(
   c: {
     id: string;

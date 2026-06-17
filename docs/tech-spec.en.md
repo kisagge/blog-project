@@ -101,7 +101,8 @@ Built an installable PWA alongside notifications.
 - **PWA**: `manifest` + a service worker (offline caching) + icons. The service worker focuses/opens the relevant URL on push receipt/click.
 - **Web push**: VAPID-based (web-push); per-device subscriptions are stored unique by `endpoint`, and expired (404/410) subscriptions are pruned during send.
 - **In-app notification center**: a comment notifies the feed owner, a reply notifies the parent comment's author. Entering the page auto-marks read; clicking a notification deep-links via `?c={commentId}` to **scroll and highlight that comment** (auto-expanding the parent thread for replies). This is groundwork for generalizing "owner" to user-authored posts later.
-- **Real-time notifications (SSE)**: the header bell badge updates live via **Server-Sent Events** (web push covers closed tabs, SSE covers open ones — complementary). On a single container, an **in-memory per-user bus** (`lib/events.ts`, same shape as the rate-limit Map) has `createNotification`/`markAllRead` publish the unread count, and the `/api/events` route streams it to subscribers via a `ReadableStream`. **No nginx change** (response `X-Accel-Buffering: no` + a 25s heartbeat avoid buffering and idle timeouts); on disconnect (`req.signal` abort/cancel) the subscription and interval are cleaned up to prevent leaks. EventSource auto-reconnects and the current count is re-sent on connect to resync.
+- **Real-time notifications (SSE)**: the header bell badge updates live via **Server-Sent Events** (web push covers closed tabs, SSE covers open ones — complementary). On a single container, an **in-memory channel bus** (`lib/events.ts`, same shape as the rate-limit Map) has `createNotification`/`markAllRead` publish the unread count, and the `/api/events` route streams it to subscribers via a `ReadableStream`. **No nginx change** (response `X-Accel-Buffering: no` + a 25s heartbeat avoid buffering and idle timeouts); on disconnect (`req.signal` abort/cancel) the subscription and interval are cleaned up to prevent leaks. EventSource auto-reconnects and the current count is re-sent on connect to resync.
+- **Real-time comments (SSE)**: extends the same bus with a `feed:{id}` channel. The add/delete comment server actions publish a `CommentEvent` (the created node / deleted id), and the `/api/feed-events` route streams it under the **same access gate as the post detail** (`checkAccess` + draft/hidden blocking; public posts allow anon). The client merges into the tree with the **same pure functions used for optimistic insertion** (`merge.ts`'s `applyCreated`/`applyDeleted`), and **id-based dedup** absorbs the overlap between the author's optimistic insert and the SSE echo (remote events don't scroll).
 
 ### 4.8 Global request rate limiting (abuse prevention)
 
@@ -127,7 +128,7 @@ Combines title/body/summary substring search with 10-item infinite scroll.
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 197**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 208**.
 
 ### 4.12 Content reporting & moderation
 
@@ -143,5 +144,5 @@ Added user reporting of member content (comments and member posts) with admin mo
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 197); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 208); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
