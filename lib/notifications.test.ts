@@ -57,6 +57,17 @@ describe("notifications", () => {
     expect(list).toHaveLength(2);
   });
 
+  test("createNotification·markAllRead가 SSE 버스로 unread를 publish", async () => {
+    const events = await import("@/lib/events");
+    const recv: number[] = [];
+    const off = events.subscribeUnread(replierId, (n) => recv.push(n));
+    await m.createNotification(replierId, "버스알림1");
+    await m.createNotification(replierId, "버스알림2");
+    await m.markAllRead(replierId);
+    off();
+    expect(recv).toEqual([1, 2, 0]); // 누적 unread 1,2 → 읽음 0
+  });
+
   test("notifyCommentReply: 타인 답글 → 알림 생성 + 푸시", async () => {
     sendNotification.mockClear();
     const before = await prisma.notification.count({

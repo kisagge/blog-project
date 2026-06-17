@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendToUser } from "@/lib/push";
 import { getSession } from "@/lib/dal";
 import { ensureAdminUser, ADMIN_EMAIL } from "@/lib/comment-actor";
+import { publishUnread } from "@/lib/events";
 
 export async function createNotification(
   userId: string,
@@ -10,6 +11,8 @@ export async function createNotification(
   url?: string,
 ) {
   await prisma.notification.create({ data: { userId, body, url } });
+  // 열린 탭(SSE)에 미읽음 수 즉시 반영.
+  publishUnread(userId, await countUnread(userId));
 }
 
 export async function listNotifications(userId: string, take = 30) {
@@ -29,6 +32,7 @@ export async function markAllRead(userId: string) {
     where: { userId, readAt: null },
     data: { readAt: new Date() },
   });
+  publishUnread(userId, 0); // 다른 열린 탭 배지도 즉시 0
 }
 
 // 답글 → 원댓글 작성자에게 인앱 알림 생성 + 푸시(본인 제외). url은 답글로 딥링크.
