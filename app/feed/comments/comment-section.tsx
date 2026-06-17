@@ -22,6 +22,7 @@ export default function CommentSection({
   canParticipate,
   actorUserId,
   isAdmin,
+  linkAuthors,
   initialItems,
   initialTotal,
   initialHighlightId,
@@ -32,6 +33,7 @@ export default function CommentSection({
   canParticipate: boolean;
   actorUserId?: string;
   isAdmin: boolean;
+  linkAuthors: boolean;
   initialItems: CommentNode[];
   initialTotal: number;
   initialHighlightId?: string;
@@ -166,6 +168,7 @@ export default function CommentSection({
               canParticipate={canParticipate}
               actorUserId={actorUserId}
               isAdmin={isAdmin}
+              linkAuthors={linkAuthors}
               highlightId={highlightId}
               initialHighlightId={initialHighlightId}
               onRequestDelete={requestDelete}

@@ -15,6 +15,7 @@ export default function CommentItem({
   canParticipate,
   actorUserId,
   isAdmin,
+  linkAuthors,
   isReply = false,
   highlightId,
   initialHighlightId,
@@ -28,6 +29,7 @@ export default function CommentItem({
   canParticipate: boolean;
   actorUserId?: string;
   isAdmin: boolean;
+  linkAuthors: boolean; // 비회원(anon) 뷰어에겐 false → 작성자 닉네임 평문(막다른 프로필 링크 제거).
   isReply?: boolean;
   highlightId?: string | null;
   initialHighlightId?: string;
@@ -89,7 +91,7 @@ export default function CommentItem({
       <div className="flex items-center gap-2 text-sm">
         {node.deleted || node.hidden ? (
           <span className="font-medium">—</span>
-        ) : node.authorRole === "member" ? (
+        ) : node.authorRole === "member" && linkAuthors ? (
           <Link
             href={`/u/${node.userId}`}
             className="font-medium hover:underline"
@@ -242,6 +244,7 @@ export default function CommentItem({
               canParticipate={canParticipate}
               actorUserId={actorUserId}
               isAdmin={isAdmin}
+              linkAuthors={linkAuthors}
               isReply
               highlightId={highlightId}
               initialHighlightId={initialHighlightId}

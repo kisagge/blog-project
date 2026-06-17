@@ -10,6 +10,7 @@ type Props = {
   initialQuery: string;
   author?: "admin" | "member"; // 어느 목록인지(관리자 글/회원 글) — 무한스크롤에도 전달
   initialTag?: string; // 태그 slug 필터(URL ?tag=). 변경 시 page에서 key로 remount.
+  linkAuthors?: boolean; // 비회원(anon) 뷰어에겐 false → 작성자 닉네임 평문(막다른 프로필 링크 제거).
 };
 
 export default function FeedList({
@@ -18,6 +19,7 @@ export default function FeedList({
   initialQuery,
   author,
   initialTag,
+  linkAuthors = true,
 }: Props) {
   const [items, setItems] = useState(initialItems);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -160,7 +162,7 @@ export default function FeedList({
                   </span>
                 )}
                 {feed.authorName &&
-                  (feed.authorId ? (
+                  (feed.authorId && linkAuthors ? (
                     <span>
                       <Link
                         href={`/u/${feed.authorId}`}

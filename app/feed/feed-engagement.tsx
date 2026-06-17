@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/dal";
+import { getSession, getViewerRole } from "@/lib/dal";
 import { getCommentActor } from "@/lib/comment-actor";
 import { getFeedComments, type CommentSort } from "@/lib/comments";
 import { getLikeSummary } from "@/lib/likes";
@@ -19,8 +19,11 @@ export default async function FeedEngagement({
 }) {
   const session = await getSession();
   const actor = await getCommentActor();
+  const role = await getViewerRole(); // 상세 페이지가 이미 호출 → cache()로 추가 비용 0
   const isAdmin = session?.role === "admin";
   const canParticipate = !!actor;
+  // 비회원(anon) 뷰어에겐 작성자 닉네임을 평문으로(막다른 프로필 링크 제거).
+  const linkAuthors = role !== "anon";
   const [page, like] = await Promise.all([
     getFeedComments(feedId, { sort, viewerUserId: actor?.userId }),
     getLikeSummary(feedId, actor?.userId),
@@ -46,6 +49,7 @@ export default async function FeedEngagement({
           canParticipate={canParticipate}
           actorUserId={actor?.userId}
           isAdmin={isAdmin}
+          linkAuthors={linkAuthors}
           initialItems={page.items}
           initialTotal={page.total}
           initialHighlightId={highlightCommentId}

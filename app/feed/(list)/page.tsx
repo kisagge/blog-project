@@ -37,6 +37,7 @@ export default async function FeedListPage({
         initialQuery={q}
         author="admin"
         initialTag={tag}
+        linkAuthors={role !== "anon"}
       />
     </main>
   );
