@@ -29,6 +29,16 @@ export function applyCreated(
   return inserted ? { items: next, total } : { items, total };
 }
 
+// loadMore로 받은 다음 페이지를 이어붙이되, 실시간(SSE)으로 이미 들어온 상위 댓글과의
+// 중복 제거. 정렬(인기순) 차이로 prepend된 신규 댓글이 다음 페이지에 다시 올 수 있어 필요.
+export function appendLoaded(
+  items: CommentNode[],
+  more: CommentNode[],
+): CommentNode[] {
+  const seen = new Set(items.map((c) => c.id));
+  return [...items, ...more.filter((c) => !seen.has(c.id))];
+}
+
 // 삭제 병합. 상위+대댓글 있음 → 가림(내용 비움), 상위+대댓글 없음 → 제거(−total),
 // 대댓글 → 부모에서 제거(total 불변). 없으면 변경 없음.
 export function applyDeleted(

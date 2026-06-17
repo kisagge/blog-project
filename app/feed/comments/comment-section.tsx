@@ -5,7 +5,7 @@ import type { CommentNode, CommentSort, CommentEvent } from "@/lib/comments";
 import { ToastViewport, useToast } from "@/app/toast";
 import CommentForm from "./comment-form";
 import CommentItem from "./comment-item";
-import { applyCreated, applyDeleted } from "./merge";
+import { applyCreated, applyDeleted, appendLoaded } from "./merge";
 import { deleteCommentAction, loadMoreCommentsAction } from "./comment-actions";
 
 export default function CommentSection({
@@ -67,6 +67,7 @@ export default function CommentSection({
 
   // 실시간(SSE): 같은 글을 보는 다른 뷰어의 댓글·삭제를 트리에 병합.
   // 본인 낙관적 삽입은 applyCreated의 id dedup으로 중복 흡수. 원격 이벤트는 스크롤 없음.
+  // (연결이 끊긴 동안 생성된 댓글은 라이브로 못 받음 — 새로고침/더보기로 재동기화.)
   useEffect(() => {
     const es = new EventSource(`/api/feed-events?feed=${feedId}`);
     es.onmessage = (e) => {
@@ -119,7 +120,11 @@ export default function CommentSection({
   function loadMore() {
     startMore(async () => {
       const res = await loadMoreCommentsAction(feedId, sort, items.length);
-      setTree((t) => ({ items: [...t.items, ...res.items], total: res.total }));
+      // 실시간으로 이미 들어온 댓글이 다음 페이지에 중복으로 올 수 있어 dedup.
+      setTree((t) => ({
+        items: appendLoaded(t.items, res.items),
+        total: res.total,
+      }));
     });
   }
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { CommentNode } from "@/lib/comments";
-import { applyCreated, applyDeleted } from "./merge";
+import { applyCreated, applyDeleted, appendLoaded } from "./merge";
 
 function node(id: string, replies: CommentNode[] = []): CommentNode {
   return {
@@ -79,5 +79,21 @@ describe("applyDeleted", () => {
     const r = applyDeleted(items, 1, "ghost");
     expect(r.items).toBe(items);
     expect(r.total).toBe(1);
+  });
+
+  test("하드 삭제 두 번 적용해도 total은 한 번만 감소(idempotent)", () => {
+    const r1 = applyDeleted([node("a"), node("b")], 2, "a");
+    const r2 = applyDeleted(r1.items, r1.total, "a"); // SSE 에코 재적용
+    expect(r2.items.map((c) => c.id)).toEqual(["b"]);
+    expect(r2.total).toBe(1); // -1 한 번만
+  });
+});
+
+describe("appendLoaded", () => {
+  test("기존에 없는 항목만 이어붙임(실시간 prepend된 댓글 중복 제거)", () => {
+    const items = [node("live"), node("a")]; // live는 SSE로 먼저 들어옴
+    const more = [node("a"), node("live"), node("c")]; // 다음 페이지에 a·live 재등장
+    const merged = appendLoaded(items, more);
+    expect(merged.map((c) => c.id)).toEqual(["live", "a", "c"]); // 중복 없음
   });
 });
