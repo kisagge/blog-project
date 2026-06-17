@@ -3,7 +3,14 @@ import type { CommentEvent } from "@/lib/comments";
 
 // 인메모리 채널 버스(단일 컨테이너 전제 — rate-limit Map과 동형).
 // 열린 SSE 연결로 이벤트를 팬아웃. 다중 인스턴스로 확장 시엔 Redis pub/sub 등 외부 버스 필요.
-const channels = new Map<string, Set<(data: unknown) => void>>();
+//
+// globalThis에 고정: Next App Router는 SSE 라우트 핸들러(구독)와 서버 액션(발행)을
+// 서로 다른 서버 번들/모듈 인스턴스로 평가할 수 있어, 평범한 모듈 레벨 Map이면
+// publish와 subscribe가 다른 Map을 보게 돼 이벤트가 전달되지 않는다(운영 빌드에서 발현).
+// prisma(lib/prisma.ts)와 동일한 globalThis 싱글톤 패턴으로 프로세스 전역 단일 인스턴스 보장.
+type Channels = Map<string, Set<(data: unknown) => void>>;
+const g = globalThis as unknown as { __eventChannels?: Channels };
+const channels: Channels = (g.__eventChannels ??= new Map());
 
 function subscribe(channel: string, cb: (data: unknown) => void): () => void {
   let set = channels.get(channel);
