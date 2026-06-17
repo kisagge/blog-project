@@ -24,21 +24,21 @@ afterAll(async () => {
 });
 
 describe("likes", () => {
-  test("toggle: 처음엔 생성(liked), 다시 누르면 취소", async () => {
-    expect(await m.toggleLike(feedId, u1)).toBe(true);
+  test("toggle: 처음엔 생성(liked)+count, 다시 누르면 취소", async () => {
+    expect(await m.toggleLike(feedId, u1)).toEqual({ liked: true, count: 1 });
     expect(await m.getLikeSummary(feedId, u1)).toEqual({
       count: 1,
       liked: true,
     });
-    expect(await m.toggleLike(feedId, u1)).toBe(false);
+    expect(await m.toggleLike(feedId, u1)).toEqual({ liked: false, count: 0 });
     expect(await m.getLikeSummary(feedId, u1)).toEqual({
       count: 0,
       liked: false,
     });
   });
   test("여러 사용자 카운트 + liked는 사용자별", async () => {
-    await m.toggleLike(feedId, u1);
-    await m.toggleLike(feedId, u2);
+    expect(await m.toggleLike(feedId, u1)).toEqual({ liked: true, count: 1 });
+    expect(await m.toggleLike(feedId, u2)).toEqual({ liked: true, count: 2 });
     expect(await m.getLikeSummary(feedId, u1)).toEqual({
       count: 2,
       liked: true,

@@ -49,19 +49,21 @@ describe("events bus (unread)", () => {
   });
 });
 
-describe("events bus (comments)", () => {
-  const ev = (id: string) =>
-    ({ kind: "deleted" as const, id });
+describe("events bus (feed: comments + likes)", () => {
+  const ev = (id: string) => ({ kind: "deleted" as const, id });
+  // FeedEvent에서 식별자 추출(테스트 가독용): 댓글류는 id/node.id, 글 좋아요는 count 태깅.
+  const tag = (e: import("@/lib/comments").FeedEvent): string =>
+    e.kind === "created"
+      ? e.node.id
+      : e.kind === "feedLike"
+        ? `like:${e.count}`
+        : e.id;
 
   test("feed 구독자는 해당 feed 이벤트만 받는다(feed 간 격리)", () => {
     const a: string[] = [];
     const b: string[] = [];
-    const offA = m.subscribeComment("feedA", (e) =>
-      a.push(e.kind === "created" ? e.node.id : e.id),
-    );
-    const offB = m.subscribeComment("feedB", (e) =>
-      b.push(e.kind === "created" ? e.node.id : e.id),
-    );
+    const offA = m.subscribeFeed("feedA", (e) => a.push(tag(e)));
+    const offB = m.subscribeFeed("feedB", (e) => b.push(tag(e)));
     m.publishComment("feedA", ev("c1"));
     m.publishComment("feedB", ev("c2"));
     expect(a).toEqual(["c1"]);
@@ -70,11 +72,20 @@ describe("events bus (comments)", () => {
     offB();
   });
 
+  test("글 좋아요(feedLike)도 같은 채널로 전달, 댓글과 함께 수신", () => {
+    const got: string[] = [];
+    const off = m.subscribeFeed("feedL", (e) => got.push(tag(e)));
+    m.publishComment("feedL", ev("c1"));
+    m.publishFeedLike("feedL", 5);
+    m.publishFeedLike("feedL", 4);
+    off();
+    m.publishFeedLike("feedL", 9); // off 이후 미수신
+    expect(got).toEqual(["c1", "like:5", "like:4"]);
+  });
+
   test("unsubscribe 후 미수신, unread 채널과 독립", () => {
     const got: string[] = [];
-    const offC = m.subscribeComment("f", (e) =>
-      got.push(e.kind === "deleted" ? e.id : "?"),
-    );
+    const offC = m.subscribeFeed("f", (e) => got.push(tag(e)));
     const unread: number[] = [];
     const offU = m.subscribeUnread("f", (n) => unread.push(n)); // 같은 키라도 채널 분리
     m.publishComment("f", ev("x"));

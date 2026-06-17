@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { getViewerRole } from "@/lib/dal";
 import { checkAccess, type Visibility } from "@/lib/visibility";
-import { subscribeComment } from "@/lib/events";
+import { subscribeFeed } from "@/lib/events";
 
-// SSE: 특정 글의 댓글 생성·수정·삭제 이벤트를 실시간 전달. 접근은 글 상세와 동일하게 게이트.
+// SSE: 특정 글의 피드 이벤트(댓글 생성·수정·삭제 + 글 좋아요 수)를 실시간 전달.
+// 접근은 글 상세와 동일하게 게이트.
 export const dynamic = "force-dynamic";
 
 const HEARTBEAT_MS = 25_000;
@@ -59,7 +60,7 @@ export async function GET(req: Request) {
       req.signal.addEventListener("abort", onAbort);
 
       send(": connected\n\n");
-      unsubscribe = subscribeComment(feedId, (ev) =>
+      unsubscribe = subscribeFeed(feedId, (ev) =>
         send(`data: ${JSON.stringify(ev)}\n\n`),
       );
       heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);

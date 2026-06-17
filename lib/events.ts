@@ -1,5 +1,5 @@
 import "server-only";
-import type { CommentEvent } from "@/lib/comments";
+import type { CommentEvent, FeedEvent } from "@/lib/comments";
 
 // 인메모리 채널 버스(단일 컨테이너 전제 — rate-limit Map과 동형).
 // 열린 SSE 연결로 이벤트를 팬아웃. 다중 인스턴스로 확장 시엔 Redis pub/sub 등 외부 버스 필요.
@@ -39,15 +39,19 @@ export function publishUnread(userId: string, unread: number): void {
   publish(`user:${userId}`, unread);
 }
 
-// ── 댓글 이벤트(per-feed) ──
-export function subscribeComment(
+// ── 피드 이벤트(per-feed): 댓글 + 글 좋아요를 같은 `feed:{id}` 채널로 ──
+// 구독은 union(FeedEvent)으로 받고(라우트가 그대로 전달), 발행은 종류별 헬퍼로.
+export function subscribeFeed(
   feedId: string,
-  cb: (ev: CommentEvent) => void,
+  cb: (ev: FeedEvent) => void,
 ): () => void {
-  return subscribe(`feed:${feedId}`, (d) => cb(d as CommentEvent));
+  return subscribe(`feed:${feedId}`, (d) => cb(d as FeedEvent));
 }
 export function publishComment(feedId: string, ev: CommentEvent): void {
   publish(`feed:${feedId}`, ev);
+}
+export function publishFeedLike(feedId: string, count: number): void {
+  publish(`feed:${feedId}`, { kind: "feedLike", count });
 }
 
 // ── 미처리 신고 수(관리자 단일 채널) ──

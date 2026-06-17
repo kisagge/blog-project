@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import LoginRequiredModal from "./login-required-modal";
+import { useFeedEvent } from "./feed-events-context";
 import { toggleLikeAction } from "./comments/comment-actions";
 
 export default function LikeButton({
@@ -19,6 +20,13 @@ export default function LikeButton({
   const [count, setCount] = useState(initialCount);
   const [liked, setLiked] = useState(initialLiked);
   const modal = useRef<HTMLDialogElement>(null);
+
+  // 실시간(SSE, 피드 연결 공유): 다른 뷰어의 좋아요로 바뀐 서버 truth로 카운트 갱신.
+  // 본인 클릭은 낙관적 +/−1 후 커밋→자기 에코로 같은 값에 수렴(낙관==truth라 깜빡임 없음).
+  // liked(하트)는 뷰어별이라 SSE로 바꾸지 않는다(낙관 유지).
+  useFeedEvent((ev) => {
+    if (ev.kind === "feedLike") setCount(ev.count);
+  });
 
   // 디바운스: 연타를 최종 상태 1요청으로 합침(toggle은 현재 상태를 뒤집음).
   const committed = useRef(initialLiked);

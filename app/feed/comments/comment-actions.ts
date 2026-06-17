@@ -14,7 +14,7 @@ import {
 import { toggleLike } from "@/lib/likes";
 import { toggleCommentLike } from "@/lib/comment-likes";
 import { notifyCommentReply, notifyFeedComment } from "@/lib/notifications";
-import { publishComment } from "@/lib/events";
+import { publishComment, publishFeedLike } from "@/lib/events";
 
 export type AddCommentResult = { error: string } | { comment: CommentNode };
 
@@ -128,8 +128,10 @@ export async function editCommentAction(
 export async function toggleLikeAction(feedId: string, slug: string) {
   const actor = await getCommentActor();
   if (!actor) return;
-  await toggleLike(feedId, actor.userId);
+  const { count } = await toggleLike(feedId, actor.userId);
   revalidate(slug);
+  // 실시간: 같은 글을 보는 다른 뷰어에게 새 좋아요 수 전파(본인 liked는 낙관 유지).
+  publishFeedLike(feedId, count);
 }
 
 export async function toggleCommentLikeAction(

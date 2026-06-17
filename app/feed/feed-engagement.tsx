@@ -4,6 +4,7 @@ import { getFeedComments, type CommentSort } from "@/lib/comments";
 import { getLikeSummary } from "@/lib/likes";
 import LikeButton from "./like-button";
 import CommentSection from "./comments/comment-section";
+import { FeedEventsProvider } from "./feed-events-context";
 
 export default async function FeedEngagement({
   feedId,
@@ -27,26 +28,29 @@ export default async function FeedEngagement({
 
   return (
     <section className="mt-10 border-t border-black/[.08] pt-6 dark:border-white/[.145]">
-      <LikeButton
-        feedId={feedId}
-        slug={slug}
-        initialCount={like.count}
-        initialLiked={like.liked}
-        canParticipate={canParticipate}
-      />
-      {/* 정렬 변경(URL) 시 새 초기 데이터로 다시 마운트 */}
-      <CommentSection
-        key={sort}
-        feedId={feedId}
-        slug={slug}
-        sort={sort}
-        canParticipate={canParticipate}
-        actorUserId={actor?.userId}
-        isAdmin={isAdmin}
-        initialItems={page.items}
-        initialTotal={page.total}
-        initialHighlightId={highlightCommentId}
-      />
+      {/* 댓글·좋아요가 피드 SSE 연결 1개를 공유 */}
+      <FeedEventsProvider feedId={feedId}>
+        <LikeButton
+          feedId={feedId}
+          slug={slug}
+          initialCount={like.count}
+          initialLiked={like.liked}
+          canParticipate={canParticipate}
+        />
+        {/* 정렬 변경(URL) 시 새 초기 데이터로 다시 마운트 */}
+        <CommentSection
+          key={sort}
+          feedId={feedId}
+          slug={slug}
+          sort={sort}
+          canParticipate={canParticipate}
+          actorUserId={actor?.userId}
+          isAdmin={isAdmin}
+          initialItems={page.items}
+          initialTotal={page.total}
+          initialHighlightId={highlightCommentId}
+        />
+      </FeedEventsProvider>
     </section>
   );
 }
