@@ -132,9 +132,15 @@ export async function toggleLikeAction(feedId: string, slug: string) {
   revalidate(slug);
 }
 
-export async function toggleCommentLikeAction(commentId: string, slug: string) {
+export async function toggleCommentLikeAction(
+  commentId: string,
+  feedId: string,
+  slug: string,
+) {
   const actor = await getCommentActor();
   if (!actor) return;
-  await toggleCommentLike(commentId, actor.userId);
+  const { count } = await toggleCommentLike(commentId, actor.userId);
   revalidate(slug);
+  // 실시간: 같은 글을 보는 다른 뷰어에게 새 좋아요 수 전파(본인 liked는 낙관 유지).
+  publishComment(feedId, { kind: "likeCount", id: commentId, count });
 }

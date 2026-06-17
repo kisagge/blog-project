@@ -5,7 +5,13 @@ import type { CommentNode, CommentSort, CommentEvent } from "@/lib/comments";
 import { ToastViewport, useToast } from "@/app/toast";
 import CommentForm from "./comment-form";
 import CommentItem from "./comment-item";
-import { applyCreated, applyDeleted, applyEdited, appendLoaded } from "./merge";
+import {
+  applyCreated,
+  applyDeleted,
+  applyEdited,
+  applyLikeCount,
+  appendLoaded,
+} from "./merge";
 import { deleteCommentAction, loadMoreCommentsAction } from "./comment-actions";
 
 export default function CommentSection({
@@ -82,6 +88,8 @@ export default function CommentSection({
           return applyCreated(t.items, t.total, ev.parentId, ev.node);
         if (ev.kind === "edited")
           return applyEdited(t.items, t.total, ev.id, ev.content);
+        if (ev.kind === "likeCount")
+          return applyLikeCount(t.items, t.total, ev.id, ev.count);
         return applyDeleted(t.items, t.total, ev.id);
       });
     };

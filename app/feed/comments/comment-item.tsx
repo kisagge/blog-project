@@ -160,6 +160,7 @@ export default function CommentItem({
         {!gone && (
           <CommentLikeButton
             commentId={node.id}
+            feedId={feedId}
             slug={slug}
             initialCount={node.likeCount}
             initialLiked={node.liked}

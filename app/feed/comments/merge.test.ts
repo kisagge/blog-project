@@ -4,6 +4,7 @@ import {
   applyCreated,
   applyDeleted,
   applyEdited,
+  applyLikeCount,
   appendLoaded,
 } from "./merge";
 
@@ -115,6 +116,22 @@ describe("applyEdited", () => {
     const items = [node("a")];
     const r = applyEdited(items, 1, "ghost", "x");
     expect(r.items).toBe(items);
+  });
+});
+
+describe("applyLikeCount", () => {
+  test("상위/대댓글 likeCount 갱신(liked·content 불변), total 불변", () => {
+    const items = [node("a", [node("a1")])];
+    const r = applyLikeCount(items, 1, "a", 5);
+    expect(r.items[0].likeCount).toBe(5);
+    expect(r.items[0].content).toBe("c-a"); // 본문 불변
+    const r2 = applyLikeCount(r.items, 1, "a1", 3);
+    expect(r2.items[0].replies[0].likeCount).toBe(3);
+    expect(r2.total).toBe(1);
+  });
+  test("없는 id → 변경 없음", () => {
+    const items = [node("a")];
+    expect(applyLikeCount(items, 1, "ghost", 9).items).toBe(items);
   });
 });
 

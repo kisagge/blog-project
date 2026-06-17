@@ -30,8 +30,14 @@ afterAll(async () => {
 
 describe("comment likes", () => {
   test("토글: 생성/취소 + 트리에 likeCount·liked 반영", async () => {
-    expect(await cl.toggleCommentLike(commentId, u1)).toBe(true);
-    expect(await cl.toggleCommentLike(commentId, u2)).toBe(true);
+    expect(await cl.toggleCommentLike(commentId, u1)).toEqual({
+      liked: true,
+      count: 1,
+    });
+    expect(await cl.toggleCommentLike(commentId, u2)).toEqual({
+      liked: true,
+      count: 2,
+    });
     const tree = await c.getFeedComments(feedId, { viewerUserId: u1 });
     expect(tree.items[0].likeCount).toBe(2);
     expect(tree.items[0].liked).toBe(true);
@@ -39,7 +45,10 @@ describe("comment likes", () => {
     const tree2 = await c.getFeedComments(feedId, { viewerUserId: undefined });
     expect(tree2.items[0].liked).toBe(false);
     // 취소
-    expect(await cl.toggleCommentLike(commentId, u1)).toBe(false);
+    expect(await cl.toggleCommentLike(commentId, u1)).toEqual({
+      liked: false,
+      count: 1,
+    });
     expect((await c.getFeedComments(feedId)).items[0].likeCount).toBe(1);
   });
 });
