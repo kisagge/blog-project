@@ -176,6 +176,118 @@ describe("searchFeeds", () => {
     expect(items.map((f) => f.slug)).toEqual(["pub-7"]);
   });
 
+  test("FTS 부분일치: 3자 토큰이 단어 중간에 매치(trigram)", async () => {
+    // pub-7 content "강아지물고기 본문" — "물고기"(3자)가 부분일치
+    const { items } = await searchFeeds({ role: "anon", q: "물고기" });
+    expect(items.map((f) => f.slug)).toEqual(["pub-7"]);
+  });
+
+  test("FTS BM25 랭킹: 제목 매치가 본문 매치보다 먼저", async () => {
+    await prisma.feed.create({
+      data: {
+        id: "rk-title",
+        slug: "rk-title",
+        title: "랭킹고유단어 글",
+        content: "본문",
+        visibility: "public",
+        createdAt: new Date(2026, 2, 1),
+        updatedAt: new Date(2026, 2, 1),
+      },
+    });
+    await prisma.feed.create({
+      data: {
+        id: "rk-body",
+        slug: "rk-body",
+        title: "보통 글",
+        content: "본문에 랭킹고유단어 포함",
+        visibility: "public",
+        createdAt: new Date(2026, 2, 2),
+        updatedAt: new Date(2026, 2, 2),
+      },
+    });
+    const { items } = await searchFeeds({ role: "anon", q: "랭킹고유단어" });
+    expect(items.map((f) => f.slug)).toEqual(["rk-title", "rk-body"]);
+    await prisma.feed.delete({ where: { id: "rk-title" } });
+    await prisma.feed.delete({ where: { id: "rk-body" } });
+  });
+
+  test("FTS 다중 토큰 AND: 모든 토큰을 포함한 글만", async () => {
+    await prisma.feed.create({
+      data: {
+        id: "and-both",
+        slug: "and-both",
+        title: "글",
+        content: "사과나무 그리고 바나나칩",
+        visibility: "public",
+        createdAt: new Date(2026, 2, 3),
+        updatedAt: new Date(2026, 2, 3),
+      },
+    });
+    await prisma.feed.create({
+      data: {
+        id: "and-one",
+        slug: "and-one",
+        title: "글",
+        content: "사과나무만 있음",
+        visibility: "public",
+        createdAt: new Date(2026, 2, 4),
+        updatedAt: new Date(2026, 2, 4),
+      },
+    });
+    const { items } = await searchFeeds({ role: "anon", q: "사과나무 바나나칩" });
+    expect(items.map((f) => f.slug)).toEqual(["and-both"]);
+    await prisma.feed.delete({ where: { id: "and-both" } });
+    await prisma.feed.delete({ where: { id: "and-one" } });
+  });
+
+  test("짧은 쿼리(2자)는 trigram 미적격 → contains 폴백", async () => {
+    // "고양"(2자) → FTS 미적격 → contains 폴백으로 pub-3("고양이 이야기") 매치
+    const { items } = await searchFeeds({ role: "anon", q: "고양" });
+    expect(items.map((f) => f.slug)).toEqual(["pub-3"]);
+  });
+
+  test("FTS 특수문자/따옴표가 들어와도 throw 없이 처리", async () => {
+    await expect(
+      searchFeeds({ role: "anon", q: '강아지물고기"' }),
+    ).resolves.toBeDefined();
+    await expect(
+      searchFeeds({ role: "anon", q: "강아지 AND OR" }),
+    ).resolves.toBeDefined();
+  });
+
+  test("FTS: 글 제목 수정 시 색인 갱신(새 단어 검색, 옛 단어 제거)", async () => {
+    await prisma.feed.create({
+      data: {
+        id: "edit-1",
+        slug: "edit-1",
+        title: "수정전고유단어",
+        content: "본문",
+        visibility: "public",
+        createdAt: new Date(2026, 2, 5),
+        updatedAt: new Date(2026, 2, 5),
+      },
+    });
+    expect(
+      (await searchFeeds({ role: "anon", q: "수정전고유단어" })).items.map(
+        (f) => f.slug,
+      ),
+    ).toEqual(["edit-1"]);
+    // AFTER UPDATE OF title 트리거가 옛 행 제거 + 새 행 색인.
+    await prisma.feed.update({
+      where: { id: "edit-1" },
+      data: { title: "수정후고유단어" },
+    });
+    expect(
+      (await searchFeeds({ role: "anon", q: "수정후고유단어" })).items.map(
+        (f) => f.slug,
+      ),
+    ).toEqual(["edit-1"]);
+    expect(
+      (await searchFeeds({ role: "anon", q: "수정전고유단어" })).items,
+    ).toHaveLength(0);
+    await prisma.feed.delete({ where: { id: "edit-1" } });
+  });
+
   test("비공개 글은 anon·회원 목록에서 제외, 관리자는 노출", async () => {
     for (const role of ["anon", "member"] as const) {
       const { items } = await searchFeeds({ role, q: "오직비공개단어" });
