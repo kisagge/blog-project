@@ -127,6 +127,9 @@ export async function getFeedComments(
   const orderBy =
     sort === "popular"
       ? [
+          // 소프트 삭제된 댓글("삭제된 댓글")은 과거 좋아요로 상위에 뜨지 않도록
+          // 미삭제(null)를 먼저, 삭제(timestamp)를 하단으로.
+          { deletedAt: { sort: "asc" as const, nulls: "first" as const } },
           { commentLikes: { _count: "desc" as const } },
           { createdAt: "desc" as const },
         ]
