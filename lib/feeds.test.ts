@@ -7,6 +7,7 @@ type Feeds = typeof import("@/lib/feeds");
 let searchFeeds: Feeds["searchFeeds"];
 let countFeeds: Feeds["countFeeds"];
 let getAdminFeedsPage: Feeds["getAdminFeedsPage"];
+let getRelatedFeeds: Feeds["getRelatedFeeds"];
 let cleanup: () => Promise<void>;
 let prisma: Awaited<ReturnType<typeof setupTestDb>>["prisma"];
 
@@ -102,7 +103,7 @@ beforeAll(async () => {
   await setFeedTags("pub-3", ["고양이"]);
   await setFeedTags("draft-1", ["비밀태그"]);
 
-  ({ searchFeeds, countFeeds, getAdminFeedsPage } =
+  ({ searchFeeds, countFeeds, getAdminFeedsPage, getRelatedFeeds } =
     await import("@/lib/feeds"));
 });
 
@@ -348,6 +349,39 @@ describe("searchFeeds", () => {
     // 작성자 닉네임이 실려옴
     const card = m.items.find((f) => f.slug === "umem-1");
     expect(card?.author?.nickname).toBe("유저1");
+  });
+
+  test("getRelatedFeeds: 공유 태그순 추천, self·권한·태그없음 처리", async () => {
+    const { setFeedTags } = await import("@/lib/tags");
+    const mk = async (id: string, vis = "public", status = "published") => {
+      await prisma.feed.create({
+        data: { id, slug: id, title: id, content: "c", visibility: vis, status },
+      });
+    };
+    await mk("rel-base");
+    await mk("rel-r2");
+    await mk("rel-r1");
+    await mk("rel-priv", "private");
+    await setFeedTags("rel-base", ["관련가", "관련나"]);
+    await setFeedTags("rel-r2", ["관련가", "관련나"]); // 공유 2
+    await setFeedTags("rel-r1", ["관련가"]); // 공유 1
+    await setFeedTags("rel-priv", ["관련가"]); // 비공개
+    const base = await prisma.feed.findUnique({
+      where: { id: "rel-base" },
+      select: { feedTags: { select: { tag: { select: { slug: true } } } } },
+    });
+    const slugs = base!.feedTags.map((ft) => ft.tag.slug);
+
+    const anon = await getRelatedFeeds("rel-base", slugs, "anon", 5);
+    expect(anon.map((f) => f.slug)).toEqual(["rel-r2", "rel-r1"]); // 공유 2 먼저, self·private 제외
+    // 관리자는 비공개 포함
+    const admin = await getRelatedFeeds("rel-base", slugs, "admin", 5);
+    expect(admin.map((f) => f.slug)).toContain("rel-priv");
+    // 태그 없으면 빈 배열
+    expect(await getRelatedFeeds("rel-base", [], "anon")).toEqual([]);
+
+    for (const id of ["rel-base", "rel-r2", "rel-r1", "rel-priv"])
+      await prisma.feed.delete({ where: { id } });
   });
 
   test("countFeeds: 관리자 글만 집계(회원 글 제외)", async () => {
