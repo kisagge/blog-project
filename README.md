@@ -7,15 +7,18 @@
 ## 주요 기능
 
 - **공개 피드**(`/feed`): 관리자 글 목록 + 상세(마크다운 렌더), **제목·내용·요약 검색**, **무한스크롤(10개 단위)**, 조회수 집계
+- **태그·가독성**: 글 태그(최대 5개) + 태그별 필터(`/feed?tag=`), 본문 상단 **읽는 시간 · 목차(TOC)**
 - **커뮤니티**(`/community`): 회원이 작성한 글 목록(회원 전용 — 비회원은 안내 페이지). 회원은 **임시저장(동시 ≤3) → 회원공개**로 글을 작성(`/account`에서 관리), 본문은 마크다운+외부 이미지 URL. 작성 화면에 **작성/미리보기 탭 + 마크다운 문법 도움말** 제공
 - **공개 범위 3단계**: 전체공개 / 회원공개 / 비공개(초안). 피드·던파 공용, 단건·목록 모두 접근 제어. 관리자는 비공개 초안도 열람
 - **던파 쇼케이스**: Neople OpenAPI로 캐릭터 정보(스탯·장비 등) 표시, 관리자 등록·정렬(드래그)
 - **회원**: 가입 신청 → 관리자 승인 → 로그인(JWT 세션), 비밀번호 재설정(이메일 6자리 코드), **내 정보(닉네임 수정·중복검사)**
+- **회원 프로필**(`/u/[id]`, `/me`): 회원 공개 프로필(작성 글·최근 댓글). 글·댓글·피드 카드의 작성자 닉네임에서 링크(회원만)
 - **댓글·좋아요**: 2뎁스 댓글(답글) + 댓글/피드 좋아요, 비회원은 로그인 유도 모달
 - **신고·모더레이션**: 회원이 댓글·회원 글을 사유와 함께 신고 → 관리자 큐(`/admin/reports`)에서 **숨김(복구 가능)·기각**. 숨김 콘텐츠는 목록·상세·프로필에서 가려지고 관리자만 검토 열람
 - **알림**: 인앱 알림 센터(읽음 처리·딥링크 하이라이트) + **웹 푸시**(댓글/답글·신고 접수)
 - **PWA**: 설치형 + 오프라인(서비스 워커·manifest·아이콘)
 - **SNS 공유**: X · 카카오톡 · 네이티브 공유 · URL 복사 (og:image 포함)
+- **구독·SEO**: `/rss.xml` RSS 피드, 글별 **동적 OG 이미지**, `sitemap.xml`·`robots`
 - **관리자 CMS**: 글·던파 캐릭터 CRUD, 회원 승인/거절·차단, 신고 처리(숨김/기각), 본문 이미지 업로드, 공개 범위 모달, 점검 모드
 - **어뷰징 방지**: `proxy`에서 IP당 전역 요청 속도 제한(429) + 가입·로그인·비밀번호 재설정에 **Cloudflare Turnstile CAPTCHA**(무료, 키 설정 시 활성)
 - **점검 모드**: 관리자가 공개 사이트를 외부 방문자에게 on/off (비어드민은 `/maintenance`로)
@@ -46,6 +49,7 @@ pnpm dev                      # http://localhost:3010
 | `DATABASE_URL`                                                  |  ✓   | SQLite 경로 (예: `file:./dev.db`)                    |
 | `ADMIN_PASSWORD`                                                |  ✓   | 관리자 로그인 비밀번호(평문)                         |
 | `SESSION_SECRET`                                                |  ✓   | 세션 JWT 서명 키 (`openssl rand -base64 32`)         |
+| `ADMIN_TOTP_SECRET`                                             |      | 관리자 2FA(Google Authenticator) — 설정 시 OTP 요구  |
 | `UPLOAD_DIR`                                                    |      | 업로드 저장 디렉토리 (기본 `data/uploads`)           |
 | `NEOPLE_API_KEY`                                                |      | 던파 OpenAPI 키 (없으면 `/df` 비활성)                |
 | `KAKAO_JS_KEY`                                                  |      | 카카오 JS 키 (없으면 카카오 공유 버튼 비노출)        |
@@ -62,6 +66,10 @@ pnpm dev                      # http://localhost:3010
 | `pnpm test` / `pnpm test:watch` | Vitest 실행 / 워치          |
 | `pnpm lint` / `pnpm format`     | ESLint / Prettier           |
 | `pnpm studio`                   | Prisma Studio               |
+| `pnpm totp:setup`               | 관리자 2FA 시크릿·QR 생성   |
+| `pnpm pack:config`              | 비추적 설정 파일 압축(이관) |
+
+변경 이력은 **[CHANGELOG.md](CHANGELOG.md)** 참고.
 
 ## 테스트
 
@@ -83,15 +91,21 @@ GitHub Actions: test → build-and-push(GHCR) → deploy(SSH: pull & up + migrat
 
 ```
 app/          라우트
-  (list)/feed, feed/[slug]     공개 피드(목록·상세·댓글)
-  df, df/[server]/[id]         던파 쇼케이스
-  signup, signin, account      회원 가입·로그인·내 정보
-  forgot-password/*            비밀번호 재설정(이메일 코드)
-  notifications                인앱 알림 센터
-  admin/*                      관리자 CMS(글·던파·회원·설정)
-  maintenance, uploads/[name]  점검 안내, 업로드 서빙
-lib/          도메인 로직 (feeds, df-characters, users, comments, likes,
-              notifications, push, mailer, visibility, rate-limit, dal, jwt …)
+  feed/(list), feed/[slug]        공개 피드(목록·상세·댓글·OG)
+  community                       회원 글 목록(회원 전용)
+  df, df/[server]/[characterId]   던파 쇼케이스
+  signup, signin, login           회원 가입·로그인 / 관리자 로그인
+  account, account/posts/*        내 정보 · 회원 글 작성(작성/미리보기)
+  u/[id], me                      회원 공개 프로필
+  forgot-password/*               비밀번호 재설정(이메일 코드)
+  report/*                        콘텐츠 신고(모달·액션)
+  notifications                   인앱 알림 센터
+  admin/*                         관리자 CMS(글·던파·회원·신고·설정)
+  rss.xml, sitemap.ts, robots.ts  구독·SEO
+  maintenance, uploads/[name]     점검 안내, 업로드 서빙
+lib/          도메인 로직 (feeds, df-characters, users, member-posts, comments,
+              likes, reports, tags, content, notifications, push, mailer,
+              visibility, turnstile, rate-limit, dal, session …)
 prisma/       schema.prisma + migrations
 public/       manifest·service worker·아이콘
 docs/deploy/  배포 런북   ·   docs/plans/  구현 계획(완료분은 archive/)
