@@ -57,10 +57,10 @@ describe("events bus (comments)", () => {
     const a: string[] = [];
     const b: string[] = [];
     const offA = m.subscribeComment("feedA", (e) =>
-      a.push(e.kind === "deleted" ? e.id : e.node.id),
+      a.push(e.kind === "created" ? e.node.id : e.id),
     );
     const offB = m.subscribeComment("feedB", (e) =>
-      b.push(e.kind === "deleted" ? e.id : e.node.id),
+      b.push(e.kind === "created" ? e.node.id : e.id),
     );
     m.publishComment("feedA", ev("c1"));
     m.publishComment("feedB", ev("c2"));

@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import type { CommentNode } from "@/lib/comments";
-import { applyCreated, applyDeleted, appendLoaded } from "./merge";
+import {
+  applyCreated,
+  applyDeleted,
+  applyEdited,
+  appendLoaded,
+} from "./merge";
 
 function node(id: string, replies: CommentNode[] = []): CommentNode {
   return {
@@ -11,6 +16,7 @@ function node(id: string, replies: CommentNode[] = []): CommentNode {
     content: `c-${id}`,
     deleted: false,
     hidden: false,
+    edited: false,
     createdAt: "2026-01-01T00:00:00.000Z",
     likeCount: 0,
     liked: false,
@@ -86,6 +92,29 @@ describe("applyDeleted", () => {
     const r2 = applyDeleted(r1.items, r1.total, "a"); // SSE 에코 재적용
     expect(r2.items.map((c) => c.id)).toEqual(["b"]);
     expect(r2.total).toBe(1); // -1 한 번만
+  });
+});
+
+describe("applyEdited", () => {
+  test("상위 댓글 content 갱신 + edited", () => {
+    const r = applyEdited([node("a"), node("b")], 2, "a", "수정됨");
+    expect(r.items[0].content).toBe("수정됨");
+    expect(r.items[0].edited).toBe(true);
+    expect(r.items[1].content).toBe("c-b"); // 다른 댓글 불변
+    expect(r.total).toBe(2);
+  });
+
+  test("대댓글 content 갱신 + edited, total 불변", () => {
+    const r = applyEdited([node("a", [node("a1")])], 1, "a1", "답수정");
+    expect(r.items[0].replies[0].content).toBe("답수정");
+    expect(r.items[0].replies[0].edited).toBe(true);
+    expect(r.total).toBe(1);
+  });
+
+  test("없는 id → 변경 없음", () => {
+    const items = [node("a")];
+    const r = applyEdited(items, 1, "ghost", "x");
+    expect(r.items).toBe(items);
   });
 });
 

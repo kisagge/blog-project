@@ -5,6 +5,7 @@ import { getSession } from "@/lib/dal";
 import {
   addComment,
   deleteComment,
+  editComment,
   getFeedComments,
   type CommentNode,
   type CommentPage,
@@ -64,6 +65,7 @@ export async function addCommentAction(
     content: content.trim(),
     deleted: false,
     hidden: false,
+    edited: false,
     createdAt: new Date().toISOString(),
     likeCount: 0,
     liked: false,
@@ -104,6 +106,23 @@ export async function deleteCommentAction(
   if (!res.ok) return; // 권한 없음 등 — 전파/리밸리데이트 생략
   revalidate(slug);
   publishComment(feedId, { kind: "deleted", id: commentId }); // 실시간 전파
+}
+
+export type EditCommentResult = { ok: true } | { error: string };
+
+export async function editCommentAction(
+  commentId: string,
+  feedId: string,
+  slug: string,
+  content: string,
+): Promise<EditCommentResult> {
+  const actor = await getCommentActor();
+  if (!actor) return { error: "로그인이 필요합니다." };
+  const res = await editComment(commentId, actor.userId, content);
+  if (!res.ok) return { error: res.error };
+  revalidate(slug);
+  publishComment(feedId, { kind: "edited", id: commentId, content: res.content });
+  return { ok: true };
 }
 
 export async function toggleLikeAction(feedId: string, slug: string) {

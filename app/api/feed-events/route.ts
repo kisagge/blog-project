@@ -3,7 +3,7 @@ import { getViewerRole } from "@/lib/dal";
 import { checkAccess, type Visibility } from "@/lib/visibility";
 import { subscribeComment } from "@/lib/events";
 
-// SSE: 특정 글의 댓글 생성·삭제 이벤트를 실시간 전달. 접근은 글 상세와 동일하게 게이트.
+// SSE: 특정 글의 댓글 생성·수정·삭제 이벤트를 실시간 전달. 접근은 글 상세와 동일하게 게이트.
 export const dynamic = "force-dynamic";
 
 const HEARTBEAT_MS = 25_000;
