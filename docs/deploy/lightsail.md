@@ -103,6 +103,8 @@ server {
 }
 ```
 
+> **실시간 알림(SSE, `/api/events`)**: nginx 추가 설정 불필요. 앱이 응답에 `X-Accel-Buffering: no`를 보내 버퍼링을 끄고 25초 하트비트로 idle 타임아웃을 피한다. (장시간 SSE가 끊기면 `proxy_read_timeout`을 늘릴 수 있으나 하트비트로 충분.) 단일 컨테이너 인메모리 버스라 다중 인스턴스로 확장 시엔 외부 pub/sub 필요.
+
 ```bash
 # 최초 1회: 업로드 디렉토리 생성 + 컨테이너 uid(999=nextjs)에 소유권 부여
 sudo mkdir -p /srv/byjang/data/uploads
