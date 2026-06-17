@@ -49,3 +49,11 @@ export function subscribeComment(
 export function publishComment(feedId: string, ev: CommentEvent): void {
   publish(`feed:${feedId}`, ev);
 }
+
+// ── 미처리 신고 수(관리자 단일 채널) ──
+export function subscribeReports(cb: (count: number) => void): () => void {
+  return subscribe("reports", (d) => cb(d as number));
+}
+export function publishReports(count: number): void {
+  publish("reports", count);
+}

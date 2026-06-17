@@ -223,4 +223,21 @@ describe("queue · 모더레이션 전이", () => {
     // 위에서 comment는 resolved, feed는 dismissed → pending 0
     expect(await m.countPendingReportTargets()).toBe(0);
   });
+
+  test("countHiddenTargets: 숨김 댓글 + 회원 글 합", async () => {
+    const before = await m.countHiddenTargets();
+    const u = (await makeUser(prisma)).id;
+    const feed = await makeFeed(prisma, { slug: "ht", title: "HT" });
+    const c = await makeComment(prisma, feed.id, u);
+    await prisma.comment.update({
+      where: { id: c.id },
+      data: { hiddenAt: new Date() },
+    });
+    await makeFeed(prisma, {
+      slug: "ht-feed",
+      authorId: u,
+      hiddenAt: new Date(),
+    });
+    expect(await m.countHiddenTargets()).toBe(before + 2);
+  });
 });

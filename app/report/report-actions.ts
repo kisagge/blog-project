@@ -1,8 +1,9 @@
 "use server";
 import { getCommentActor } from "@/lib/comment-actor";
-import { createReport } from "@/lib/reports";
+import { createReport, countPendingReportTargets } from "@/lib/reports";
 import { ReportSchema } from "@/lib/validation";
 import { notifyAdminReport } from "@/lib/notifications";
+import { publishReports } from "@/lib/events";
 
 // 신고 제출. 승인 회원/관리자만(차단·비로그인 거부). 본인·중복·관리자 콘텐츠는 createReport에서 방어.
 export async function submitReportAction(
@@ -27,7 +28,10 @@ export async function submitReportAction(
   });
   if (!res.ok) return { error: res.error };
   // 대상의 첫 신고일 때만 관리자 알림(중복·후속 신고는 무음, 누적은 큐에서 확인).
-  if (res.firstForTarget)
+  // 새 대상이 큐에 들어오면 관리자 라이브 배지도 갱신.
+  if (res.firstForTarget) {
     void notifyAdminReport({ targetType: args.targetType }).catch(() => {});
+    publishReports(await countPendingReportTargets());
+  }
   return { ok: true };
 }

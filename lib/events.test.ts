@@ -85,4 +85,18 @@ describe("events bus (comments)", () => {
     expect(got).toEqual(["x"]); // offC 이후 미수신
     expect(unread).toEqual([7]); // comment publish가 unread 구독자에 안 감
   });
+
+  test("reports 채널: 구독자가 publish 수신, 다른 채널과 독립", () => {
+    const got: number[] = [];
+    const off = m.subscribeReports((c) => got.push(c));
+    const unread: number[] = [];
+    const offU = m.subscribeUnread("reports", (n) => unread.push(n)); // 같은 키라도 분리
+    m.publishReports(3);
+    m.publishUnread("reports", 9);
+    off();
+    m.publishReports(4);
+    offU();
+    expect(got).toEqual([3]); // off 이후 미수신
+    expect(unread).toEqual([9]); // reports publish가 unread 구독자에 안 감
+  });
 });
