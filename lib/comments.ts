@@ -51,6 +51,7 @@ export type CommentNode = {
   content: string;
   deleted: boolean;
   hidden: boolean; // 신고로 가려짐(모더레이션). content는 비움.
+  edited: boolean; // 작성자가 수정함("(수정됨)" 표시).
   createdAt: string;
   likeCount: number;
   liked: boolean;
@@ -60,6 +61,7 @@ export type CommentNode = {
 // 실시간(SSE) 댓글 이벤트 — 서버 액션이 publish, 클라이언트가 트리에 병합.
 export type CommentEvent =
   | { kind: "created"; parentId: string | null; node: CommentNode }
+  | { kind: "edited"; id: string; content: string }
   | { kind: "deleted"; id: string };
 
 function toNode(
@@ -69,6 +71,7 @@ function toNode(
     content: string;
     deletedAt: Date | null;
     hiddenAt: Date | null;
+    editedAt: Date | null;
     createdAt: Date;
     user: { nickname: string; role: string };
     _count: { commentLikes: number };
@@ -85,6 +88,7 @@ function toNode(
     content: deleted || hidden ? "" : c.content,
     deleted,
     hidden,
+    edited: c.editedAt !== null,
     createdAt: c.createdAt.toISOString(),
     likeCount: c._count.commentLikes,
     liked: likedIds.has(c.id),
@@ -99,6 +103,7 @@ const NODE_SELECT = {
   content: true,
   deletedAt: true,
   hiddenAt: true,
+  editedAt: true,
   createdAt: true,
   parentId: true,
   user: { select: { nickname: true, role: true } },
@@ -205,6 +210,36 @@ export async function deleteComment(
     await prisma.comment.delete({ where: { id } });
   }
   return { ok: true };
+}
+
+type EditResult = { ok: true; content: string } | { ok: false; error: string };
+
+// 작성자 본인이 살아있는(미삭제·미숨김) 댓글 본문을 수정. editedAt 기록("(수정됨)" 표시).
+export async function editComment(
+  id: string,
+  actorUserId: string,
+  content: string,
+): Promise<EditResult> {
+  const parsed = CommentSchema.safeParse({ content });
+  if (!parsed.success)
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "내용을 확인하세요.",
+    };
+  const c = await prisma.comment.findUnique({
+    where: { id },
+    select: { userId: true, deletedAt: true, hiddenAt: true },
+  });
+  if (!c) return { ok: false, error: "댓글을 찾을 수 없습니다." };
+  if (c.deletedAt || c.hiddenAt)
+    return { ok: false, error: "수정할 수 없는 댓글입니다." };
+  if (c.userId !== actorUserId)
+    return { ok: false, error: "수정 권한이 없습니다." };
+  await prisma.comment.update({
+    where: { id },
+    data: { content: parsed.data.content, editedAt: new Date() },
+  });
+  return { ok: true, content: parsed.data.content };
 }
 
 export type UserCommentItem = {

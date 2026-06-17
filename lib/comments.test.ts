@@ -233,6 +233,37 @@ describe("comments", () => {
     expect(p2.items).toHaveLength(5);
     expect(p2.total).toBe(30);
   });
+
+  test("editComment: 작성자 수정 성공(content 변경 + edited 표시)", async () => {
+    const f = await prisma.feed.create({
+      data: { slug: "fe", title: "FE", content: "c", visibility: "public" },
+    });
+    const r = await m.addComment({ feedId: f.id, userId: alice, content: "원본" });
+    const id = (r as { ok: true; id: string }).id;
+    const res = await m.editComment(id, alice, "  고친 내용  ");
+    expect(res).toEqual({ ok: true, content: "고친 내용" }); // trim
+    const { items } = await m.getFeedComments(f.id);
+    expect(items[0].content).toBe("고친 내용");
+    expect(items[0].edited).toBe(true);
+  });
+
+  test("editComment: 비작성자·빈내용·삭제 댓글은 거부", async () => {
+    const f = await prisma.feed.create({
+      data: { slug: "fe2", title: "FE2", content: "c", visibility: "public" },
+    });
+    const r = await m.addComment({ feedId: f.id, userId: alice, content: "내것" });
+    const id = (r as { ok: true; id: string }).id;
+    // 비작성자
+    expect(await m.editComment(id, bob, "탈취")).toEqual({
+      ok: false,
+      error: "수정 권한이 없습니다.",
+    });
+    // 빈 내용
+    expect((await m.editComment(id, alice, "   ")).ok).toBe(false);
+    // 삭제(답글 없으니 hard delete) 후엔 못 찾음
+    await m.deleteComment(id, alice);
+    expect((await m.editComment(id, alice, "x")).ok).toBe(false);
+  });
 });
 
 describe("getCommentsByUser", () => {

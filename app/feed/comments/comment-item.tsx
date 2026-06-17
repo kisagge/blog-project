@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import ReportButton from "@/app/report/report-button";
 import CommentBody from "./comment-body";
 import CommentForm from "./comment-form";
 import CommentLikeButton from "./comment-like-button";
+import { editCommentAction } from "./comment-actions";
 import type { CommentNode } from "@/lib/comments";
 
 export default function CommentItem({
@@ -19,6 +20,7 @@ export default function CommentItem({
   initialHighlightId,
   onRequestDelete,
   onCreatedReply,
+  onEdited,
 }: {
   node: CommentNode;
   feedId: string;
@@ -31,6 +33,7 @@ export default function CommentItem({
   initialHighlightId?: string;
   onRequestDelete: (id: string) => void;
   onCreatedReply: (parentId: string, comment: CommentNode) => void;
+  onEdited: (id: string, content: string) => void;
 }) {
   const [replying, setReplying] = useState(false);
   // 알림 딥링크 대상이 이 댓글의 답글이면 처음부터 펼쳐서 보이게.
@@ -42,7 +45,37 @@ export default function CommentItem({
   const gone = node.deleted || node.hidden; // 삭제·숨김이면 액션 비노출
   const canDelete =
     !gone && (isAdmin || (!!actorUserId && actorUserId === node.userId));
+  // 수정은 작성자 본인만(관리자도 타인 댓글 본문은 수정 안 함).
+  const canEdit = !gone && !!actorUserId && actorUserId === node.userId;
   const replyCount = node.replies.length;
+
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(node.content);
+  const [editError, setEditError] = useState<string>();
+  const [savingEdit, startEdit] = useTransition();
+
+  function openEdit() {
+    setEditValue(node.content);
+    setEditError(undefined);
+    setEditing(true);
+  }
+  function saveEdit() {
+    const v = editValue.trim();
+    setEditError(undefined);
+    if (!v) {
+      setEditError("내용을 입력하세요.");
+      return;
+    }
+    startEdit(async () => {
+      const res = await editCommentAction(node.id, feedId, slug, v);
+      if ("error" in res) {
+        setEditError(res.error);
+        return;
+      }
+      onEdited(node.id, v);
+      setEditing(false);
+    });
+  }
 
   return (
     <li
@@ -71,17 +104,59 @@ export default function CommentItem({
             timeZone: "Asia/Seoul",
           })}
         </time>
+        {node.edited && !gone && (
+          <span className="text-xs text-zinc-400">(수정됨)</span>
+        )}
       </div>
       {node.deleted ? (
         <p className="mt-1 text-sm text-zinc-400">삭제된 댓글입니다.</p>
       ) : node.hidden ? (
         <p className="mt-1 text-sm text-zinc-400">신고로 가려진 댓글입니다.</p>
+      ) : editing ? (
+        <div className="mt-1 flex flex-col gap-2">
+          <textarea
+            aria-label="댓글 수정"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            maxLength={2000}
+            rows={3}
+            className="w-full resize-none rounded-lg border border-black/15 bg-transparent p-2 text-sm outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
+          />
+          {editError && (
+            <p role="alert" className="text-xs text-red-600">
+              {editError}
+            </p>
+          )}
+          <div className="flex gap-2 text-xs">
+            <button
+              type="button"
+              onClick={saveEdit}
+              disabled={savingEdit || editValue.trim() === ""}
+              className="bg-foreground text-background rounded px-3 py-1 font-medium disabled:opacity-50"
+            >
+              {savingEdit ? "저장 중…" : "저장"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(false);
+                setEditError(undefined);
+              }}
+              className="rounded border border-black/15 px-3 py-1 dark:border-white/20"
+            >
+              취소
+            </button>
+          </div>
+        </div>
       ) : (
         <div className="mt-1">
           <CommentBody content={node.content} />
         </div>
       )}
-      <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
+      <div
+        className="mt-1 flex items-center gap-3 text-xs text-zinc-500"
+        hidden={editing}
+      >
         {!gone && (
           <CommentLikeButton
             commentId={node.id}
@@ -98,6 +173,15 @@ export default function CommentItem({
             className="hover:text-zinc-800 dark:hover:text-zinc-200"
           >
             답글
+          </button>
+        )}
+        {canEdit && (
+          <button
+            type="button"
+            onClick={openEdit}
+            className="hover:text-zinc-800 dark:hover:text-zinc-200"
+          >
+            수정
           </button>
         )}
         {canDelete && (
@@ -162,6 +246,7 @@ export default function CommentItem({
               initialHighlightId={initialHighlightId}
               onRequestDelete={onRequestDelete}
               onCreatedReply={onCreatedReply}
+              onEdited={onEdited}
             />
           ))}
         </ul>

@@ -163,6 +163,7 @@ model Comment {
   content   String
   deletedAt DateTime?
   hiddenAt  DateTime?           // 신고로 가려진(모더레이션 숨김) 시각. null=정상. 사용자 삭제(deletedAt)와 별개·복구 가능
+  editedAt  DateTime?           // 작성자가 본문 수정한 시각. null=미수정("(수정됨)" 표시용)
   createdAt DateTime  @default(now())
   feed      Feed      @relation(fields: [feedId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])

@@ -91,7 +91,7 @@ Public / members-only / private (draft), implemented as an app-layer union type 
 
 Two-level comments (replies) plus feed and comment likes, built on Server Actions.
 
-- Replies are allowed only on top-level comments (depth check); deletion branches soft/hard depending on whether children exist. Likes toggle with a `(user, target)` unique constraint.
+- Replies are allowed only on top-level comments (depth check); deletion branches soft/hard depending on whether children exist. Likes toggle with a `(user, target)` unique constraint. Authors can edit their own comments (`editedAt` recorded → "(edited)" marker, propagated live via SSE). Under popular sort, deleted comments sink to the bottom regardless of likes (`deletedAt` nulls-first).
 - To receive notifications for admin-authored posts, a non-loginable **reserved admin User** (singleton) lets an admin — who has no `userId` in the session — be represented as author/recipient in the domain model.
 
 ### 4.7 PWA + web push + in-app notifications
@@ -128,7 +128,7 @@ Combines title/body/summary substring search with 10-item infinite scroll.
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 210**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 216**.
 
 ### 4.12 Content reporting & moderation
 
@@ -144,5 +144,5 @@ Added user reporting of member content (comments and member posts) with admin mo
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 210); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 216); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

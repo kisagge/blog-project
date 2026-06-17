@@ -39,6 +39,34 @@ export function appendLoaded(
   return [...items, ...more.filter((c) => !seen.has(c.id))];
 }
 
+// 수정 병합. 상위/대댓글에서 해당 id의 content를 갱신 + edited 표시(total 불변).
+// 같은 content 재적용은 idempotent(낙관적 + SSE 에코). 없으면 no-op.
+export function applyEdited(
+  items: CommentNode[],
+  total: number,
+  id: string,
+  content: string,
+): Tree {
+  let changed = false;
+  const next = items.map((t) => {
+    if (t.id === id) {
+      changed = true;
+      return { ...t, content, edited: true };
+    }
+    if (t.replies.some((r) => r.id === id)) {
+      changed = true;
+      return {
+        ...t,
+        replies: t.replies.map((r) =>
+          r.id === id ? { ...r, content, edited: true } : r,
+        ),
+      };
+    }
+    return t;
+  });
+  return changed ? { items: next, total } : { items, total };
+}
+
 // 삭제 병합. 상위+대댓글 있음 → 가림(내용 비움), 상위+대댓글 없음 → 제거(−total),
 // 대댓글 → 부모에서 제거(total 불변). 없으면 변경 없음.
 export function applyDeleted(

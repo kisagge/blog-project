@@ -5,7 +5,7 @@ import type { CommentNode, CommentSort, CommentEvent } from "@/lib/comments";
 import { ToastViewport, useToast } from "@/app/toast";
 import CommentForm from "./comment-form";
 import CommentItem from "./comment-item";
-import { applyCreated, applyDeleted, appendLoaded } from "./merge";
+import { applyCreated, applyDeleted, applyEdited, appendLoaded } from "./merge";
 import { deleteCommentAction, loadMoreCommentsAction } from "./comment-actions";
 
 export default function CommentSection({
@@ -77,11 +77,13 @@ export default function CommentSection({
       } catch {
         return;
       }
-      setTree((t) =>
-        ev.kind === "created"
-          ? applyCreated(t.items, t.total, ev.parentId, ev.node)
-          : applyDeleted(t.items, t.total, ev.id),
-      );
+      setTree((t) => {
+        if (ev.kind === "created")
+          return applyCreated(t.items, t.total, ev.parentId, ev.node);
+        if (ev.kind === "edited")
+          return applyEdited(t.items, t.total, ev.id, ev.content);
+        return applyDeleted(t.items, t.total, ev.id);
+      });
     };
     return () => es.close();
   }, [feedId]);
@@ -99,6 +101,10 @@ export default function CommentSection({
   function onCreatedReply(parentId: string, reply: CommentNode) {
     setTree((t) => applyCreated(t.items, t.total, parentId, reply));
     focusAfterRender(reply.id);
+  }
+
+  function onEdited(id: string, content: string) {
+    setTree((t) => applyEdited(t.items, t.total, id, content));
   }
 
   function requestDelete(id: string) {
@@ -164,6 +170,7 @@ export default function CommentSection({
               initialHighlightId={initialHighlightId}
               onRequestDelete={requestDelete}
               onCreatedReply={onCreatedReply}
+              onEdited={onEdited}
             />
           ))}
         </ul>
