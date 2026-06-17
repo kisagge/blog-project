@@ -77,6 +77,8 @@ model User {
   status       String   @default("pending")   // "pending" | "approved" | "rejected"
   rejectionReason String?                      // 최근 거절 사유(재신청 시 관리자 참고용, 신청자엔 비노출)
   rejectedAt   DateTime?                        // 최근 거절 시각
+  notifyOnReply   Boolean @default(true)        // 내 댓글에 답글 알림 수신 여부
+  notifyOnComment Boolean @default(true)        // 내 글에 댓글 알림 수신 여부
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   comments  Comment[]

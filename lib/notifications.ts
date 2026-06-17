@@ -5,6 +5,30 @@ import { getSession } from "@/lib/dal";
 import { ensureAdminUser, ADMIN_EMAIL } from "@/lib/comment-actor";
 import { publishUnread } from "@/lib/events";
 
+// 회원 알림 환경설정(종류별 on/off). off면 해당 이벤트는 인앱·푸시 모두 미생성.
+export async function getNotificationPrefs(
+  userId: string,
+): Promise<{ onReply: boolean; onComment: boolean }> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { notifyOnReply: true, notifyOnComment: true },
+  });
+  return {
+    onReply: u?.notifyOnReply ?? true,
+    onComment: u?.notifyOnComment ?? true,
+  };
+}
+
+export async function setNotificationPrefs(
+  userId: string,
+  prefs: { onReply: boolean; onComment: boolean },
+) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { notifyOnReply: prefs.onReply, notifyOnComment: prefs.onComment },
+  });
+}
+
 export async function createNotification(
   userId: string,
   body: string,
@@ -46,9 +70,10 @@ export async function notifyCommentReply(args: {
 }) {
   const parent = await prisma.comment.findUnique({
     where: { id: args.parentId },
-    select: { userId: true },
+    select: { userId: true, user: { select: { notifyOnReply: true } } },
   });
   if (!parent || parent.userId === args.fromUserId) return;
+  if (!parent.user.notifyOnReply) return; // 수신자가 답글 알림을 끔
   const body = `${args.fromNickname}님이 회원님의 댓글에 답글을 남겼습니다.`;
   const url = `/feed/${args.slug}?c=${args.commentId}`;
   await createNotification(parent.userId, body, url);
@@ -70,6 +95,12 @@ export async function notifyFeedComment(args: {
   });
   const ownerId = feed?.authorId ?? (await ensureAdminUser()).id;
   if (ownerId === args.fromUserId) return;
+  // 글 주인이 '내 글 댓글' 알림을 껐으면 미생성(admin 예약 User는 기본 true).
+  const owner = await prisma.user.findUnique({
+    where: { id: ownerId },
+    select: { notifyOnComment: true },
+  });
+  if (!owner?.notifyOnComment) return;
   const body = `${args.fromNickname}님이 '${feed?.title ?? "글"}'에 댓글을 남겼습니다.`;
   const url = `/feed/${args.slug}?c=${args.commentId}`;
   await createNotification(ownerId, body, url);

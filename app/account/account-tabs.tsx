@@ -4,13 +4,14 @@ const TABS = [
   { key: "info", href: "/account", label: "내 정보" },
   { key: "posts", href: "/account/posts", label: "내 글" },
   { key: "saved", href: "/account/saved", label: "저장한 글" },
+  { key: "notifications", href: "/account/notifications", label: "알림" },
 ] as const;
 
-// 내 계정 영역 탭(내 정보 / 내 글 / 저장한 글). active는 각 페이지에서 지정.
+// 내 계정 영역 탭(내 정보 / 내 글 / 저장한 글 / 알림). active는 각 페이지에서 지정.
 export default function AccountTabs({
   active,
 }: {
-  active: "info" | "posts" | "saved";
+  active: "info" | "posts" | "saved" | "notifications";
 }) {
   return (
     <nav
