@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { PRIMARY_BTN } from "@/lib/ui";
 import { updateNotificationPrefsAction, type NotifPrefsState } from "./actions";
 
@@ -12,6 +12,10 @@ export default function NotificationPrefsForm({
     updateNotificationPrefsAction,
     undefined,
   );
+  // controlled 체크박스 + 초기 prefs와 비교해 변경 없으면 저장 비활성화.
+  const [onReply, setOnReply] = useState(prefs.onReply);
+  const [onComment, setOnComment] = useState(prefs.onComment);
+  const dirty = onReply !== prefs.onReply || onComment !== prefs.onComment;
 
   return (
     <form action={action} className="flex w-full max-w-md flex-col gap-5">
@@ -21,7 +25,8 @@ export default function NotificationPrefsForm({
           <input
             type="checkbox"
             name="onReply"
-            defaultChecked={prefs.onReply}
+            checked={onReply}
+            onChange={(e) => setOnReply(e.target.checked)}
             className="mt-0.5 h-4 w-4"
           />
           <span>
@@ -35,7 +40,8 @@ export default function NotificationPrefsForm({
           <input
             type="checkbox"
             name="onComment"
-            defaultChecked={prefs.onComment}
+            checked={onComment}
+            onChange={(e) => setOnComment(e.target.checked)}
             className="mt-0.5 h-4 w-4"
           />
           <span>
@@ -58,7 +64,11 @@ export default function NotificationPrefsForm({
         </p>
       )}
 
-      <button type="submit" disabled={pending} className={PRIMARY_BTN}>
+      <button
+        type="submit"
+        disabled={pending || !dirty}
+        className={PRIMARY_BTN}
+      >
         {pending ? "저장 중…" : "저장"}
       </button>
     </form>
