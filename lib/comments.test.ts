@@ -133,7 +133,20 @@ describe("comments", () => {
       userId: alice,
       content: "오래된-인기",
     })) as { ok: true; id: string };
-    await m.addComment({ feedId: f2.id, userId: bob, content: "최신-비인기" });
+    const newer = (await m.addComment({
+      feedId: f2.id,
+      userId: bob,
+      content: "최신-비인기",
+    })) as { ok: true; id: string };
+    // 명시적 시각으로 결정적 정렬(생성 시각 동률로 인한 플레이크 방지).
+    await prisma.comment.update({
+      where: { id: older.id },
+      data: { createdAt: new Date(2026, 0, 1) },
+    });
+    await prisma.comment.update({
+      where: { id: newer.id },
+      data: { createdAt: new Date(2026, 0, 2) },
+    });
     await m.addComment({
       feedId: f2.id,
       userId: alice,
@@ -164,6 +177,42 @@ describe("comments", () => {
       "최신-비인기",
       "오래된-인기",
     ]);
+  });
+
+  test("인기순: 소프트 삭제된 댓글은 좋아요가 많아도 하단으로", async () => {
+    const cl = await import("@/lib/comment-likes");
+    const f4 = await prisma.feed.create({
+      data: { slug: "f4", title: "F4", content: "c", visibility: "public" },
+    });
+    // A: 좋아요 2 + 답글 보유 → 소프트 삭제 대상
+    const a = (await m.addComment({
+      feedId: f4.id,
+      userId: alice,
+      content: "삭제될-인기",
+    })) as { ok: true; id: string };
+    await m.addComment({
+      feedId: f4.id,
+      userId: bob,
+      content: "답",
+      parentId: a.id,
+    });
+    // B: 좋아요 1, 미삭제
+    const b = (await m.addComment({
+      feedId: f4.id,
+      userId: bob,
+      content: "살아있는",
+    })) as { ok: true; id: string };
+    await cl.toggleCommentLike(a.id, alice);
+    await cl.toggleCommentLike(a.id, bob);
+    await cl.toggleCommentLike(b.id, alice);
+    await m.deleteComment(a.id, alice); // 답글 있어 soft delete
+
+    const popular = await m.getFeedComments(f4.id, { sort: "popular" });
+    // 좋아요는 A(2) > B(1)이지만, 삭제된 A는 하단.
+    expect(popular.items.map((c) => c.id)).toEqual([b.id, a.id]);
+    expect(popular.items[0].content).toBe("살아있는");
+    expect(popular.items[1].deleted).toBe(true);
+    expect(popular.items[1].content).toBe(""); // 삭제 → 본문 비움
   });
 
   test("페이지네이션: skip/take로 상위 댓글 분할, total은 전체", async () => {
