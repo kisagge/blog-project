@@ -121,14 +121,16 @@ Lets the admin toggle the public site on/off for external visitors, backed by a 
 
 ### 4.10 Feed search + infinite scroll
 
-Combines title/body/summary substring search with 10-item infinite scroll.
+Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ chars use **SQLite FTS5 full-text search**; otherwise (empty or 2-char) it falls back to substring match, newest-first.
 
-- A `take+1` fetch determines whether a next page exists without a separate count query.
+- **FTS5 full-text search**: a `feed_fts` virtual table (**external content** — no duplicated body text, shares "Feed"'s rowid) indexed with the **trigram tokenizer**, preserving Korean/CJK substring matching (e.g. "물고기" matches inside "강아지물고기") like LIKE while using an inverted index. `AFTER INSERT/UPDATE/DELETE` triggers keep it in sync with Feed automatically (no app-code change), and the migration backfills existing rows. Virtual tables/triggers can't be expressed as Prisma models, so they live in **raw SQL outside schema.prisma** (authored via `migrate dev --create-only`, applied in prod by `migrate deploy`; the test DB mirrors the same DDL in `lib/test-db.ts`'s SCHEMA).
+- **Relevance ranking & query composition**: `bm25(feed_fts, 10,5,1)` weights title > summary > content. Search obtains only the **ranked Feed.id candidates** from FTS, then reuses the existing Prisma path for access/author/tag filters and SELECT (DRY) — candidate ids are non-sensitive; the real data is gated by the second Prisma stage. Multiple tokens are AND-ed (all must appear); FTS operators/quotes are phrase-escaped and bound via `?`. Tokens under 3 chars are trigram-ineligible, so they take the contains fallback.
+- A `take+1` (fallback) / candidate slice (FTS) determines whether a next page exists without a separate count query.
 - Search is debounced at 300ms and uses a **request sequence (reqId) to discard stale responses** during fast typing, avoiding races. The query syncs to `?q=` for shareable results.
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 229**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 235**.
 
 ### 4.12 Content reporting & moderation
 
@@ -144,5 +146,5 @@ Added user reporting of member content (comments and member posts) with admin mo
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 229); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 235); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

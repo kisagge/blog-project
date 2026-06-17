@@ -164,6 +164,27 @@ const SCHEMA = [
   )`,
   `CREATE UNIQUE INDEX "FeedTag_feedId_tagId_key" ON "FeedTag"("feedId", "tagId")`,
   `CREATE INDEX "FeedTag_tagId_idx" ON "FeedTag"("tagId")`,
+  // 전문 검색(FTS5) — prisma/migrations/*_add_feed_fts/migration.sql과 동기화 필수.
+  // external content + trigram. 트리거가 Feed 변경을 색인하므로 백필 INSERT는 불필요(빈 테이블).
+  `CREATE VIRTUAL TABLE "feed_fts" USING fts5(
+    title, summary, content,
+    content='Feed', content_rowid='rowid', tokenize='trigram'
+  )`,
+  `CREATE TRIGGER "feed_fts_ai" AFTER INSERT ON "Feed" BEGIN
+    INSERT INTO "feed_fts"(rowid, title, summary, content)
+    VALUES (new.rowid, new.title, new.summary, new.content);
+  END`,
+  `CREATE TRIGGER "feed_fts_ad" AFTER DELETE ON "Feed" BEGIN
+    INSERT INTO "feed_fts"(feed_fts, rowid, title, summary, content)
+    VALUES ('delete', old.rowid, old.title, old.summary, old.content);
+  END`,
+  // UPDATE OF: 텍스트 컬럼 변경 시에만 재색인(viewCount 등 비텍스트 UPDATE는 건너뜀).
+  `CREATE TRIGGER "feed_fts_au" AFTER UPDATE OF title, summary, content ON "Feed" BEGIN
+    INSERT INTO "feed_fts"(feed_fts, rowid, title, summary, content)
+    VALUES ('delete', old.rowid, old.title, old.summary, old.content);
+    INSERT INTO "feed_fts"(rowid, title, summary, content)
+    VALUES (new.rowid, new.title, new.summary, new.content);
+  END`,
 ];
 
 export async function setupTestDb() {
