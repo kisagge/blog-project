@@ -8,6 +8,7 @@ export default function FeedArticle({
   feed,
   authorName,
   authorId,
+  linkAuthors = true,
   tags = [],
 }: {
   feed: {
@@ -18,6 +19,7 @@ export default function FeedArticle({
   };
   authorName?: string;
   authorId?: string | null; // 회원 글이면 작성자 id(프로필 링크). 관리자 글은 null/undefined.
+  linkAuthors?: boolean; // 비회원(anon) 뷰어에겐 false → 닉네임 평문(막다른 프로필 링크 제거).
   tags?: { name: string; slug: string }[];
 }) {
   const minutes = readingTimeMinutes(feed.content);
@@ -28,7 +30,7 @@ export default function FeedArticle({
         <h1 className="text-3xl font-semibold tracking-tight">{feed.title}</h1>
         <p className="mt-2 text-sm text-zinc-500">
           {authorName &&
-            (authorId ? (
+            (authorId && linkAuthors ? (
               <span>
                 <Link href={`/u/${authorId}`} className="hover:underline">
                   {authorName}
