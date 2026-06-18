@@ -6,26 +6,41 @@ import { ensureAdminUser, ADMIN_EMAIL } from "@/lib/comment-actor";
 import { publishUnread } from "@/lib/events";
 
 // 회원 알림 환경설정(종류별 on/off). off면 해당 이벤트는 인앱·푸시 모두 미생성.
+export type NotificationPrefs = {
+  onReply: boolean;
+  onComment: boolean;
+  onMention: boolean;
+};
+
 export async function getNotificationPrefs(
   userId: string,
-): Promise<{ onReply: boolean; onComment: boolean }> {
+): Promise<NotificationPrefs> {
   const u = await prisma.user.findUnique({
     where: { id: userId },
-    select: { notifyOnReply: true, notifyOnComment: true },
+    select: {
+      notifyOnReply: true,
+      notifyOnComment: true,
+      notifyOnMention: true,
+    },
   });
   return {
     onReply: u?.notifyOnReply ?? true,
     onComment: u?.notifyOnComment ?? true,
+    onMention: u?.notifyOnMention ?? true,
   };
 }
 
 export async function setNotificationPrefs(
   userId: string,
-  prefs: { onReply: boolean; onComment: boolean },
+  prefs: NotificationPrefs,
 ) {
   await prisma.user.update({
     where: { id: userId },
-    data: { notifyOnReply: prefs.onReply, notifyOnComment: prefs.onComment },
+    data: {
+      notifyOnReply: prefs.onReply,
+      notifyOnComment: prefs.onComment,
+      notifyOnMention: prefs.onMention,
+    },
   });
 }
 
@@ -105,6 +120,38 @@ export async function notifyFeedComment(args: {
   const url = `/feed/${args.slug}?c=${args.commentId}`;
   await createNotification(ownerId, body, url);
   await sendToUser(ownerId, { title: "새 댓글", body, url });
+}
+
+// 댓글 본문의 @닉네임 멘션 → 멘션된 승인 회원에게 인앱+푸시.
+// 닉네임은 DB 유일 제약 없음 + 공백·구두점 허용이라 정규식 파싱이 어려워,
+// 승인 회원을 순회하며 content에 "@<닉네임>"이 들어있는지로 느슨 매칭한다.
+// 느슨 매칭을 택한 이유: 한국어 존칭/조사(@닉네임'님'/'아')도 멘션으로 잡기 위함.
+// 한계: 어떤 닉네임이 다른 닉네임의 접두면 과매칭(예 "철수"가 "@철수네"에도 매칭)될 수 있다 — 드물고 알림 1건 추가 수준이라 수용.
+export async function notifyCommentMention(args: {
+  content: string;
+  commentId: string;
+  slug: string;
+  fromUserId: string;
+  fromNickname: string;
+}) {
+  const members = await prisma.user.findMany({
+    where: { role: "member", status: "approved" },
+    select: { id: true, nickname: true, notifyOnMention: true },
+  });
+  const url = `/feed/${args.slug}?c=${args.commentId}`;
+  const body = `${args.fromNickname}님이 회원님을 멘션했습니다.`;
+  for (const m of members) {
+    if (m.id === args.fromUserId) continue; // 본인 멘션 제외
+    if (!m.notifyOnMention) continue; // 멘션 알림 끔
+    if (!args.content.includes(`@${m.nickname}`)) continue;
+    // 한 명에서 실패해도 나머지 멘션 대상은 계속.
+    try {
+      await createNotification(m.id, body, url);
+      await sendToUser(m.id, { title: "멘션", body, url });
+    } catch {
+      // fire-and-forget — 무시.
+    }
+  }
 }
 
 // 새 신고 접수 → 예약 관리자에게 인앱 알림 + 푸시. 신고 큐로 딥링크.

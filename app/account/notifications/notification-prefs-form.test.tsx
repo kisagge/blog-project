@@ -10,7 +10,11 @@ import NotificationPrefsForm from "@/app/account/notifications/notification-pref
 
 describe("NotificationPrefsForm 저장 버튼 dirty 비활성화", () => {
   test("초기엔 비활성, 토글하면 활성, 원복하면 다시 비활성", () => {
-    render(<NotificationPrefsForm prefs={{ onReply: true, onComment: true }} />);
+    render(
+      <NotificationPrefsForm
+        prefs={{ onReply: true, onComment: true, onMention: true }}
+      />,
+    );
     const save = screen.getByRole("button", { name: "저장" });
     expect(save).toBeDisabled(); // 변경 없음
 
