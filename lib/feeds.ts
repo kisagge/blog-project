@@ -156,6 +156,37 @@ export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
   });
 }
 
+export type AdjacentFeed = { slug: string; title: string };
+
+// 글 상세 이전/다음 내비: 현재 글 기준 시간순 인접 1건씩(이전=더 오래된, 다음=더 최신).
+// 뷰어 가시 범위 + 같은 작성자 분류(관리자 글↔관리자 글, 회원 글↔회원 글)로 한정.
+export async function getAdjacentFeeds(
+  feed: { id: string; createdAt: Date; authorId: string | null },
+  role: ViewerRole,
+): Promise<{ prev: AdjacentFeed | null; next: AdjacentFeed | null }> {
+  const base = {
+    status: "published",
+    hiddenAt: null,
+    visibility: { in: listableVisibilities(role) },
+    ...(feed.authorId === null ? { authorId: null } : { authorId: { not: null } }),
+    id: { not: feed.id },
+  } as const;
+  const select = { slug: true, title: true } as const;
+  const [prev, next] = await Promise.all([
+    prisma.feed.findFirst({
+      where: { ...base, createdAt: { lt: feed.createdAt } },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select,
+    }),
+    prisma.feed.findFirst({
+      where: { ...base, createdAt: { gt: feed.createdAt } },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select,
+    }),
+  ]);
+  return { prev, next };
+}
+
 export type RelatedFeed = { slug: string; title: string; viewCount: number };
 
 // 관련 글: 현재 글과 태그를 공유하는 다른 게시·미숨김 글을 뷰어 가시 범위로 추천.

@@ -138,7 +138,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 332 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 342 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -194,11 +194,19 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **스케줄**(`.github/workflows/backup.yml`): 매일 04:00 KST + 수동(`workflow_dispatch`). 기존 배포와 **동일 SSH 시크릿**으로 호스트에 접속해 `docker compose exec -T web sh scripts/backup-db.sh` 실행 — 상시 사이드카 없이(512MB 인스턴스 RAM 절약) 정확한 일정.
 - 복원 가능성은 테스트로 가드(백업본 gunzip 후 `PRAGMA integrity_check`=ok·행 보존, 회전 동작). 오프사이트(인스턴스 유실 대비 R2/B2)는 후속 과제.
 
+### 4.19 읽기 경험 (이전/다음 글·진행바·맨 위로)
+
+글 상세에 가벼운 읽기 보조 3종을 추가.
+
+- **이전/다음 글**: `getAdjacentFeeds(feed, role)`가 시간순 인접 글 1건씩을 뷰어 가시 범위 + **같은 작성자 분류**(관리자 글↔관리자 글, 회원 글↔회원 글)로 조회 — 독자가 보던 컬렉션을 벗어나지 않게. 본문 푸터에 `RelatedFeeds` 스타일로 렌더(둘 다 없으면 미표시).
+- **읽기 진행바**(`reading-progress-bar`): 뷰포트 상단 고정 바가 문서 스크롤 진행률 표시. passive 스크롤 + `requestAnimationFrame` 스로틀, 장식이라 `aria-hidden`.
+- **맨 위로**(`back-to-top-button`): 임계 스크롤 초과 시 우하단에 등장(미표시 땐 DOM 미렌더 → 포커스 제외), 클릭 시 최상단으로. JS smooth는 전역 CSS `scroll-behavior` override가 적용되지 않으므로 `matchMedia`로 reduced-motion을 직접 분기.
+
 ## 5. 성과 요약
 
 - 런타임 이미지 **2.05GB → 876MB (−57%)**, 배포 첫 pull **10분 32초 → 37초**
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 332), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 342), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
