@@ -137,7 +137,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 320**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 322**.
 
 ### 4.12 Content reporting & moderation
 
@@ -177,11 +177,19 @@ Post detail pages emit **schema.org JSON-LD** (`BlogPosting` + `BreadcrumbList`)
 - **Gating**: JSON-LD is injected **only for public, published posts** (matching the OG image — members-only/private/draft are excluded so gated content never leaks into structured data). The canonical is set on any viewable post to prevent duplicate indexing from `?c=`/`?sort=` query params.
 - **Safe injection**: inlined via `dangerouslySetInnerHTML`, but serialization escapes `<` to `<` so a `</script>` in a title/summary can't break or inject markup (no nonce needed since CSP allows `script-src 'unsafe-inline'`).
 
+### 4.17 Discovery pages (popular posts, tag index)
+
+Two pages (`/feed/popular`, `/feed/tags`) surface the accumulating view counts and tags publicly, placed under `app/feed/` to inherit the maintenance-mode guard.
+
+- **Popular posts**: `getPublicTopFeeds(role)` returns published, non-hidden posts by cumulative view count within the **viewer's visible range** (`listableVisibilities`) — unlike the admin-only `getTopFeeds`, it filters visibility so it's safe to expose publicly. Cards reuse `FeedCardItem`.
+- **Tag index**: `getTagsWithCounts(role)` aggregates post counts via `feedTag.groupBy` + a relation `where` (visible posts), returning **only tags with at least one visible post** plus their counts, sorted descending (private/hidden-only tags are excluded so links never dead-end). Links into the existing `?tag=` filter.
+- Entry points were added to the nav drawer, the homepage browse cards, and the sitemap (individual tag URLs are kept out of the sitemap due to cardinality).
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 320); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 322); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

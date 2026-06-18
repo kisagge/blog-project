@@ -141,6 +141,21 @@ export async function searchFeeds({
   return { items: await withSnippets(items, terms), hasMore };
 }
 
+// 공개 인기 글: 뷰어가 볼 수 있는 게시·미숨김 글을 누적 조회수순(관리자+회원 글 모두).
+// /admin/stats의 getTopFeeds와 달리 visibility를 필터해 공개 발견성 페이지에 안전하게 노출.
+export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
+  return prisma.feed.findMany({
+    where: {
+      status: "published",
+      hiddenAt: null,
+      visibility: { in: listableVisibilities(role) },
+    },
+    orderBy: [{ viewCount: "desc" }, { createdAt: "desc" }],
+    take,
+    select: FEED_LIST_SELECT,
+  });
+}
+
 export type RelatedFeed = { slug: string; title: string; viewCount: number };
 
 // 관련 글: 현재 글과 태그를 공유하는 다른 게시·미숨김 글을 뷰어 가시 범위로 추천.

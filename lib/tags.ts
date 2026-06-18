@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 
 export const MAX_TAGS = 5; // 글당 최대 태그 수
 export const MAX_TAG_LEN = 20; // 태그 1개 최대 길이
@@ -29,6 +30,33 @@ export function parseTags(raw: string): string[] {
     if (out.length >= MAX_TAGS) break;
   }
   return out;
+}
+
+// 태그 인덱스용: 뷰어가 볼 수 있는 게시·미숨김 글이 1개 이상인 태그만 글 수와 함께.
+// (비공개/숨김 전용 태그는 집계에서 빠져 빈 결과로 가는 링크를 만들지 않음.) 글 수 내림차순.
+export async function getTagsWithCounts(
+  role: ViewerRole,
+): Promise<{ name: string; slug: string; count: number }[]> {
+  const grouped = await prisma.feedTag.groupBy({
+    by: ["tagId"],
+    where: {
+      feed: {
+        status: "published",
+        hiddenAt: null,
+        visibility: { in: listableVisibilities(role) },
+      },
+    },
+    _count: { _all: true },
+  });
+  if (grouped.length === 0) return [];
+  const tags = await prisma.tag.findMany({
+    where: { id: { in: grouped.map((g) => g.tagId) } },
+    select: { id: true, name: true, slug: true },
+  });
+  const countByTag = new Map(grouped.map((g) => [g.tagId, g._count._all]));
+  return tags
+    .map((t) => ({ name: t.name, slug: t.slug, count: countByTag.get(t.id) ?? 0 }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ko"));
 }
 
 // 한 글의 태그를 주어진 집합으로 교체. Tag는 slug로 upsert, FeedTag는 전량 삭제 후 재생성.

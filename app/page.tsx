@@ -87,6 +87,8 @@ export default async function Home() {
             title="커뮤니티"
             desc="회원들의 글 · 회원 전용"
           />
+          <SectionCard href="/feed/popular" title="인기 글" desc="조회수 높은 글" />
+          <SectionCard href="/feed/tags" title="태그" desc="주제별 모아보기" />
         </ul>
       </section>
     </main>
