@@ -70,6 +70,8 @@ Diagnosed production deploy failures from logs and system metrics, then hardened
 
 Prisma 7 dropped the bundled query engine, so I adopted the `@prisma/adapter-better-sqlite3` driver adapter. Runtime queries no longer need the Rust engine binary, which compounded the image slimming in 4.1.
 
+- **Concurrency tuning**: switched SQLite to **WAL mode** (`PRAGMA journal_mode=WAL`, persistent at the file level) so writes (view tracking, comments, likes) don't block reads, and made `busy_timeout` explicit via the adapter's `timeout` (5000ms). Feed/comment like toggles wrap `find→toggle→count` in a **`$transaction`** so concurrent toggles can't interleave between awaits and broadcast an inconsistent count over SSE.
+
 ### 4.4 Membership — approval flow + role-union session
 
 Extended auth from a single password-only admin to external members with a signup/approval flow.

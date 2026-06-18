@@ -70,6 +70,8 @@ CI/CD: main push → GitHub Actions
 
 Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-sqlite3` 드라이버 어댑터를 도입. 런타임 쿼리에 Rust 엔진 바이너리가 불필요해져 4.1의 이미지 슬림화와 함께 의존성·크기를 추가로 절감.
 
+- **동시성 튜닝**: SQLite를 **WAL 모드**로 전환(`PRAGMA journal_mode=WAL`, 파일 레벨 영구)해 쓰기(조회수 트래킹·댓글·좋아요)가 읽기를 막지 않게 했고, `busy_timeout`은 어댑터 `timeout`으로 명시(5000ms). 좋아요/댓글 좋아요 토글은 `find→토글→count`를 **`$transaction`으로 원자화**해, 동시 토글이 await 사이에 인터리빙돼 카운트가 어긋난 채 SSE로 브로드캐스트되는 것을 방지.
+
 ### 4.4 회원 시스템 — 승인 흐름 + 역할 유니온 세션
 
 비밀번호만으로 들어가는 단일 관리자에서, 가입·승인 흐름을 가진 외부 회원으로 인증을 확장.

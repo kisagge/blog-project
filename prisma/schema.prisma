@@ -230,4 +230,6 @@ model Bookmark {
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([feedId, userId])
+  // 저장 목록(listSavedFeeds): where userId + orderBy createdAt desc.
+  @@index([userId, createdAt])
 }
