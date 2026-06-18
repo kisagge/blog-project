@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { readingTimeMinutes, extractToc } from "@/lib/content";
+import { kstDate, isoInstant } from "@/lib/kst";
 import Toc from "@/app/feed/toc";
 import MarkdownContent from "@/app/markdown-content";
 
@@ -40,10 +41,8 @@ export default function FeedArticle({
             ) : (
               <span>{authorName} · </span>
             ))}
-          <time dateTime={feed.createdAt.toISOString()}>
-            {feed.createdAt.toLocaleDateString("ko-KR", {
-              timeZone: "Asia/Seoul",
-            })}
+          <time dateTime={isoInstant(feed.createdAt)}>
+            {kstDate(feed.createdAt)}
           </time>
           {typeof feed.viewCount === "number" && (
             <span> · 조회 {feed.viewCount.toLocaleString()}</span>

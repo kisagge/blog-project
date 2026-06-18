@@ -4,6 +4,7 @@ import { getViewerRole } from "@/lib/dal";
 import { getMemberProfile } from "@/lib/users";
 import { listMemberPosts } from "@/lib/member-posts";
 import { getCommentsByUser } from "@/lib/comments";
+import { kstDate, isoInstant } from "@/lib/kst";
 import MemberGate from "@/app/member-gate";
 
 export const dynamic = "force-dynamic";
@@ -20,10 +21,6 @@ export async function generateMetadata({
   return {
     title: profile ? `${profile.nickname} 님의 프로필` : "찾을 수 없음",
   };
-}
-
-function kstDate(d: Date | string) {
-  return new Date(d).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
 }
 
 export default async function MemberProfilePage({
@@ -61,7 +58,7 @@ export default async function MemberProfilePage({
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
           가입{" "}
-          <time dateTime={new Date(profile.createdAt).toISOString()}>
+          <time dateTime={isoInstant(profile.createdAt)}>
             {kstDate(profile.createdAt)}
           </time>
         </p>
@@ -112,7 +109,9 @@ export default async function MemberProfilePage({
                   </span>
                   <span className="mt-0.5 block text-xs text-zinc-500">
                     ‘{c.feed.title}’ ·{" "}
-                    <time dateTime={c.createdAt}>{kstDate(c.createdAt)}</time>
+                    <time dateTime={isoInstant(c.createdAt)}>
+                      {kstDate(c.createdAt)}
+                    </time>
                   </span>
                 </Link>
               </li>

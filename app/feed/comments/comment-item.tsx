@@ -6,6 +6,7 @@ import CommentBody from "./comment-body";
 import CommentForm from "./comment-form";
 import CommentLikeButton from "./comment-like-button";
 import { editCommentAction } from "./comment-actions";
+import { kstDateTime, isoInstant } from "@/lib/kst";
 import type { CommentNode } from "@/lib/comments";
 
 export default function CommentItem({
@@ -101,10 +102,8 @@ export default function CommentItem({
         ) : (
           <span className="font-medium">{node.nickname}</span>
         )}
-        <time className="text-xs text-zinc-400">
-          {new Date(node.createdAt).toLocaleString("ko-KR", {
-            timeZone: "Asia/Seoul",
-          })}
+        <time dateTime={isoInstant(node.createdAt)} className="text-xs text-zinc-400">
+          {kstDateTime(node.createdAt)}
         </time>
         {node.edited && !gone && (
           <span className="text-xs text-zinc-400">(수정됨)</span>
