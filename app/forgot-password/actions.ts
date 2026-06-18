@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { getClientIp } from "@/lib/client-ip";
+import { allowAction, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 import {
   ResetEmailSchema,
   ResetCodeSchema,
@@ -28,10 +29,13 @@ export async function requestCode(
   _state: RequestState,
   formData: FormData,
 ): Promise<RequestState> {
+  const ip = (await getClientIp()) ?? "unknown";
+  // 코드 요청 남발 방지(IP당). 한 IP가 여러 이메일을 두드리는 것을 차단(이메일당 60s 쿨다운은 별개).
+  if (!allowAction("passwordReset", ip)) return { error: TOO_MANY_REQUESTS };
   if (
     !(await verifyTurnstile(
       String(formData.get("cf-turnstile-response") ?? ""),
-      await getClientIp(),
+      ip,
     ))
   )
     return { error: "사람 확인에 실패했습니다. 다시 시도해 주세요." };

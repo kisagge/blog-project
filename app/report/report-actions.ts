@@ -4,6 +4,7 @@ import { createReport, countPendingReportTargets } from "@/lib/reports";
 import { ReportSchema } from "@/lib/validation";
 import { notifyAdminReport } from "@/lib/notifications";
 import { publishReports } from "@/lib/events";
+import { allowAction, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 
 // 신고 제출. 승인 회원/관리자만(차단·비로그인 거부). 본인·중복·관리자 콘텐츠는 createReport에서 방어.
 export async function submitReportAction(
@@ -12,6 +13,9 @@ export async function submitReportAction(
 ): Promise<{ ok: true } | { error: string }> {
   const actor = await getCommentActor();
   if (!actor) return { error: "로그인이 필요합니다." };
+  // 신고 남용 방지(회원당). 동일 대상 중복은 createReport의 유니크 제약이 별도 차단.
+  if (!allowAction("report", actor.userId))
+    return { error: TOO_MANY_REQUESTS };
   const parsed = ReportSchema.safeParse({
     reason: formData.get("reason"),
     detail: formData.get("detail") || undefined,

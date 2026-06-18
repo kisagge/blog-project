@@ -116,6 +116,7 @@ To curb general request floods, `proxy.ts` applies a fixed-window per-IP counter
 - Confirmed from the docs that the Next 16 proxy runs on the **Node runtime**, so in-memory `Map` state persists within the single-instance (`next start`) process — reliable without an external store.
 - The matcher covers dynamic requests broadly but excludes static assets, images, and uploads so normal traffic (prefetch, images) doesn't consume the budget.
 - For human/bot separation on **signup, login, and password-reset requests**, an optional **Cloudflare Turnstile CAPTCHA** is added and verified in the server action. With no secret configured the widget isn't shown and verification passes — **fully inert** (the same graceful degradation as SMTP/TOTP). Tokens are single-use, so the widget resets on a failed verification.
+- **Per-action limits**: since the global cap (12/s) is loose against targeted abuse (login brute force, signup spam, reset-code flooding, report abuse), the same `rateLimit` util is reused per action (`allowAction(scope, id)`). Anonymous actions key by **IP** (login 10/5min, signup 5/10min, reset request 5/10min); reporting keys by **member userId** (10/10min). The gate runs **before** Turnstile so it works even when the CAPTCHA is inert, and adds defense-in-depth when it's on. (The per-email 60s cooldown on reset requests and the `(target, reporter)` unique constraint on reports remain as separate protections.)
 
 ### 4.9 Maintenance mode
 
@@ -137,7 +138,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 324**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 332**.
 
 ### 4.12 Content reporting & moderation
 
@@ -199,5 +200,5 @@ A **credential-free local backup** guarding `/data/prod.db` (WAL) against corrup
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 324); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 332); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

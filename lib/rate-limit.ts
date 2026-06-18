@@ -25,3 +25,24 @@ export function rateLimit(
   b.count++;
   return true;
 }
+
+// 레이트리밋 초과 시 액션이 돌려줄 메시지(전역 proxy 429와 동일 문구).
+export const TOO_MANY_REQUESTS =
+  "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
+
+// 민감 액션별 한도(접두사로 키 분리). 단일 컨테이너라 인메모리 한도로 충분.
+export const ACTION_LIMITS = {
+  signin: { limit: 10, windowMs: 5 * 60_000 }, // 로그인 브루트포스
+  signup: { limit: 5, windowMs: 10 * 60_000 }, // 가입 스팸
+  passwordReset: { limit: 5, windowMs: 10 * 60_000 }, // 코드 요청(이메일당 60s 쿨다운은 별개)
+  report: { limit: 10, windowMs: 10 * 60_000 }, // 신고 남용
+} as const;
+
+// 액션 레이트리밋. 허용이면 true. id는 IP(비로그인) 또는 userId(로그인).
+export function allowAction(
+  scope: keyof typeof ACTION_LIMITS,
+  id: string,
+): boolean {
+  const { limit, windowMs } = ACTION_LIMITS[scope];
+  return rateLimit(`${scope}:${id}`, limit, windowMs);
+}
