@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { kstDate, isoInstant } from "@/lib/kst";
+import { highlightText } from "./highlight";
 import type { FeedCard } from "./feed-card";
 
 // 피드 목록 카드(제목·요약·작성자·날짜·조회수·태그). 공개 목록(FeedList)·저장 목록 공용.
@@ -8,21 +9,26 @@ export default function FeedCardItem({
   card,
   linkAuthors = true,
   basePath = "/feed",
+  highlightQuery,
 }: {
   card: FeedCard;
   linkAuthors?: boolean;
   basePath?: string;
+  highlightQuery?: string; // 검색어 — 있으면 제목·발췌의 매치를 <mark> 강조
 }) {
+  // 검색 시 매치 중심 스니펫, 비검색이면 작성자 요약.
+  const body = card.snippet ?? card.summary;
+  const q = highlightQuery?.trim();
   return (
     <li className="border-b border-black/[.06] pb-6 dark:border-white/[.1]">
       {/* 카드 링크는 제목·요약만 감싼다(작성자 프로필 링크와 앵커 중첩 방지). */}
       <Link href={`/feed/${card.slug}`} className="group block">
         <h2 className="text-xl font-medium tracking-tight group-hover:underline">
-          {card.title}
+          {q ? highlightText(card.title, q) : card.title}
         </h2>
-        {card.summary && (
+        {body && (
           <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-            {card.summary}
+            {q ? highlightText(body, q) : body}
           </p>
         )}
       </Link>

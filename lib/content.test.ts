@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { readingTimeMinutes, extractToc } from "@/lib/content";
+import {
+  readingTimeMinutes,
+  extractToc,
+  makeSnippet,
+  stripMarkdown,
+} from "@/lib/content";
 
 describe("readingTimeMinutes", () => {
   test("빈/공백은 최소 1분", () => {
@@ -51,5 +56,44 @@ describe("extractToc", () => {
     const toc = extractToc("## **굵게** `코드`");
     expect(toc[0].text).toBe("굵게 코드");
     expect(toc[0].slug).toBe("굵게-코드");
+  });
+});
+
+describe("stripMarkdown", () => {
+  test("코드블록·기호·링크를 평문으로", () => {
+    expect(stripMarkdown("# 제목\n**굵게** [링크](http://x)")).toContain("제목");
+    expect(stripMarkdown("```\ncode\n```\n본문")).not.toContain("code");
+    const s = stripMarkdown("**굵게** `코드`");
+    expect(s).not.toContain("*");
+    expect(s).not.toContain("`");
+  });
+});
+
+describe("makeSnippet", () => {
+  test("매치 토큰을 중심으로 발췌하고 앞뒤를 …로 자른다", () => {
+    const content = "가".repeat(100) + "찾는단어" + "나".repeat(100);
+    const s = makeSnippet(content, ["찾는단어"], 10);
+    expect(s).toContain("찾는단어");
+    expect(s.startsWith("…")).toBe(true);
+    expect(s.endsWith("…")).toBe(true);
+    expect(s.length).toBeLessThan(content.length);
+  });
+
+  test("매치가 없으면 본문 앞부분으로 폴백", () => {
+    const content = "처음부터" + "라".repeat(300);
+    const s = makeSnippet(content, ["없는단어"], 60);
+    expect(s.startsWith("처음부터")).toBe(true);
+    expect(s.endsWith("…")).toBe(true);
+  });
+
+  test("마크다운 기호는 제거된 평문으로 발췌", () => {
+    const s = makeSnippet("**굵게** 찾기쉬운 `코드`", ["찾기쉬운"]);
+    expect(s).toContain("찾기쉬운");
+    expect(s).not.toContain("*");
+    expect(s).not.toContain("`");
+  });
+
+  test("빈 본문은 빈 문자열", () => {
+    expect(makeSnippet("", ["x"])).toBe("");
   });
 });

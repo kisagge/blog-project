@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
+import { makeSnippet } from "@/lib/content";
 
 export const FEED_PAGE_SIZE = 10;
 
@@ -49,6 +50,24 @@ async function ftsRankedIds(tokens: string[]): Promise<string[]> {
   return rows.map((r) => r.id);
 }
 
+// 검색어가 있을 때만 결과 페이지에 본문 스니펫 부착. 본문(content)은 FEED_LIST_SELECT에
+// 없으므로 페이지 슬라이스 id로만 별도 조회(최대 take+1건) → 매치 중심 발췌. N+1 아님(1쿼리).
+async function withSnippets<T extends { id: string }>(
+  items: T[],
+  terms: string[],
+): Promise<(T & { snippet?: string })[]> {
+  if (terms.length === 0 || items.length === 0) return items;
+  const bodies = await prisma.feed.findMany({
+    where: { id: { in: items.map((i) => i.id) } },
+    select: { id: true, content: true },
+  });
+  const bmap = new Map(bodies.map((b) => [b.id, b.content]));
+  return items.map((i) => ({
+    ...i,
+    snippet: makeSnippet(bmap.get(i.id) ?? "", terms),
+  }));
+}
+
 // 목록: 뷰어 권한으로 볼 수 있는 글(anon=전체공개, 회원/관리자=전체공개+회원공개).
 // 검색어(q)에 3자+ 토큰이 있으면 FTS5(trigram 부분일치 + BM25 관련도순), 그 외(빈 검색·2자)는
 // 제목/내용/요약 부분일치 최신순. take+1로 다음 페이지 존재(hasMore)를 추가 쿼리 없이 판단.
@@ -81,6 +100,8 @@ export async function searchFeeds({
   };
 
   const tokens = term ? ftsTokens(term) : null;
+  // 하이라이트·스니펫 토큰: FTS면 3자+ 토큰, 2자 폴백이면 검색어 전체, 빈 검색이면 없음.
+  const terms = term ? (tokens ?? [term]) : [];
 
   // FTS 경로: 관련도순 id 후보 → 권한/필터는 Prisma가 적용 → rank순 재정렬 → 슬라이스.
   if (tokens) {
@@ -94,7 +115,8 @@ export async function searchFeeds({
     rows.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
     const page = rows.slice(skip, skip + take + 1);
     const hasMore = page.length > take;
-    return { items: hasMore ? page.slice(0, take) : page, hasMore };
+    const items = hasMore ? page.slice(0, take) : page;
+    return { items: await withSnippets(items, terms), hasMore };
   }
 
   // 빈 검색어 또는 2자 폴백: 기존 contains 최신순.
@@ -115,7 +137,8 @@ export async function searchFeeds({
     take: take + 1,
   });
   const hasMore = rows.length > take;
-  return { items: hasMore ? rows.slice(0, take) : rows, hasMore };
+  const items = hasMore ? rows.slice(0, take) : rows;
+  return { items: await withSnippets(items, terms), hasMore };
 }
 
 export type RelatedFeed = { slug: string; title: string; viewCount: number };
