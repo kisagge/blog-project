@@ -1,10 +1,27 @@
 "use client";
 import { INPUT_CLASS } from "@/lib/ui";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { FeedFormState } from "@/app/admin/actions";
 import { uploadImage } from "@/app/admin/upload-action";
 import { ToastViewport, useToast } from "@/app/toast";
 import { checkImage } from "@/lib/upload";
+import DraftRestoreBanner from "@/app/draft-restore-banner";
+import {
+  draftKey,
+  loadDraft,
+  saveDraft,
+  clearDraft,
+  pruneDrafts,
+} from "@/lib/draft-store";
+
+type FeedDraft = {
+  title: string;
+  slug: string;
+  summary: string;
+  content: string;
+  visibility: string;
+  tags: string;
+};
 
 type Props = {
   action: (state: FeedFormState, formData: FormData) => Promise<FeedFormState>;
@@ -32,8 +49,87 @@ export default function FeedForm({
   const err = state?.errors ?? {};
 
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [restorable, setRestorable] = useState<FeedDraft | null>(null);
   const { toasts, show } = useToast();
+  const key = draftKey("admin", d.slug ?? "new");
+
+  // 마운트: 오래된 초안 정리 + 저장본이 초기값과 다르면 복원 제안.
+  useEffect(() => {
+    pruneDrafts();
+    const dft = loadDraft<FeedDraft>(key);
+    if (dft && Object.values(dft).some(Boolean)) {
+      const init: FeedDraft = {
+        title: d.title ?? "",
+        slug: d.slug ?? "",
+        summary: d.summary ?? "",
+        content: d.content ?? "",
+        visibility: d.visibility ?? "private",
+        tags: d.tags ?? "",
+      };
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (JSON.stringify(dft) !== JSON.stringify(init)) setRestorable(dft);
+    }
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // uncontrolled 폼의 현재 값을 초안 형태로 읽음(input·실패 복구 공용).
+  function readForm(): FeedDraft | null {
+    const f = formRef.current;
+    if (!f) return null;
+    const fd = new FormData(f);
+    return {
+      title: String(fd.get("title") ?? ""),
+      slug: String(fd.get("slug") ?? ""),
+      summary: String(fd.get("summary") ?? ""),
+      content: String(fd.get("content") ?? ""),
+      visibility: String(fd.get("visibility") ?? ""),
+      tags: String(fd.get("tags") ?? ""),
+    };
+  }
+
+  // form onInput으로 현재 값을 읽어 디바운스 저장.
+  function onFormInput() {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      const data = readForm();
+      if (data && Object.values(data).some(Boolean)) saveDraft(key, data);
+    }, 800);
+  }
+
+  // 제출 실패(검증 에러 반환) 시 clear-on-submit으로 지워진 초안을 복구.
+  useEffect(() => {
+    if (state?.errors || state?.message) {
+      const data = readForm();
+      if (data && Object.values(data).some(Boolean)) saveDraft(key, data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  function restore() {
+    const f = formRef.current;
+    if (f && restorable) {
+      for (const [name, val] of Object.entries(restorable)) {
+        const el = f.elements.namedItem(name);
+        if (
+          el instanceof HTMLInputElement ||
+          el instanceof HTMLTextAreaElement ||
+          el instanceof HTMLSelectElement
+        )
+          el.value = val;
+      }
+    }
+    setRestorable(null);
+  }
+  function ignoreDraft() {
+    clearDraft(key);
+    setRestorable(null);
+  }
 
   function insertAtCursor(text: string) {
     const ta = contentRef.current;
@@ -44,6 +140,8 @@ export default function FeedForm({
     const pos = start + text.length;
     ta.selectionStart = ta.selectionEnd = pos;
     ta.focus();
+    // .value 직접 변경은 input 이벤트가 안 나므로, 자동저장이 잡도록 수동 디스패치.
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
   }
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -78,7 +176,16 @@ export default function FeedForm({
 
   return (
     <>
-      <form action={formAction} className="flex flex-col gap-5">
+      <form
+        ref={formRef}
+        action={formAction}
+        onInput={onFormInput}
+        onSubmit={() => clearDraft(key)}
+        className="flex flex-col gap-5"
+      >
+        {restorable && (
+          <DraftRestoreBanner onRestore={restore} onDismiss={ignoreDraft} />
+        )}
         <Field label="제목" error={err.title}>
           <input name="title" defaultValue={d.title} className={inputCls} />
         </Field>

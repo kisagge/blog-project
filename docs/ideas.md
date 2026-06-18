@@ -35,7 +35,7 @@
 | 28 | 이미지 최적화/CLS 방지 | 업로드 시 이미지 크기 저장 + 본문 `<img>`에 width/height(레이아웃 시프트 제거)·lazy-load. Core Web Vitals | 보류 |
 | 29 | CI 위생 + 의존성 자동화 | `prettier --check`·`pnpm audit` CI 게이트 + `.github/dependabot.yml`(공급망·포맷 회귀 차단) | 보류 |
 | 30 | 예약 발행 | 글에 예약 시각 설정 → GitHub Actions cron(백업 워크플로 패턴)이 도래 시 draft→published 전환 | 보류 |
-| 31 | 초안 자동저장 | 작성 에디터 localStorage 디바운스 자동저장(새로고침·이탈 시 작업 유실 방지) | 보류 |
+| 31 | 초안 자동저장 | 작성 에디터 localStorage 디바운스 자동저장(새로고침·이탈 시 작업 유실 방지). 누적/용량 안전(키 overwrite·TTL·스윕·quota 재시도) | 완료 |
 | 32 | 관리자 피드 검색 | `/admin/feeds`에 검색 입력(기존 `searchFeeds` FTS 재사용) | 보류 |
 | 33 | 홈 구조화 데이터 | 홈에 `WebSite`/`Organization` JSON-LD(SEO 보강, 기존 structured-data 확장) | 보류 |
 | 34 | 프로필 bio·아바타 | `User.bio`/`avatarUrl` 추가 + 계정 폼·`/u/[id]` 표시(기존 업로드 재사용) | 보류 |
