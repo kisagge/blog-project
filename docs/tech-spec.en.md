@@ -137,7 +137,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 322**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 324**.
 
 ### 4.12 Content reporting & moderation
 
@@ -185,11 +185,19 @@ Two pages (`/feed/popular`, `/feed/tags`) surface the accumulating view counts a
 - **Tag index**: `getTagsWithCounts(role)` aggregates post counts via `feedTag.groupBy` + a relation `where` (visible posts), returning **only tags with at least one visible post** plus their counts, sorted descending (private/hidden-only tags are excluded so links never dead-end). Links into the existing `?tag=` filter.
 - Entry points were added to the nav drawer, the homepage browse cards, and the sitemap (individual tag URLs are kept out of the sitemap due to cardinality).
 
+### 4.18 Automated DB backups
+
+A **credential-free local backup** guarding `/data/prod.db` (WAL) against corruption, accidental deletion, and bad migrations.
+
+- **Script** (`scripts/backup-db.sh`): sqlite **online `.backup`** (a consistent snapshot even under concurrent writes, WAL-aware) → gzip → `find -mtime` rotation over N days (`BACKUP_KEEP_DAYS`, default 14). The runtime image adds the `sqlite3` CLI and bakes in the script (leaving the app dependency graph untouched — reflecting the 502 lesson from importing lib into `next.config`, only a self-contained shell script is used).
+- **Schedule** (`.github/workflows/backup.yml`): daily at 04:00 KST + manual (`workflow_dispatch`). It reuses the **same SSH secrets** as the deploy to run `docker compose exec -T web sh scripts/backup-db.sh` on the host — a precise schedule with no always-on sidecar (saving RAM on the 512MB instance).
+- Restorability is guarded by a test (gunzip the snapshot, `PRAGMA integrity_check` = ok, rows preserved, plus rotation). Off-site replication (R2/B2 for instance loss) is left as a follow-up.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 322); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 324); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
