@@ -145,6 +145,7 @@ const SCHEMA = [
   `CREATE UNIQUE INDEX "Like_feedId_userId_key" ON "Like"("feedId", "userId")`,
   `CREATE UNIQUE INDEX "CommentLike_commentId_userId_key" ON "CommentLike"("commentId", "userId")`,
   `CREATE UNIQUE INDEX "Bookmark_feedId_userId_key" ON "Bookmark"("feedId", "userId")`,
+  `CREATE INDEX "Bookmark_userId_createdAt_idx" ON "Bookmark"("userId", "createdAt")`,
   `CREATE TABLE "Report" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "targetType" TEXT NOT NULL,
