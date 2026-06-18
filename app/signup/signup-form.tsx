@@ -3,7 +3,7 @@ import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState } from "react";
 import Link from "next/link";
 import { signup, type SignupState } from "./actions";
-import TurnstileWidget, { useTurnstileReset } from "@/app/turnstile-widget";
+import TurnstileWidget from "@/app/turnstile-widget";
 
 const inputCls = INPUT_CLASS;
 
@@ -12,7 +12,6 @@ export default function SignupForm({ siteKey }: { siteKey?: string }) {
     signup,
     undefined,
   );
-  useTurnstileReset(state); // 검증 실패 시 위젯 토큰 리셋(단일 사용)
   if (state?.done) {
     return (
       <div className="w-full max-w-sm text-center">
@@ -48,7 +47,7 @@ export default function SignupForm({ siteKey }: { siteKey?: string }) {
           {state.error}
         </p>
       )}
-      <TurnstileWidget siteKey={siteKey} />
+      <TurnstileWidget siteKey={siteKey} resetSignal={state} />
       <button
         type="submit"
         disabled={pending}
