@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { contentSecurityPolicy, securityHeaders } from "@/lib/security-headers";
+// 헤더 로직은 next.config.ts에 인라인됨(런타임 이미지가 lib/를 복사하지 않으므로).
+import { contentSecurityPolicy, securityHeaders } from "@/next.config";
 
 describe("contentSecurityPolicy", () => {
   test("prod: 잠금 지시어·외부 화이트리스트·upgrade 포함, unsafe-eval 미포함", () => {
