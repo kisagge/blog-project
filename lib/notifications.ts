@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { sendToUser } from "@/lib/push";
+import { sendToUser, sendToUsers } from "@/lib/push";
 import { getSession } from "@/lib/dal";
 import { ensureAdminUser, ADMIN_EMAIL } from "@/lib/comment-actor";
 import { publishUnread } from "@/lib/events";
@@ -52,6 +52,24 @@ export async function createNotification(
   await prisma.notification.create({ data: { userId, body, url } });
   // 열린 탭(SSE)에 미읽음 수 즉시 반영.
   publishUnread(userId, await countUnread(userId));
+}
+
+// 여러 회원에게 동일 알림을 일괄 생성 + 각자 SSE 미읽음 수 반영(N+1 회피).
+// createMany는 전부-또는-전무지만 호출부가 fire-and-forget(.catch)라 부분 실패 격리는
+// 불필요 — 균일 insert라 부분 실패도 사실상 없음.
+async function createNotifications(userIds: string[], body: string, url?: string) {
+  if (userIds.length === 0) return;
+  await prisma.notification.createMany({
+    data: userIds.map((userId) => ({ userId, body, url })),
+  });
+  // 대상별 미읽음 수를 한 번에 집계해 각 열린 탭(SSE)에 반영.
+  const counts = await prisma.notification.groupBy({
+    by: ["userId"],
+    where: { userId: { in: userIds }, readAt: null },
+    _count: { _all: true },
+  });
+  const countMap = new Map(counts.map((c) => [c.userId, c._count._all]));
+  for (const userId of userIds) publishUnread(userId, countMap.get(userId) ?? 0);
 }
 
 export async function listNotifications(userId: string, take = 30) {
@@ -140,18 +158,18 @@ export async function notifyCommentMention(args: {
   });
   const url = `/feed/${args.slug}?c=${args.commentId}`;
   const body = `${args.fromNickname}님이 회원님을 멘션했습니다.`;
-  for (const m of members) {
-    if (m.id === args.fromUserId) continue; // 본인 멘션 제외
-    if (!m.notifyOnMention) continue; // 멘션 알림 끔
-    if (!args.content.includes(`@${m.nickname}`)) continue;
-    // 한 명에서 실패해도 나머지 멘션 대상은 계속.
-    try {
-      await createNotification(m.id, body, url);
-      await sendToUser(m.id, { title: "멘션", body, url });
-    } catch {
-      // fire-and-forget — 무시.
-    }
-  }
+  // 멘션 대상(본인·off·미멘션 제외)을 모은 뒤 인앱·푸시를 각각 한 번에(대상 수 무관 상수 쿼리).
+  const targets = members
+    .filter(
+      (mb) =>
+        mb.id !== args.fromUserId &&
+        mb.notifyOnMention &&
+        args.content.includes(`@${mb.nickname}`),
+    )
+    .map((mb) => mb.id);
+  if (targets.length === 0) return;
+  await createNotifications(targets, body, url);
+  await sendToUsers(targets, { title: "멘션", body, url });
 }
 
 // 새 신고 접수 → 예약 관리자에게 인앱 알림 + 푸시. 신고 큐로 딥링크.

@@ -39,9 +39,10 @@ export async function removeSubscription(endpoint: string) {
 
 type Payload = { title: string; body: string; url?: string };
 
-export async function sendToUser(userId: string, payload: Payload) {
-  if (!configure()) return;
-  const subs = await prisma.pushSubscription.findMany({ where: { userId } });
+type StoredSub = { endpoint: string; p256dh: string; auth: string };
+
+// 구독 목록에 병렬 전송(개별 실패 격리 + 만료 구독 정리). sendToUser·sendToUsers 공용.
+async function sendToSubs(subs: StoredSub[], payload: Payload) {
   await Promise.all(
     subs.map(async (s) => {
       try {
@@ -60,4 +61,19 @@ export async function sendToUser(userId: string, payload: Payload) {
       }
     }),
   );
+}
+
+export async function sendToUser(userId: string, payload: Payload) {
+  if (!configure()) return;
+  const subs = await prisma.pushSubscription.findMany({ where: { userId } });
+  await sendToSubs(subs, payload);
+}
+
+// 여러 회원에게 한 번에(N+1 회피): 구독을 in 한 번에 조회 후 병렬 전송.
+export async function sendToUsers(userIds: string[], payload: Payload) {
+  if (!configure() || userIds.length === 0) return;
+  const subs = await prisma.pushSubscription.findMany({
+    where: { userId: { in: userIds } },
+  });
+  await sendToSubs(subs, payload);
 }
