@@ -4,6 +4,7 @@ import {
   listNotifications,
   notificationRecipientId,
 } from "@/lib/notifications";
+import { kstDateTime, isoInstant } from "@/lib/kst";
 import MarkRead from "./mark-read";
 
 export const metadata = { title: "알림" };
@@ -59,10 +60,8 @@ function Item({
         )}
         {body}
       </span>
-      <time className="text-xs text-zinc-400">
-        {new Date(createdAt).toLocaleString("ko-KR", {
-          timeZone: "Asia/Seoul",
-        })}
+      <time dateTime={isoInstant(createdAt)} className="text-xs text-zinc-400">
+        {kstDateTime(createdAt)}
       </time>
     </span>
   );

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { guardPublicAccess } from "@/lib/site-config";
 import { searchFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
+import { kstDate, isoInstant } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -63,12 +64,10 @@ export default async function Home() {
                     </p>
                   )}
                   <time
-                    dateTime={f.createdAt.toISOString()}
+                    dateTime={isoInstant(f.createdAt)}
                     className="mt-1.5 block text-xs text-zinc-500"
                   >
-                    {f.createdAt.toLocaleDateString("ko-KR", {
-                      timeZone: "Asia/Seoul",
-                    })}
+                    {kstDate(f.createdAt)}
                   </time>
                 </Link>
               </li>

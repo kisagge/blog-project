@@ -2,7 +2,8 @@ import Link from "next/link";
 import { listHiddenTargets, countPendingReportTargets } from "@/lib/reports";
 import ReportActionButtons from "../report-actions-buttons";
 import ReportTabs from "../report-tabs";
-import { kst, targetHref } from "../helpers";
+import { targetHref } from "../helpers";
+import { kstDateTime } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function AdminHiddenReportsPage() {
                 <div className="min-w-0">
                   <p className="text-xs text-zinc-500">
                     {h.targetType === "comment" ? "댓글" : "글"} · 숨김{" "}
-                    {kst(h.hiddenAt)}
+                    {kstDateTime(h.hiddenAt)}
                   </p>
                   <Link
                     href={targetHref(h.targetType, h.slug, h.targetId)}

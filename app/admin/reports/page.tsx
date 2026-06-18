@@ -3,7 +3,8 @@ import { listReportQueue, countHiddenTargets } from "@/lib/reports";
 import { REPORT_REASONS } from "@/lib/report-reasons";
 import ReportActionButtons from "./report-actions-buttons";
 import ReportTabs from "./report-tabs";
-import { kst, targetHref } from "./helpers";
+import { targetHref } from "./helpers";
+import { kstDateTime } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function AdminReportsPage() {
                 <div className="min-w-0">
                   <p className="text-xs text-zinc-500">
                     {q.targetType === "comment" ? "댓글" : "글"} · 신고{" "}
-                    {q.reportCount}건 · 최초 {kst(q.firstReportedAt)}
+                    {q.reportCount}건 · 최초 {kstDateTime(q.firstReportedAt)}
                   </p>
                   <Link
                     href={targetHref(q.targetType, q.slug, q.targetId)}

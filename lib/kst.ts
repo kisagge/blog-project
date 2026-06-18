@@ -13,3 +13,20 @@ export function kstStartOfTodayUtc(): Date {
       9 * 3600 * 1000,
   );
 }
+
+type DateInput = Date | string | number;
+
+// KST 날짜(표시용, date-only). 예: "2026. 6. 18."
+export function kstDate(d: DateInput): string {
+  return new Date(d).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
+}
+
+// KST 날짜+시각(표시용).
+export function kstDateTime(d: DateInput): string {
+  return new Date(d).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+}
+
+// <time dateTime="…">용 머신리더블 ISO 인스턴트(UTC, 타임존 무관).
+export function isoInstant(d: DateInput): string {
+  return new Date(d).toISOString();
+}

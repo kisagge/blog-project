@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { kstDate, isoInstant } from "@/lib/kst";
 import type { FeedCard } from "./feed-card";
 
 // 피드 목록 카드(제목·요약·작성자·날짜·조회수·태그). 공개 목록(FeedList)·저장 목록 공용.
@@ -42,11 +43,7 @@ export default function FeedCardItem({
           ) : (
             <span>{card.authorName} · </span>
           ))}
-        <time dateTime={card.createdAt}>
-          {new Date(card.createdAt).toLocaleDateString("ko-KR", {
-            timeZone: "Asia/Seoul",
-          })}
-        </time>
+        <time dateTime={isoInstant(card.createdAt)}>{kstDate(card.createdAt)}</time>
         <span> · 조회 {card.viewCount.toLocaleString()}</span>
       </p>
       {card.tags.length > 0 && (
