@@ -40,12 +40,18 @@ export async function requestCode(
     email: String(formData.get("email") ?? ""),
   });
   if (!parsed.success) return { error: "올바른 이메일을 입력하세요." };
-  const { expiresAt } = await requestPasswordReset(parsed.data.email);
-  await setResetCookie({
-    email: parsed.data.email,
-    expiresAt: expiresAt.toISOString(),
-    verified: false,
-  });
+  // 백엔드 오류(DB 락 등)가 화면을 깨지 않도록 흡수 — redirect는 try 밖(NEXT_REDIRECT 보존).
+  try {
+    const { expiresAt } = await requestPasswordReset(parsed.data.email);
+    await setResetCookie({
+      email: parsed.data.email,
+      expiresAt: expiresAt.toISOString(),
+      verified: false,
+    });
+  } catch (e) {
+    console.error("[forgot-password] requestCode 실패:", e);
+    return { error: "코드 전송 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요." };
+  }
   redirect("/forgot-password/verify");
 }
 
@@ -53,12 +59,16 @@ export async function requestCode(
 export async function resendCode() {
   const cookie = await getResetCookie();
   if (!cookie) redirect("/forgot-password");
-  const { expiresAt } = await requestPasswordReset(cookie.email);
-  await setResetCookie({
-    email: cookie.email,
-    expiresAt: expiresAt.toISOString(),
-    verified: false,
-  });
+  try {
+    const { expiresAt } = await requestPasswordReset(cookie.email);
+    await setResetCookie({
+      email: cookie.email,
+      expiresAt: expiresAt.toISOString(),
+      verified: false,
+    });
+  } catch (e) {
+    console.error("[forgot-password] resendCode 실패:", e); // 삼키고 타이머 화면 유지
+  }
   redirect("/forgot-password/verify");
 }
 
@@ -73,9 +83,14 @@ export async function verifyCode(
     code: String(formData.get("code") ?? ""),
   });
   if (!parsed.success) return { error: "6자리 숫자 코드를 입력하세요." };
-  const res = await verifyResetCode(cookie.email, parsed.data.code);
-  if (!res.ok) return { error: res.error };
-  await setResetCookie({ ...cookie, verified: true });
+  try {
+    const res = await verifyResetCode(cookie.email, parsed.data.code);
+    if (!res.ok) return { error: res.error };
+    await setResetCookie({ ...cookie, verified: true });
+  } catch (e) {
+    console.error("[forgot-password] verifyCode 실패:", e);
+    return { error: "처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요." };
+  }
   redirect("/forgot-password/reset");
 }
 
@@ -91,8 +106,13 @@ export async function submitNewPassword(
     confirm: String(formData.get("confirm") ?? ""),
   });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
-  const res = await resetPassword(cookie.email, parsed.data.password);
-  if (!res.ok) return { error: res.error };
-  await clearResetCookie();
+  try {
+    const res = await resetPassword(cookie.email, parsed.data.password);
+    if (!res.ok) return { error: res.error };
+    await clearResetCookie();
+  } catch (e) {
+    console.error("[forgot-password] submitNewPassword 실패:", e);
+    return { error: "처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요." };
+  }
   redirect("/signin?reset=1");
 }
