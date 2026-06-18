@@ -69,3 +69,33 @@ describe("setFeedTags", () => {
     expect(await prisma.feedTag.count({ where: { feedId: f.id } })).toBe(0);
   });
 });
+
+describe("getTagsWithCounts", () => {
+  test("가시 글 태그만 글 수와 함께, 비공개/숨김/초안 제외, 글 수 내림차순", async () => {
+    const pub1 = await makeFeed(prisma, { visibility: "public" });
+    const pub2 = await makeFeed(prisma, { visibility: "public" });
+    const mem = await makeFeed(prisma, { visibility: "members" });
+    const hidden = await makeFeed(prisma, { visibility: "public", hiddenAt: new Date() });
+    const draft = await makeFeed(prisma, { visibility: "public", status: "draft" });
+    await m.setFeedTags(pub1.id, ["디스공개"]);
+    await m.setFeedTags(pub2.id, ["디스공개"]); // 같은 태그 2건
+    await m.setFeedTags(mem.id, ["디스회원"]);
+    await m.setFeedTags(hidden.id, ["디스숨김"]);
+    await m.setFeedTags(draft.id, ["디스초안"]);
+
+    const anon = await m.getTagsWithCounts("anon");
+    const aCount = Object.fromEntries(anon.map((t) => [t.slug, t.count]));
+    expect(aCount["디스공개"]).toBe(2);
+    expect(aCount["디스회원"]).toBeUndefined(); // 회원공개 제외
+    expect(aCount["디스숨김"]).toBeUndefined(); // 신고 숨김 제외
+    expect(aCount["디스초안"]).toBeUndefined(); // 초안 제외
+
+    const member = await m.getTagsWithCounts("member");
+    const mCount = Object.fromEntries(member.map((t) => [t.slug, t.count]));
+    expect(mCount["디스회원"]).toBe(1); // 회원에겐 보임
+    // 내림차순: 디스공개(2)가 디스회원(1)보다 앞.
+    const iPub = member.findIndex((t) => t.slug === "디스공개");
+    const iMem = member.findIndex((t) => t.slug === "디스회원");
+    expect(iPub).toBeLessThan(iMem);
+  });
+});

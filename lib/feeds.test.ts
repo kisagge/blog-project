@@ -8,6 +8,7 @@ let searchFeeds: Feeds["searchFeeds"];
 let countFeeds: Feeds["countFeeds"];
 let getAdminFeedsPage: Feeds["getAdminFeedsPage"];
 let getRelatedFeeds: Feeds["getRelatedFeeds"];
+let getPublicTopFeeds: Feeds["getPublicTopFeeds"];
 let cleanup: () => Promise<void>;
 let prisma: Awaited<ReturnType<typeof setupTestDb>>["prisma"];
 
@@ -103,8 +104,13 @@ beforeAll(async () => {
   await setFeedTags("pub-3", ["고양이"]);
   await setFeedTags("draft-1", ["비밀태그"]);
 
-  ({ searchFeeds, countFeeds, getAdminFeedsPage, getRelatedFeeds } =
-    await import("@/lib/feeds"));
+  ({
+    searchFeeds,
+    countFeeds,
+    getAdminFeedsPage,
+    getRelatedFeeds,
+    getPublicTopFeeds,
+  } = await import("@/lib/feeds"));
 });
 
 afterAll(async () => {
@@ -421,5 +427,38 @@ describe("searchFeeds", () => {
     const allSlugs = [...p1.items, ...p2.items].map((f) => f.slug);
     expect(allSlugs).not.toContain("umem-1");
     expect(allSlugs).not.toContain("udraft-1");
+  });
+});
+
+describe("getPublicTopFeeds", () => {
+  test("조회수 내림차순 + 가시성 필터(anon/member) + 숨김·초안 제외", async () => {
+    const mk = (id: string, over: Record<string, unknown>) =>
+      prisma.feed.create({
+        data: {
+          id,
+          slug: id,
+          title: id,
+          content: "c",
+          createdAt: new Date(2026, 5, 1),
+          updatedAt: new Date(2026, 5, 1),
+          ...over,
+        },
+      });
+    await mk("top-a", { visibility: "public", viewCount: 500 });
+    await mk("top-b", { visibility: "public", viewCount: 300 });
+    await mk("top-mem", { visibility: "members", viewCount: 999 });
+    await mk("top-hidden", { visibility: "public", viewCount: 999, hiddenAt: new Date() });
+
+    const anon = (await getPublicTopFeeds("anon")).map((f) => f.slug);
+    expect(anon).not.toContain("top-hidden"); // 신고 숨김 제외
+    expect(anon).not.toContain("top-mem"); // 회원공개는 anon 제외
+    expect(anon[0]).toBe("top-a"); // 최고 조회수(500)
+    expect(anon.indexOf("top-a")).toBeLessThan(anon.indexOf("top-b")); // 500 > 300
+
+    const member = (await getPublicTopFeeds("member")).map((f) => f.slug);
+    expect(member[0]).toBe("top-mem"); // 999, 회원에겐 보임
+
+    for (const id of ["top-a", "top-b", "top-mem", "top-hidden"])
+      await prisma.feed.delete({ where: { id } });
   });
 });

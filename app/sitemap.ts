@@ -22,6 +22,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: SITE_ORIGIN, lastModified: now },
     { url: `${SITE_ORIGIN}/feed`, lastModified: now },
+    { url: `${SITE_ORIGIN}/feed/popular`, lastModified: now },
+    { url: `${SITE_ORIGIN}/feed/tags`, lastModified: now },
     { url: `${SITE_ORIGIN}/df`, lastModified: now },
   ];
   const feedPages: MetadataRoute.Sitemap = feeds.map((f) => ({

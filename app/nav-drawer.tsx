@@ -124,6 +124,12 @@ export default function NavDrawer({
           <DrawerLink href="/df" onClick={close}>
             던파
           </DrawerLink>
+          <DrawerLink href="/feed/popular" onClick={close}>
+            인기 글
+          </DrawerLink>
+          <DrawerLink href="/feed/tags" onClick={close}>
+            태그
+          </DrawerLink>
           {session?.role === "admin" && (
             <DrawerLink href="/admin" onClick={close}>
               관리자

@@ -137,7 +137,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 320 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 322 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -177,11 +177,19 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **게이팅**: **전체공개·게시 글만** JSON-LD 주입(OG 이미지와 동일 — 회원공개/비공개/초안은 미노출로 게이트 콘텐츠가 구조화 데이터로 새지 않음). canonical은 열람 가능한 글에 설정해 `?c=`·`?sort=` 쿼리 중복 인덱싱 방지.
 - **안전 주입**: `dangerouslySetInnerHTML`로 인라인하되 직렬화 시 `<`를 `<`로 이스케이프해 제목/요약의 `</script>`가 마크업을 깨거나 주입되지 않게 함(CSP `script-src 'unsafe-inline'`라 nonce 불필요).
 
+### 4.17 발견성 페이지 (인기 글·태그 인덱스)
+
+쌓이던 조회수·태그를 공개적으로 탐색하게 하는 두 페이지(`/feed/popular`·`/feed/tags`)를 `app/feed/` 아래 두어 점검 모드 가드를 상속.
+
+- **인기 글**: `getPublicTopFeeds(role)`가 누적 조회수순으로 게시·미숨김 글을 **뷰어 가시 범위**(`listableVisibilities`)로 반환 — admin 전용 `getTopFeeds`와 달리 visibility를 필터해 공개 노출에 안전. 카드 UI는 `FeedCardItem` 재사용.
+- **태그 인덱스**: `getTagsWithCounts(role)`가 `feedTag.groupBy` + 관계 `where`(가시 글)로 글 수를 집계해, **가시 글이 1개 이상인 태그만** 글 수와 함께 내림차순 반환(비공개/숨김 전용 태그는 빈 링크가 되지 않게 제외). 기존 `?tag=` 필터로 연결.
+- 진입은 nav 드로어·홈 둘러보기 카드·sitemap에 추가(개별 태그 URL은 카디널리티 이유로 sitemap 제외).
+
 ## 5. 성과 요약
 
 - 런타임 이미지 **2.05GB → 876MB (−57%)**, 배포 첫 pull **10분 32초 → 37초**
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 320), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 322), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
