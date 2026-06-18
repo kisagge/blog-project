@@ -1,11 +1,20 @@
 "use client";
 import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { submitPost, type PostFormState } from "./actions";
 import MarkdownContent from "@/app/markdown-content";
 import MarkdownHelp from "./markdown-help";
+import DraftRestoreBanner from "@/app/draft-restore-banner";
+import {
+  draftKey,
+  loadDraft,
+  saveDraft,
+  clearDraft,
+  pruneDrafts,
+} from "@/lib/draft-store";
 
 const inputCls = INPUT_CLASS;
+type PostDraft = { title: string; content: string; tags: string };
 
 export default function PostEditor({
   post,
@@ -26,6 +35,56 @@ export default function PostEditor({
   const [content, setContent] = useState(post?.content ?? "");
   const [tags, setTags] = useState(post?.tags ?? "");
   const [tab, setTab] = useState<"write" | "preview">("write");
+  const [restorable, setRestorable] = useState<PostDraft | null>(null);
+  const key = draftKey("member", post?.id ?? "new");
+
+  // 마운트: 오래된 초안 정리 + 저장본이 초기값과 다르면 복원 제안.
+  useEffect(() => {
+    pruneDrafts();
+    const d = loadDraft<PostDraft>(key);
+    if (d && (d.title || d.content || d.tags)) {
+      const changed =
+        d.title !== (post?.title ?? "") ||
+        d.content !== (post?.content ?? "") ||
+        d.tags !== (post?.tags ?? "");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (changed) setRestorable(d);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 자동저장(800ms 디바운스). 첫 렌더·전부 빈값은 스킵.
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    const t = setTimeout(() => {
+      if (title || content || tags) saveDraft(key, { title, content, tags });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [title, content, tags, key]);
+
+  // 제출 실패(검증 에러 반환, 리다이렉트 없음) 시 clear-on-submit으로 지워진 초안을 복구.
+  useEffect(() => {
+    if (state?.errors || state?.error) saveDraft(key, { title, content, tags });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  function restore() {
+    if (restorable) {
+      setTitle(restorable.title);
+      setContent(restorable.content);
+      setTags(restorable.tags);
+    }
+    setRestorable(null);
+  }
+  function ignoreDraft() {
+    clearDraft(key);
+    setRestorable(null);
+  }
+
   const isPublished = post?.status === "published";
   const titleEmpty = title.trim() === "";
   const contentEmpty = content.trim() === "";
@@ -34,8 +93,15 @@ export default function PostEditor({
   const publishDisabled = pending || titleEmpty || contentEmpty;
 
   return (
-    <form action={action} className="flex w-full max-w-2xl flex-col gap-4">
+    <form
+      action={action}
+      onSubmit={() => clearDraft(key)}
+      className="flex w-full max-w-2xl flex-col gap-4"
+    >
       {post && <input type="hidden" name="id" value={post.id} />}
+      {restorable && (
+        <DraftRestoreBanner onRestore={restore} onDismiss={ignoreDraft} />
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-zinc-500">제목</span>

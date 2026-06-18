@@ -138,7 +138,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 343**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 356**.
 
 ### 4.12 Content reporting & moderation
 
@@ -206,11 +206,19 @@ Three lightweight reading aids on the post detail page.
 
 The shared markdown renderer (`MarkdownContent`, used by both the post body and the editor preview) gained `rehype-highlight` (highlight.js). **Post detail is a server component, so highlighting runs once at server render** — public readers get static HTML with `hljs` classes and zero extra client JS. highlight.js was chosen over shiki to keep the bundle/image lean. Token colors are defined directly in `globals.css` to match all **three themes (light/dark/brand)** rather than importing a fixed theme; fenced code blocks get horizontal scroll + `font-mono`, and the inline-code background is neutralized inside `pre`. Raw HTML stays disallowed, so it's XSS-safe.
 
+### 4.21 Draft autosave (localStorage, accumulation/quota-safe)
+
+The authoring editors (member and admin) gained localStorage autosave to prevent work loss on refresh/accidental navigation. The core is a **safe store** (`lib/draft-store.ts`) built to prevent accumulation/quota blowups.
+
+- **Safeguards**: one key per post (`byjang-draft:<scope>:<id|new>`) that **overwrites (never appends)** — no unbounded key growth. Each entry carries `savedAt` for a **7-day TTL**; a mount-time `pruneDrafts()` sweeps expired entries and trims to a count cap (12). Serialized length over a cap (1M code units) is skipped. If `setItem` throws `QuotaExceededError`, it **prunes and retries once, then gives up silently** — autosave is best-effort and must never block typing/submit (`typeof window` guard + try/catch throughout).
+- **Both editors**: the member editor is controlled (save/restore by value); the admin form is uncontrolled, so it reads `FormData` on `form onInput` and restores via `elements.namedItem` (after image insertion it dispatches a synthetic `input` event so autosave catches it). A `DraftRestoreBanner` offers **restore/dismiss** only when the saved draft differs from the initial content (never auto-overwrites).
+- **Lifecycle**: clears the key on submit (success ends via redirect); if validation fails without a redirect, a `state`-change effect **re-saves** the current values to close the data-loss window.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 343); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 356); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

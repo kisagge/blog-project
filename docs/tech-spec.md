@@ -138,7 +138,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 343 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 356 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -206,11 +206,19 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 
 마크다운 본문·미리보기 공유 렌더러(`MarkdownContent`)에 `rehype-highlight`(highlight.js)를 추가. **글 상세는 서버 컴포넌트라 하이라이트가 서버 렌더 시 1회 수행** → 공개 독자에겐 추가 클라이언트 JS 0(정적 HTML에 `hljs` 클래스). shiki 대신 highlight.js를 택해 번들·이미지 슬림화 기조 유지. 토큰 색은 단일 고정 테마 CSS 대신 `globals.css`에 **3테마(light/dark/brand) 정합**으로 직접 정의하고, 펜스 코드블록은 가로 스크롤·`font-mono`로, 인라인 code 배경이 블록에 새지 않게 `pre code`를 무력화. raw HTML 비허용은 그대로라 XSS 안전.
 
+### 4.21 초안 자동저장 (localStorage, 누적/용량 안전)
+
+작성 에디터(회원·관리자)에 새로고침·실수 이탈 시 작업 유실을 막는 localStorage 자동저장을 추가. 핵심은 **누적·용량 폭주를 막는 안전 스토어**(`lib/draft-store.ts`)다.
+
+- **안전장치**: 글당 키 1개(`byjang-draft:<scope>:<id|new>`)로 **overwrite(append 아님)** → 항목 무한증식 방지. 저장본에 `savedAt`을 남겨 **7일 TTL**, 개수 상한(12)·만료를 마운트 시 `pruneDrafts()`로 스윕. 직렬화 길이 캡(1M 코드유닛) 초과는 스킵. `setItem`이 `QuotaExceededError`로 던지면 **정리 후 1회 재시도, 그래도 실패면 조용히 포기** — 자동저장은 best-effort라 타이핑·제출을 절대 막지 않음(`typeof window` 가드 + 전 구간 try/catch).
+- **두 에디터**: 회원 에디터는 controlled state라 값으로 저장/복원, 관리자 폼은 uncontrolled라 `form onInput`으로 `FormData`를 읽어 저장하고 복원 시 `elements.namedItem`으로 값을 채움(이미지 삽입 후엔 합성 `input` 이벤트로 자동저장이 잡게). 저장본이 초기값과 다를 때만 `DraftRestoreBanner`로 **복원/무시**를 제안(자동 덮어쓰기 안 함).
+- **수명주기**: 제출 시 키 삭제(성공은 리다이렉트로 종료). 검증 실패로 리다이렉트가 없으면 `state` 변화 effect가 현재 값을 **재저장**해 데이터 유실 창을 닫음.
+
 ## 5. 성과 요약
 
 - 런타임 이미지 **2.05GB → 876MB (−57%)**, 배포 첫 pull **10분 32초 → 37초**
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 343), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 356), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
