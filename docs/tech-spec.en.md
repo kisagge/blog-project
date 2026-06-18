@@ -164,7 +164,7 @@ Added App Router error boundaries so a render-time exception no longer leaks a b
 
 ### 4.15 HTTP security headers (CSP, etc.)
 
-`next.config.ts`'s `headers()` applies security headers to all routes (sharing the pure `lib/security-headers.ts` module with tests).
+`next.config.ts`'s `headers()` applies security headers to all routes (the header builder is inlined in `next.config.ts` and exposed via named exports for tests — the runtime image doesn't copy `lib/`, so importing lib from the config would crash startup).
 
 - **Headers**: `Content-Security-Policy` + `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin` · `Permissions-Policy` (camera/mic/geolocation off) · `Strict-Transport-Security` (prod only).
 - **CSP approach**: nonces would force every page into dynamic rendering in this Next version (giving up static optimization/caching), so instead `script`/`style` allow `'unsafe-inline'` while **external script origins are whitelisted** (Turnstile `challenges.cloudflare.com`, Kakao SDK `t1.kakaocdn.net`), and `frame-ancestors 'none'` · `object-src 'none'` · `base-uri 'self'` · `form-action 'self'` shut down clickjacking/injection surface. External https images (post bodies, Neople) are allowed via `img-src https:`; fonts are self-hosted by `next/font` (`font-src 'self'`). `upgrade-insecure-requests` and HSTS apply only in prod (avoiding local http breakage). User content carries low residual injection risk since react-markdown never renders raw HTML.

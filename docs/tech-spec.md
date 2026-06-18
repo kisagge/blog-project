@@ -164,7 +164,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 
 ### 4.15 HTTP 보안 헤더 (CSP 등)
 
-`next.config.ts`의 `headers()`로 전 경로에 보안 헤더를 적용(`lib/security-headers.ts` 순수 모듈을 테스트와 공유).
+`next.config.ts`의 `headers()`로 전 경로에 보안 헤더를 적용(헤더 빌더는 `next.config.ts`에 인라인하고 named export로 테스트와 공유 — 런타임 이미지가 `lib/`를 복사하지 않아 config가 lib을 import하면 기동이 깨지기 때문).
 
 - **헤더**: `Content-Security-Policy` + `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin` · `Permissions-Policy`(카메라·마이크·위치 차단) · `Strict-Transport-Security`(prod 한정).
 - **CSP 방식 선택**: nonce는 이 Next 버전에서 **전 페이지 동적 렌더를 강제**(정적 최적화·캐싱 포기)하므로 채택하지 않고, `script/style`은 `'unsafe-inline'`을 허용하되 **외부 스크립트 출처를 화이트리스트**(Turnstile `challenges.cloudflare.com`, Kakao SDK `t1.kakaocdn.net`)로 제한하고 `frame-ancestors 'none'`·`object-src 'none'`·`base-uri 'self'`·`form-action 'self'`로 클릭재킹·인젝션 표면을 차단. 외부 https 이미지(본문·Neople)는 `img-src https:`로 허용, 폰트는 `next/font` self-host라 `font-src 'self'`. `upgrade-insecure-requests`·HSTS는 prod에만(로컬 http 깨짐 방지). 사용자 콘텐츠는 react-markdown이 raw HTML을 렌더하지 않아 잔여 인젝션 위험이 낮다.
