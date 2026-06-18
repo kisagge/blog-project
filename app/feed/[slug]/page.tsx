@@ -12,6 +12,7 @@ import ViewTracker from "@/app/view-tracker";
 import ShareBar from "@/app/share-bar";
 import ReportButton from "@/app/report/report-button";
 import { absoluteUrl, firstContentImage, toAbsolute } from "@/lib/share";
+import { buildFeedJsonLd, jsonLdHtml } from "@/lib/structured-data";
 
 // 임시저장(draft) 글은 작성자 본인(또는 관리자)만 볼 수 있다.
 type DraftCheck = { status: string; authorId: string | null };
@@ -47,6 +48,8 @@ export async function generateMetadata({
   return {
     title: feed.title,
     description,
+    // 명시적 canonical로 ?c=·?sort= 쿼리 중복 인덱싱 방지(metadataBase가 절대화).
+    alternates: { canonical: `/feed/${slug}` },
     openGraph: { type: "article", title: feed.title, description },
   };
 }
@@ -130,6 +133,15 @@ export default async function FeedDetailPage({
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
+      {/* 전체공개 글만 구조화 데이터(BlogPosting + Breadcrumb) — 공개 인덱싱 대상. */}
+      {feed.visibility === "public" && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLdHtml(buildFeedJsonLd(feed, authorName)),
+          }}
+        />
+      )}
       <ViewTracker type="feed" id={feed.id} />
       <FeedArticle
         feed={feed}
