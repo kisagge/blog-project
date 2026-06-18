@@ -146,6 +146,7 @@ export default function FeedList({
               card={feed}
               linkAuthors={linkAuthors}
               basePath={basePath}
+              highlightQuery={query}
             />
           ))}
         </ul>

@@ -5,6 +5,7 @@ export type FeedCard = {
   slug: string;
   title: string;
   summary: string | null;
+  snippet: string | null; // 검색 시 매치 중심 본문 발췌(비검색이면 null → summary 표시)
   createdAt: string;
   viewCount: number;
   visibility: Visibility;
@@ -18,6 +19,7 @@ export function toFeedCard(f: {
   slug: string;
   title: string;
   summary: string | null;
+  snippet?: string;
   createdAt: Date;
   viewCount: number;
   visibility: string;
@@ -28,6 +30,7 @@ export function toFeedCard(f: {
     slug: f.slug,
     title: f.title,
     summary: f.summary,
+    snippet: f.snippet ?? null,
     createdAt: f.createdAt.toISOString(),
     viewCount: f.viewCount,
     visibility: f.visibility as Visibility,

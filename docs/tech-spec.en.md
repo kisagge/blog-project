@@ -132,11 +132,12 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 - **Relevance ranking & query composition**: `bm25(feed_fts, 10,5,1)` weights title > summary > content. Search obtains only the **ranked Feed.id candidates** from FTS, then reuses the existing Prisma path for access/author/tag filters and SELECT (DRY) — candidate ids are non-sensitive; the real data is gated by the second Prisma stage. Multiple tokens are AND-ed (all must appear); FTS operators/quotes are phrase-escaped and bound via `?`. Tokens under 3 chars are trigram-ineligible, so they take the contains fallback.
 - A `take+1` (fallback) / candidate slice (FTS) determines whether a next page exists without a separate count query.
 - Search is debounced at 300ms and uses a **request sequence (reqId) to discard stale responses** during fast typing, avoiding races. The query syncs to `?q=` for shareable results.
+- **Snippets & highlighting**: while searching, result cards show a **match-centered body excerpt** instead of the summary (`makeSnippet` — strips markdown, then a ±radius window around the first matched token with `…` when truncated). Since `content` isn't in the list SELECT, it's fetched in **one extra query keyed by the page-slice ids only** (non-search and the saved list skip it). Matched tokens in the title/excerpt are wrapped in `<mark>` by **splitting the string and wrapping only the matched fragments** (regex metachars escaped) — no HTML injection, XSS-safe.
 - **Related posts**: the post detail footer recommends posts sharing tags (`getRelatedFeeds`). Candidates come from `feedTags.some` + `listableVisibilities(role)` (the same access gate as search), re-sorted by **shared-tag count → recency** (self and private/hidden/draft excluded; nothing shown if the post has no tags).
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 264**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 276**.
 
 ### 4.12 Content reporting & moderation
 
@@ -167,5 +168,5 @@ Added App Router error boundaries so a render-time exception no longer leaks a b
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 264); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 276); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

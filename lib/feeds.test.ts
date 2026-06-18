@@ -183,6 +183,24 @@ describe("searchFeeds", () => {
     expect(items.map((f) => f.slug)).toEqual(["pub-7"]);
   });
 
+  test("검색 결과에 매치 중심 스니펫 부착(FTS 경로)", async () => {
+    const { items } = await searchFeeds({ role: "anon", q: "강아지물고기" });
+    expect(items[0].slug).toBe("pub-7");
+    expect(items[0].snippet).toContain("강아지물고기");
+  });
+
+  test("검색 결과에 스니펫 부착(2자 폴백 경로)", async () => {
+    // "본문"(2자) → contains 폴백. 각 글 content "본문 N"에서 발췌.
+    const { items } = await searchFeeds({ role: "anon", q: "본문" });
+    expect(items.length).toBeGreaterThan(0);
+    expect(items[0].snippet).toContain("본문");
+  });
+
+  test("비검색 목록은 스니펫 없음", async () => {
+    const { items } = await searchFeeds({ role: "anon" });
+    expect(items[0].snippet).toBeUndefined();
+  });
+
   test("FTS BM25 랭킹: 제목 매치가 본문 매치보다 먼저", async () => {
     await prisma.feed.create({
       data: {

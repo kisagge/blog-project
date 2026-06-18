@@ -14,8 +14,8 @@ function stripInline(s: string): string {
     .trim();
 }
 
-// 읽는 데 걸리는 예상 분(최소 1). 마크다운 기호는 제외하고 비공백 글자 수로 계산.
-export function readingTimeMinutes(content: string): number {
+// 마크다운 본문을 표시용 평문으로(코드블록·기호·목록 마커 제거). 읽는 시간·검색 스니펫 공용.
+export function stripMarkdown(content: string): string {
   let s = content;
   s = s.replace(/```[\s\S]*?```/g, ""); // 펜스 코드블록
   s = s.replace(/~~~[\s\S]*?~~~/g, "");
@@ -27,8 +27,43 @@ export function readingTimeMinutes(content: string): number {
   s = s.replace(/^\s*[-*+]\s+/gm, ""); // 불릿
   s = s.replace(/^\s*\d+\.\s+/gm, ""); // 번호 목록
   s = s.replace(/[*_~`#>]/g, ""); // 남은 기호
-  const chars = s.replace(/\s/g, "").length;
+  return s;
+}
+
+// 읽는 데 걸리는 예상 분(최소 1). 마크다운 기호는 제외하고 비공백 글자 수로 계산.
+export function readingTimeMinutes(content: string): number {
+  const chars = stripMarkdown(content).replace(/\s/g, "").length;
   return Math.max(1, Math.ceil(chars / KOREAN_CHARS_PER_MINUTE));
+}
+
+// 검색 스니펫: 본문을 평문화 후 첫 매치 토큰을 중심으로 발췌(앞/뒤 생략 시 …).
+// 매치가 없으면(제목·요약에만 걸린 경우 등) 본문 앞부분으로 폴백. 표시용이라 완벽 파싱 불필요.
+export function makeSnippet(
+  content: string,
+  terms: string[],
+  radius = 60,
+): string {
+  const text = stripMarkdown(content).replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  const lower = text.toLowerCase();
+  let idx = -1;
+  let matchLen = 0;
+  for (const t of terms) {
+    const at = lower.indexOf(t.toLowerCase());
+    if (at !== -1 && (idx === -1 || at < idx)) {
+      idx = at;
+      matchLen = t.length;
+    }
+  }
+  // 미매치 → 앞부분 발췌.
+  if (idx === -1) {
+    const head = text.slice(0, radius * 2 + 20);
+    return head.length < text.length ? `${head}…` : head;
+  }
+  const start = Math.max(0, idx - radius);
+  const end = Math.min(text.length, idx + matchLen + radius);
+  const body = text.slice(start, end);
+  return `${start > 0 ? "…" : ""}${body}${end < text.length ? "…" : ""}`;
 }
 
 export type TocItem = { depth: number; text: string; slug: string };
