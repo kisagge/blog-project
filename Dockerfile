@@ -35,8 +35,8 @@ RUN pnpm install --prod --frozen-lockfile
 #    next start로 기동하고, entrypoint에서 prisma migrate deploy를 먼저 실행한다.
 FROM base AS runner
 ENV NODE_ENV=production PORT=3010 HOSTNAME=0.0.0.0
-# prisma 마이그레이트 엔진이 libssl을 요구 → openssl 설치(작음).
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+# prisma 마이그레이트 엔진이 libssl을 요구 → openssl 설치. sqlite3는 DB 백업 스크립트용(작음).
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates sqlite3 && rm -rf /var/lib/apt/lists/*
 RUN groupadd -r nodejs && useradd -r -g nodejs -m nextjs
 
 # --chown으로 복사 시점에 소유권을 지정한다. 별도 `chown -R`을 돌리면 overlay FS가
@@ -50,6 +50,8 @@ COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/app/generated ./app/generated
+# DB 백업 스크립트를 이미지에 베이크(self-contained 셸 — lib/ 미복사라 호스트 파일 의존 없음).
+COPY --chown=nextjs:nodejs --from=builder /app/scripts ./scripts
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && mkdir -p /data && chown nextjs:nodejs /data
