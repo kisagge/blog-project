@@ -137,7 +137,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 전체 **17 → 276 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 전체 **17 → 280 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -162,11 +162,18 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **`app/global-error.tsx`**: 루트 레이아웃 자체(세션·알림 DB 호출 등)가 던지는 치명 예외의 최종 폴백 — 루트 레이아웃을 대체하므로 자체 `<html>/<body>` + `globals.css`를 렌더.
 - 두 바운더리는 공유 폴백(`app/error-fallback.tsx`)으로 DRY. `<main>` 랜드마크·단일 `h1` 유지하고 메시지 영역만 `role="alert"`로 announce, 홈 링크는 라우터 트리가 끊긴 컨텍스트에서도 동작하도록 순수 `<a>`(하드 내비). 이 Next 버전은 회복 prop이 `reset`이 아니라 **`unstable_retry`**.
 
+### 4.15 HTTP 보안 헤더 (CSP 등)
+
+`next.config.ts`의 `headers()`로 전 경로에 보안 헤더를 적용(`lib/security-headers.ts` 순수 모듈을 테스트와 공유).
+
+- **헤더**: `Content-Security-Policy` + `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin` · `Permissions-Policy`(카메라·마이크·위치 차단) · `Strict-Transport-Security`(prod 한정).
+- **CSP 방식 선택**: nonce는 이 Next 버전에서 **전 페이지 동적 렌더를 강제**(정적 최적화·캐싱 포기)하므로 채택하지 않고, `script/style`은 `'unsafe-inline'`을 허용하되 **외부 스크립트 출처를 화이트리스트**(Turnstile `challenges.cloudflare.com`, Kakao SDK `t1.kakaocdn.net`)로 제한하고 `frame-ancestors 'none'`·`object-src 'none'`·`base-uri 'self'`·`form-action 'self'`로 클릭재킹·인젝션 표면을 차단. 외부 https 이미지(본문·Neople)는 `img-src https:`로 허용, 폰트는 `next/font` self-host라 `font-src 'self'`. `upgrade-insecure-requests`·HSTS는 prod에만(로컬 http 깨짐 방지). 사용자 콘텐츠는 react-markdown이 raw HTML을 렌더하지 않아 잔여 인젝션 위험이 낮다.
+
 ## 5. 성과 요약
 
 - 런타임 이미지 **2.05GB → 876MB (−57%)**, 배포 첫 pull **10분 32초 → 37초**
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 276), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 280), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

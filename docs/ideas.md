@@ -22,3 +22,11 @@
 | 16 | 관련 글 추천(태그) | 글 상세 하단에 같은 태그를 공유하는 다른 글 추천(`getRelatedFeeds`, 공유 태그 수순). 기존 태그·접근제어 재사용 | 완료 |
 | 17 | @멘션 + 멘션 알림 | 댓글 @닉네임 멘션 → 멘션된 승인 회원에게 알림(인앱+푸시). 닉네임 비유일·공백 허용이라 회원 순회 매칭, 환경설정 토글·본문 강조 | 완료 |
 | 18 | 관리자 통계 대시보드 | 조회수 추이·가입 추이·인기글·요약을 `/admin/stats`에 CSS 바로 시각화(View.day groupBy + raw date(+9h)) | 완료 |
+| 19 | 이메일 다이제스트 | 미읽음 인앱 알림/새 글을 주기적으로 묶어 이메일 발송(기존 SES 메일러 `lib/mailer.ts` 재사용, 회원별 수신 on/off·수신거부). 트리거 수단(수동 관리자 버튼 / GitHub Actions cron / 컨테이너 cron) 미정 | 보류 |
+| 20 | 보안 헤더(CSP·HSTS 등) | `next.config.ts` headers()로 CSP·X-Frame-Options·X-Content-Type-Options·Referrer-Policy·Permissions-Policy·HSTS. CSP는 no-nonce(정적 렌더 유지) + 외부 스크립트 출처 화이트리스트(Turnstile·Kakao) | 완료 |
+| 21 | SEO 구조화 데이터 | 글 상세에 JSON-LD(BlogPosting/BreadcrumbList) + 명시적 canonical. 검색 리치 스니펫·CTR 개선 | 보류 |
+| 22 | 발견성 페이지 | 공개 인기 글(viewCount 상위) 목록 + 태그 인덱스(전체 태그·글 수). 기존 Tag·searchFeeds 재사용 | 보류 |
+| 23 | 인증/DAL·서버액션 테스트 | `lib/dal`·`session`·`reset-token`·`mailer` + signin/signup/forgot-password 서버 액션 테스트(인가 우회·세션 회귀 방지) | 보류 |
+| 24 | 민감 액션 레이트리밋 | 로그인 브루트포스·가입·신고에 per-action 제한(전역 IP 제한 외, 기존 `rateLimit` 유틸 재사용) | 보류 |
+| 25 | DB 자동 백업 | `/data/prod.db` 주기 덤프 → 오프사이트(S3 등). WAL만으론 백업 아님, 데이터 유실 대비 | 보류 |
+| 26 | 읽기 UX | 글 상세 이전/다음 글 내비게이션·읽기 진행바·맨 위로 버튼 | 보류 |
