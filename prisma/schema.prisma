@@ -79,6 +79,7 @@ model User {
   rejectedAt   DateTime?                        // 최근 거절 시각
   notifyOnReply   Boolean @default(true)        // 내 댓글에 답글 알림 수신 여부
   notifyOnComment Boolean @default(true)        // 내 글에 댓글 알림 수신 여부
+  notifyOnMention Boolean @default(true)        // 댓글에서 @멘션 알림 수신 여부
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   comments  Comment[]

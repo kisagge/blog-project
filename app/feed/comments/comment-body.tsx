@@ -1,6 +1,19 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
+// @멘션 토큰을 색으로 강조(장식 — 닉네임 유일성 문제로 링크는 걸지 않음).
+function renderMentions(content: string) {
+  return content.split(/(@[^\s]+)/g).map((part, i) =>
+    part.startsWith("@") && part.length > 1 ? (
+      <span key={i} className="font-medium text-blue-600 dark:text-blue-400">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
 export default function CommentBody({ content }: { content: string }) {
   const ref = useRef<HTMLParagraphElement>(null);
   const [overflow, setOverflow] = useState(false);
@@ -17,7 +30,7 @@ export default function CommentBody({ content }: { content: string }) {
         ref={ref}
         className={`text-sm break-words whitespace-pre-wrap ${expanded ? "" : "line-clamp-3"}`}
       >
-        {content}
+        {renderMentions(content)}
       </p>
       {(overflow || expanded) && (
         <button

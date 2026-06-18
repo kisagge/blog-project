@@ -16,6 +16,7 @@ export async function updateNotificationPrefsAction(
   await setNotificationPrefs(session.userId, {
     onReply: formData.get("onReply") === "on",
     onComment: formData.get("onComment") === "on",
+    onMention: formData.get("onMention") === "on",
   });
   revalidatePath("/account/notifications");
   return { done: true };

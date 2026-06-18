@@ -196,12 +196,92 @@ describe("notification prefs", () => {
     expect(await m.getNotificationPrefs(u.id)).toEqual({
       onReply: true,
       onComment: true,
+      onMention: true,
     });
-    await m.setNotificationPrefs(u.id, { onReply: false, onComment: true });
+    await m.setNotificationPrefs(u.id, {
+      onReply: false,
+      onComment: true,
+      onMention: false,
+    });
     expect(await m.getNotificationPrefs(u.id)).toEqual({
       onReply: false,
       onComment: true,
+      onMention: false,
     });
+  });
+
+  test("notifyCommentMention: @닉네임 멘션된 승인 회원에게 알림(본인·off·미멘션 제외)", async () => {
+    const author = await prisma.user.create({
+      data: {
+        email: "ma@x.com",
+        nickname: "멘션작성",
+        passwordHash: "-",
+        status: "approved",
+      },
+    });
+    const target = await prisma.user.create({
+      data: {
+        email: "mt@x.com",
+        nickname: "대상회원",
+        passwordHash: "-",
+        status: "approved",
+      },
+    });
+    const other = await prisma.user.create({
+      data: {
+        email: "mo@x.com",
+        nickname: "딴사람",
+        passwordHash: "-",
+        status: "approved",
+      },
+    });
+    const offUser = await prisma.user.create({
+      data: {
+        email: "moff@x.com",
+        nickname: "멘션끔",
+        passwordHash: "-",
+        status: "approved",
+        notifyOnMention: false,
+      },
+    });
+    const pending = await prisma.user.create({
+      data: {
+        email: "mp@x.com",
+        nickname: "미승인",
+        passwordHash: "-",
+        status: "pending",
+      },
+    });
+    const honor = await prisma.user.create({
+      data: {
+        email: "mh@x.com",
+        nickname: "존칭회원",
+        passwordHash: "-",
+        status: "approved",
+      },
+    });
+    sendNotification.mockClear();
+    // 대상회원·멘션끔·미승인·본인(멘션작성) + 존칭(@존칭회원님)을 멘션
+    await m.notifyCommentMention({
+      content: "@대상회원 @멘션끔 @미승인 @멘션작성 @존칭회원님 안녕",
+      commentId: "mc1",
+      slug: "p",
+      fromUserId: author.id,
+      fromNickname: "멘션작성",
+    });
+    const got = async (id: string) =>
+      prisma.notification.count({ where: { userId: id } });
+    expect(await got(target.id)).toBe(1); // 멘션된 승인 회원
+    expect(await got(honor.id)).toBe(1); // @존칭회원님 — 존칭 접미도 매칭(느슨)
+    expect(await got(offUser.id)).toBe(0); // 멘션 알림 off
+    expect(await got(pending.id)).toBe(0); // 비승인 회원
+    expect(await got(author.id)).toBe(0); // 본인 멘션 제외
+    expect(await got(other.id)).toBe(0); // 멘션 안 됨
+    const rows = await prisma.notification.findMany({
+      where: { userId: target.id },
+      take: 1,
+    });
+    expect(rows[0].url).toBe("/feed/p?c=mc1");
   });
 
   test("notifyCommentReply: 수신자가 답글 알림 off면 미생성(on이면 생성)", async () => {
@@ -239,6 +319,7 @@ describe("notification prefs", () => {
     await m.setNotificationPrefs(recipient.id, {
       onReply: true,
       onComment: true,
+      onMention: true,
     });
     await m.notifyCommentReply({
       parentId: parent.id,
