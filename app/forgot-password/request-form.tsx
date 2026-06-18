@@ -3,7 +3,7 @@ import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState } from "react";
 import Link from "next/link";
 import { requestCode, type RequestState } from "./actions";
-import TurnstileWidget, { useTurnstileReset } from "@/app/turnstile-widget";
+import TurnstileWidget from "@/app/turnstile-widget";
 
 const inputCls = INPUT_CLASS;
 
@@ -12,7 +12,6 @@ export default function RequestForm({ siteKey }: { siteKey?: string }) {
     requestCode,
     undefined,
   );
-  useTurnstileReset(state);
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -32,7 +31,7 @@ export default function RequestForm({ siteKey }: { siteKey?: string }) {
           {state.error}
         </p>
       )}
-      <TurnstileWidget siteKey={siteKey} />
+      <TurnstileWidget siteKey={siteKey} resetSignal={state} />
       <button
         type="submit"
         disabled={pending}
