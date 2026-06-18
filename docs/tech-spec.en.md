@@ -137,7 +137,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 280**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. Test count grew from **17 to 286**.
 
 ### 4.12 Content reporting & moderation
 
@@ -169,11 +169,19 @@ Added App Router error boundaries so a render-time exception no longer leaks a b
 - **Headers**: `Content-Security-Policy` + `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin` · `Permissions-Policy` (camera/mic/geolocation off) · `Strict-Transport-Security` (prod only).
 - **CSP approach**: nonces would force every page into dynamic rendering in this Next version (giving up static optimization/caching), so instead `script`/`style` allow `'unsafe-inline'` while **external script origins are whitelisted** (Turnstile `challenges.cloudflare.com`, Kakao SDK `t1.kakaocdn.net`), and `frame-ancestors 'none'` · `object-src 'none'` · `base-uri 'self'` · `form-action 'self'` shut down clickjacking/injection surface. External https images (post bodies, Neople) are allowed via `img-src https:`; fonts are self-hosted by `next/font` (`font-src 'self'`). `upgrade-insecure-requests` and HSTS apply only in prod (avoiding local http breakage). User content carries low residual injection risk since react-markdown never renders raw HTML.
 
+### 4.16 SEO structured data (JSON-LD)
+
+Post detail pages emit **schema.org JSON-LD** (`BlogPosting` + `BreadcrumbList`) and an explicit **canonical** to surface search rich snippets (author, published/modified dates, breadcrumb).
+
+- **Separate builder**: `lib/structured-data.ts` (pure) assembles a `@graph` of BlogPosting + Breadcrumb, reusing the existing `absoluteUrl`/`isoInstant`. `datePublished = publishedAt ?? createdAt`, `dateModified = updatedAt`; the author is a `Person` with a `/u/{id}` URL for members or name-only for the admin; `image` is the dynamic OG route; `publisher` is the site Organization + logo.
+- **Gating**: JSON-LD is injected **only for public, published posts** (matching the OG image — members-only/private/draft are excluded so gated content never leaks into structured data). The canonical is set on any viewable post to prevent duplicate indexing from `?c=`/`?sort=` query params.
+- **Safe injection**: inlined via `dangerouslySetInnerHTML`, but serialization escapes `<` to `<` so a `</script>` in a title/summary can't break or inject markup (no nonce needed since CSP allows `script-src 'unsafe-inline'`).
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 280); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 286); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
