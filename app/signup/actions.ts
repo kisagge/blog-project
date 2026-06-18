@@ -3,6 +3,7 @@ import { SignupSchema } from "@/lib/validation";
 import { createPendingUser } from "@/lib/users";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { getClientIp } from "@/lib/client-ip";
+import { allowAction, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 import type { FormState } from "@/lib/form-state";
 
 export type SignupState = FormState;
@@ -11,9 +12,12 @@ export async function signup(
   _state: SignupState,
   formData: FormData,
 ): Promise<SignupState> {
+  const ip = (await getClientIp()) ?? "unknown";
+  // 가입 스팸·이메일 열거 방지(IP당).
+  if (!allowAction("signup", ip)) return { error: TOO_MANY_REQUESTS };
   const captcha = await verifyTurnstile(
     String(formData.get("cf-turnstile-response") ?? ""),
-    await getClientIp(),
+    ip,
   );
   if (!captcha)
     return { error: "사람 확인에 실패했습니다. 다시 시도해 주세요." };

@@ -27,7 +27,7 @@
 | 21 | SEO 구조화 데이터 | 글 상세에 JSON-LD(BlogPosting/BreadcrumbList) + 명시적 canonical. 검색 리치 스니펫·CTR 개선 | 완료 |
 | 22 | 발견성 페이지 | 공개 인기 글(viewCount 상위) 목록 + 태그 인덱스(전체 태그·글 수). 기존 Tag·searchFeeds 재사용 | 완료 |
 | 23 | 인증/DAL·서버액션 테스트 | `lib/dal`·`session`·`reset-token`·`mailer`·`jwt` + signin/signup/forgot-password 서버 액션 테스트(인가 우회·세션 회귀 방지) | 완료 |
-| 24 | 민감 액션 레이트리밋 | 로그인 브루트포스·가입·신고에 per-action 제한(전역 IP 제한 외, 기존 `rateLimit` 유틸 재사용) | 보류 |
+| 24 | 민감 액션 레이트리밋 | 로그인 브루트포스·가입·코드요청·신고에 per-action 제한(전역 IP 제한 외, 기존 `rateLimit` 유틸 재사용) | 완료 |
 | 25 | DB 자동 백업 | `/data/prod.db` 일별 sqlite `.backup` → gzip → /data/backups N일 회전(GitHub Actions cron). 손상·실수·마이그레이션 대비 | 완료 |
 | 25b | DB 오프사이트 백업 | 25의 로컬 백업을 R2/B2/S3로 업로드(인스턴스 유실 대비 DR). 객체저장소 자격증명 필요 | 보류 |
 | 26 | 읽기 UX | 글 상세 이전/다음 글 내비게이션·읽기 진행바·맨 위로 버튼 | 보류 |

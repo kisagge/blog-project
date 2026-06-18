@@ -37,9 +37,12 @@ import {
   getResetCookie,
   clearResetCookie,
 } from "@/lib/reset-token";
+import { getClientIp } from "@/lib/client-ip";
+import { ACTION_LIMITS, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
 
 const vt = vi.mocked(verifyTurnstile);
+const gci = vi.mocked(getClientIp);
 const rpr = vi.mocked(requestPasswordReset);
 const vrc = vi.mocked(verifyResetCode);
 const rp = vi.mocked(resetPassword);
@@ -63,6 +66,8 @@ beforeEach(() => {
   setCk.mockReset();
   getCk.mockReset();
   clearCk.mockReset();
+  gci.mockReset();
+  gci.mockResolvedValue("1.2.3.4");
   rd.mockClear();
 });
 
@@ -71,6 +76,19 @@ describe("requestCode (1단계)", () => {
     vt.mockResolvedValue(false);
     expect(await requestCode(undefined, fd({ email: "a@x.com" }))).toEqual({
       error: "사람 확인에 실패했습니다. 다시 시도해 주세요.",
+    });
+  });
+
+  test("레이트리밋: IP당 한도 초과 시 차단", async () => {
+    gci.mockResolvedValue("rl-reset");
+    vt.mockResolvedValue(false); // 한도 내 호출은 turnstile 에러
+    const { limit } = ACTION_LIMITS.passwordReset;
+    for (let i = 0; i < limit; i++) {
+      const r = await requestCode(undefined, fd({ email: "a@x.com" }));
+      expect(r?.error).not.toBe(TOO_MANY_REQUESTS);
+    }
+    expect(await requestCode(undefined, fd({ email: "a@x.com" }))).toEqual({
+      error: TOO_MANY_REQUESTS,
     });
   });
 
