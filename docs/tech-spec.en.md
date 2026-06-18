@@ -138,7 +138,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 332**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 342**.
 
 ### 4.12 Content reporting & moderation
 
@@ -194,11 +194,19 @@ A **credential-free local backup** guarding `/data/prod.db` (WAL) against corrup
 - **Schedule** (`.github/workflows/backup.yml`): daily at 04:00 KST + manual (`workflow_dispatch`). It reuses the **same SSH secrets** as the deploy to run `docker compose exec -T web sh scripts/backup-db.sh` on the host — a precise schedule with no always-on sidecar (saving RAM on the 512MB instance).
 - Restorability is guarded by a test (gunzip the snapshot, `PRAGMA integrity_check` = ok, rows preserved, plus rotation). Off-site replication (R2/B2 for instance loss) is left as a follow-up.
 
+### 4.19 Reading experience (prev/next, progress bar, back-to-top)
+
+Three lightweight reading aids on the post detail page.
+
+- **Prev/next post**: `getAdjacentFeeds(feed, role)` fetches the chronologically adjacent post on each side within the viewer's visible range and the **same author class** (admin↔admin, member↔member) so navigation stays inside the collection the reader is browsing. Rendered in the article footer in the `RelatedFeeds` style (hidden when neither exists).
+- **Reading progress bar** (`reading-progress-bar`): a top-fixed bar reflects document scroll progress, throttled with a passive scroll listener + `requestAnimationFrame`, and is `aria-hidden` (decorative).
+- **Back-to-top** (`back-to-top-button`): appears bottom-right past a scroll threshold (not rendered when hidden, so it's out of the focus order) and scrolls to the top on click. Since JS smooth scroll isn't governed by the global CSS `scroll-behavior` override, it branches on reduced-motion via `matchMedia`.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 332); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 342); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

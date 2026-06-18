@@ -9,6 +9,7 @@ let countFeeds: Feeds["countFeeds"];
 let getAdminFeedsPage: Feeds["getAdminFeedsPage"];
 let getRelatedFeeds: Feeds["getRelatedFeeds"];
 let getPublicTopFeeds: Feeds["getPublicTopFeeds"];
+let getAdjacentFeeds: Feeds["getAdjacentFeeds"];
 let cleanup: () => Promise<void>;
 let prisma: Awaited<ReturnType<typeof setupTestDb>>["prisma"];
 
@@ -110,6 +111,7 @@ beforeAll(async () => {
     getAdminFeedsPage,
     getRelatedFeeds,
     getPublicTopFeeds,
+    getAdjacentFeeds,
   } = await import("@/lib/feeds"));
 });
 
@@ -460,5 +462,31 @@ describe("getPublicTopFeeds", () => {
 
     for (const id of ["top-a", "top-b", "top-mem", "top-hidden"])
       await prisma.feed.delete({ where: { id } });
+  });
+});
+
+describe("getAdjacentFeeds", () => {
+  async function adj(slug: string, role: "anon" | "member" = "anon") {
+    const f = await prisma.feed.findUnique({
+      where: { slug },
+      select: { id: true, createdAt: true, authorId: true },
+    });
+    return getAdjacentFeeds(f!, role);
+  }
+
+  test("시간순 이전(오래된)·다음(최신) 1건씩", async () => {
+    const { prev, next } = await adj("pub-5");
+    expect(prev?.slug).toBe("pub-4");
+    expect(next?.slug).toBe("pub-6");
+  });
+
+  test("양 끝은 null", async () => {
+    expect((await adj("pub-1")).prev).toBeNull();
+    expect((await adj("pub-12")).next).toBeNull();
+  });
+
+  test("작성자 분류 격리: 회원 글의 이웃은 회원 글만(관리자 글 미혼입)", async () => {
+    // umem-1(회원 published)의 더 오래된 글은 admin pub-12뿐이나 author-scope=member라 제외 → prev null.
+    expect((await adj("umem-1", "member")).prev).toBeNull();
   });
 });

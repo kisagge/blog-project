@@ -1,12 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getFeedBySlug, getRelatedFeeds, searchFeeds } from "@/lib/feeds";
+import {
+  getFeedBySlug,
+  getRelatedFeeds,
+  getAdjacentFeeds,
+  searchFeeds,
+} from "@/lib/feeds";
 import { getViewerRole, getSession, isBlockedMember } from "@/lib/dal";
 import { getAdminNickname } from "@/lib/comment-actor";
 import { checkAccess, type Visibility } from "@/lib/visibility";
 import FeedArticle from "@/app/feed/feed-article";
 import FeedEngagement from "@/app/feed/feed-engagement";
 import RelatedFeeds from "@/app/feed/related-feeds";
+import PrevNextNav from "@/app/feed/prev-next-nav";
+import ReadingProgressBar from "@/app/feed/reading-progress-bar";
+import BackToTopButton from "@/app/feed/back-to-top-button";
 import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
 import ShareBar from "@/app/share-bar";
@@ -130,6 +138,7 @@ export default async function FeedDetailPage({
     session?.role === "member" &&
     !!feed.authorId &&
     session.userId !== feed.authorId;
+  const { prev, next } = await getAdjacentFeeds(feed, role);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
@@ -142,6 +151,8 @@ export default async function FeedDetailPage({
           }}
         />
       )}
+      <ReadingProgressBar />
+      <BackToTopButton />
       <ViewTracker type="feed" id={feed.id} />
       <FeedArticle
         feed={feed}
@@ -170,6 +181,7 @@ export default async function FeedDetailPage({
           <ReportButton targetType="feed" targetId={feed.id} />
         </div>
       )}
+      <PrevNextNav prev={prev} next={next} />
       <FeedEngagement
         feedId={feed.id}
         slug={feed.slug}
