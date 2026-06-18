@@ -26,7 +26,7 @@
 | 20 | 보안 헤더(CSP·HSTS 등) | `next.config.ts` headers()로 CSP·X-Frame-Options·X-Content-Type-Options·Referrer-Policy·Permissions-Policy·HSTS. CSP는 no-nonce(정적 렌더 유지) + 외부 스크립트 출처 화이트리스트(Turnstile·Kakao) | 완료 |
 | 21 | SEO 구조화 데이터 | 글 상세에 JSON-LD(BlogPosting/BreadcrumbList) + 명시적 canonical. 검색 리치 스니펫·CTR 개선 | 완료 |
 | 22 | 발견성 페이지 | 공개 인기 글(viewCount 상위) 목록 + 태그 인덱스(전체 태그·글 수). 기존 Tag·searchFeeds 재사용 | 보류 |
-| 23 | 인증/DAL·서버액션 테스트 | `lib/dal`·`session`·`reset-token`·`mailer` + signin/signup/forgot-password 서버 액션 테스트(인가 우회·세션 회귀 방지) | 보류 |
+| 23 | 인증/DAL·서버액션 테스트 | `lib/dal`·`session`·`reset-token`·`mailer`·`jwt` + signin/signup/forgot-password 서버 액션 테스트(인가 우회·세션 회귀 방지) | 완료 |
 | 24 | 민감 액션 레이트리밋 | 로그인 브루트포스·가입·신고에 per-action 제한(전역 IP 제한 외, 기존 `rateLimit` 유틸 재사용) | 보류 |
 | 25 | DB 자동 백업 | `/data/prod.db` 주기 덤프 → 오프사이트(S3 등). WAL만으론 백업 아님, 데이터 유실 대비 | 보류 |
 | 26 | 읽기 UX | 글 상세 이전/다음 글 내비게이션·읽기 진행바·맨 위로 버튼 | 보류 |
