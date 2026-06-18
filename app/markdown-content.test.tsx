@@ -28,4 +28,14 @@ describe("MarkdownContent", () => {
     );
     expect(container.querySelector("script")).toBeNull();
   });
+
+  test("펜스 코드블록을 hljs로 하이라이트(토큰 span 생성)", () => {
+    const { container } = render(
+      <MarkdownContent content={"```js\nconst x = 1;\n```"} />,
+    );
+    const code = container.querySelector("pre code.hljs");
+    expect(code).not.toBeNull();
+    // highlight.js가 키워드 등 토큰을 span으로 감쌈.
+    expect(container.querySelector("pre code .hljs-keyword")).not.toBeNull();
+  });
 });

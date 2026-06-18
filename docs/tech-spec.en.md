@@ -138,7 +138,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 342**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 343**.
 
 ### 4.12 Content reporting & moderation
 
@@ -202,11 +202,15 @@ Three lightweight reading aids on the post detail page.
 - **Reading progress bar** (`reading-progress-bar`): a top-fixed bar reflects document scroll progress, throttled with a passive scroll listener + `requestAnimationFrame`, and is `aria-hidden` (decorative).
 - **Back-to-top** (`back-to-top-button`): appears bottom-right past a scroll threshold (not rendered when hidden, so it's out of the focus order) and scrolls to the top on click. Since JS smooth scroll isn't governed by the global CSS `scroll-behavior` override, it branches on reduced-motion via `matchMedia`.
 
+### 4.20 Code syntax highlighting
+
+The shared markdown renderer (`MarkdownContent`, used by both the post body and the editor preview) gained `rehype-highlight` (highlight.js). **Post detail is a server component, so highlighting runs once at server render** — public readers get static HTML with `hljs` classes and zero extra client JS. highlight.js was chosen over shiki to keep the bundle/image lean. Token colors are defined directly in `globals.css` to match all **three themes (light/dark/brand)** rather than importing a fixed theme; fenced code blocks get horizontal scroll + `font-mono`, and the inline-code background is neutralized inside `pre`. Raw HTML stays disallowed, so it's XSS-safe.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 342); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 343); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
