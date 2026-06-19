@@ -33,7 +33,7 @@
 | 26  | 읽기 UX                  | 글 상세 이전/다음 글 내비게이션·읽기 진행바·맨 위로 버튼                                                                                                                                            | 완료 |
 | 27  | 코드 신택스 하이라이팅   | 마크다운 코드블록 하이라이트(rehype-highlight, 글 상세 서버 렌더 → 독자 추가 JS 0). globals.css에 3테마 토큰 색                                                                                     | 완료 |
 | 28  | 이미지 최적화/CLS 방지   | 업로드 시 image-size로 치수 측정 → 마크다운 URL `?w&h` → 커스텀 `<img>`에 width/height(시프트 제거)·lazy-load. Core Web Vitals                                                                      | 완료 |
-| 29  | CI 위생 + 의존성 자동화  | `prettier --check`·`pnpm audit` CI 게이트 + `.github/dependabot.yml`(공급망·포맷 회귀 차단)                                                                                                         | 보류 |
+| 29  | CI 위생 + 의존성 자동화  | `prettier --check`·`pnpm audit(critical)` CI 게이트 + `.github/dependabot.yml`(npm·actions·docker 주간 그룹화, 공급망·포맷 회귀 차단)                                                               | 완료 |
 | 30  | 예약 발행                | 글에 예약 시각 설정 → GitHub Actions cron(백업 워크플로 패턴)이 도래 시 draft→published 전환                                                                                                        | 보류 |
 | 31  | 초안 자동저장            | 작성 에디터 localStorage 디바운스 자동저장(새로고침·이탈 시 작업 유실 방지). 누적/용량 안전(키 overwrite·TTL·스윕·quota 재시도)                                                                     | 완료 |
 | 32  | 관리자 피드 검색         | `/admin/feeds`에 검색 입력(기존 `searchFeeds` FTS 재사용)                                                                                                                                           | 보류 |

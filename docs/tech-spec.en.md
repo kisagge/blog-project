@@ -65,6 +65,8 @@ Diagnosed production deploy failures from logs and system metrics, then hardened
 - **Disk exhaustion**: accumulated unused images filled `/`, stalling layer extraction → added a cleanup step before `pull` plus per-step timing logs.
 - **Out of memory**: on a 512MB instance, deploys OOM-killed the container (→ 504) → fixed with a 2GB swap file, recommended an instance upsize.
 - **Workflow**: `test → build/push (GHCR) → SSH deploy (+ `prisma migrate deploy`)`, with manual trigger (workflow_dispatch) and timeouts for visible failures.
+- **CI hygiene gates**: the test job must pass `tsc → eslint → prettier --check → vitest → pnpm audit (--prod --audit-level critical)` before build/deploy proceeds, blocking formatting and **critical runtime-vuln** regressions pre-merge (current prod vulns are all transitive via `prisma>@prisma/dev>hono`, so the critical gate stays green; high/moderate are handled by Dependabot).
+- **Dependency automation**: `.github/dependabot.yml` checks npm, GitHub Actions, and the Docker base image weekly, grouping minor/patch into a single PR and splitting majors into individual PRs (supply-chain/pin regression guard, minimal PR noise).
 
 ### 4.3 Prisma 7 driver adapter
 
