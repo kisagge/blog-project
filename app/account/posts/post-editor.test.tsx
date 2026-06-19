@@ -3,8 +3,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 // 서버 액션("use server" → server-only 체인) 격리.
 vi.mock("@/app/account/posts/actions", () => ({ submitPost: vi.fn() }));
+vi.mock("@/app/account/posts/image-action", () => ({
+  uploadPostImage: vi.fn(),
+}));
 
 import PostEditor from "@/app/account/posts/post-editor";
+import { uploadPostImage } from "@/app/account/posts/image-action";
 
 beforeEach(() => localStorage.clear());
 
@@ -31,6 +35,43 @@ describe("PostEditor 미리보기", () => {
   test("마크다운 도움말이 접이식으로 제공된다", () => {
     render(<PostEditor />);
     expect(screen.getByText("마크다운 작성 도움말")).toBeInTheDocument();
+  });
+});
+
+describe("PostEditor 이미지 업로드", () => {
+  test("이미지 첨부 → 업로드 성공 시 본문에 마크다운 삽입", async () => {
+    vi.mocked(uploadPostImage).mockResolvedValue({
+      url: "/uploads/x.png?w=4&h=2",
+    });
+    render(<PostEditor />);
+    const ta = screen.getByLabelText("본문 (마크다운)") as HTMLTextAreaElement;
+    fireEvent.change(ta, { target: { value: "앞" } });
+    ta.selectionStart = ta.selectionEnd = 1; // 커서를 '앞' 뒤로
+
+    const file = new File([new Uint8Array([1, 2, 3])], "x.png", {
+      type: "image/png",
+    });
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(uploadPostImage).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(ta.value).toBe("앞![](/uploads/x.png?w=4&h=2)\n"),
+    );
+  });
+
+  test("비이미지 파일은 업로드 호출 없이 오류 표시", async () => {
+    vi.mocked(uploadPostImage).mockClear();
+    render(<PostEditor />);
+    const file = new File(["text"], "a.txt", { type: "text/plain" });
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("jpg/png/webp");
+    expect(uploadPostImage).not.toHaveBeenCalled();
   });
 });
 

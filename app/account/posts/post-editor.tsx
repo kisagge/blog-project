@@ -2,6 +2,9 @@
 import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { submitPost, type PostFormState } from "./actions";
+import { uploadPostImage } from "./image-action";
+import { checkImage } from "@/lib/upload";
+import { spliceText } from "@/lib/textarea";
 import MarkdownContent from "@/app/markdown-content";
 import MarkdownHelp from "./markdown-help";
 import DraftRestoreBanner from "@/app/draft-restore-banner";
@@ -37,6 +40,46 @@ export default function PostEditor({
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [restorable, setRestorable] = useState<PostDraft | null>(null);
   const key = draftKey("member", post?.id ?? "new");
+
+  // 본문 이미지 업로드(아바타와 동일 인프라 재사용 — 회원 가드·레이트리밋·매직바이트).
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = ""; // 같은 파일 재선택 허용
+    if (!file) return;
+    setUploadError(null);
+    const pre = checkImage(file.type, file.size);
+    if (!pre.ok) {
+      setUploadError(pre.error);
+      return;
+    }
+    setUploading(true);
+    const fd = new FormData();
+    fd.set("file", file);
+    const res = await uploadPostImage(fd);
+    setUploading(false);
+    if ("error" in res) {
+      setUploadError(res.error);
+      return;
+    }
+    // 커서 위치에 마크다운 이미지 삽입 + 캐럿 복원(제어 상태라 setContent로 자동저장도 갱신).
+    const ta = taRef.current;
+    const start = ta?.selectionStart ?? content.length;
+    const end = ta?.selectionEnd ?? content.length;
+    const insert = `![](${res.url})\n`;
+    setContent(spliceText(content, start, end, insert));
+    requestAnimationFrame(() => {
+      const pos = start + insert.length;
+      if (ta) {
+        ta.selectionStart = ta.selectionEnd = pos;
+        ta.focus();
+      }
+    });
+  }
 
   // 마운트: 오래된 초안 정리 + 저장본이 초기값과 다르면 복원 제안.
   useEffect(() => {
@@ -181,7 +224,37 @@ export default function PostEditor({
           aria-labelledby="tab-write"
           hidden={tab === "preview"}
         >
+          <div className="mb-2 flex items-center gap-3 text-sm">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="rounded border border-black/15 px-2 py-1 disabled:opacity-50 dark:border-white/20"
+            >
+              이미지 첨부
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              tabIndex={-1}
+              aria-hidden
+              onChange={handleImage}
+              className="sr-only"
+            />
+            {uploading && (
+              <span role="status" className="text-zinc-500">
+                업로드 중…
+              </span>
+            )}
+          </div>
+          {uploadError && (
+            <p role="alert" className="mb-2 text-xs text-red-600">
+              {uploadError}
+            </p>
+          )}
           <textarea
+            ref={taRef}
             id="post-content"
             name="content"
             value={content}
