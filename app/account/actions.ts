@@ -8,6 +8,7 @@ import {
   NICKNAME_TAKEN_MESSAGE,
 } from "@/lib/users";
 import { createMemberSession } from "@/lib/session";
+import { deleteUpload } from "@/lib/save-image";
 import type { FormState } from "@/lib/form-state";
 
 export type AccountState = FormState;
@@ -29,8 +30,12 @@ export async function updateProfileAction(
   if (await isNicknameTaken(parsed.data.nickname, session.userId))
     return { errors: { nickname: [NICKNAME_TAKEN_MESSAGE] } };
 
-  const nickname = await updateProfile(session.userId, parsed.data);
+  const { nickname, replacedAvatarUrl } = await updateProfile(
+    session.userId,
+    parsed.data,
+  );
   await createMemberSession(session.userId, nickname); // 세션 닉네임 갱신
+  if (replacedAvatarUrl) await deleteUpload(replacedAvatarUrl); // 이전 아바타 파일 정리
   revalidatePath("/", "layout"); // 헤더/드로어 닉네임 반영
   return { done: true };
 }

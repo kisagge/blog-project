@@ -123,20 +123,26 @@ export async function authenticateMember(
   return { ok: true, user: { id: user.id, nickname: user.nickname } };
 }
 
-// 회원 본인 프로필(닉네임·자기소개·아바타) 변경. 변경된 닉네임 반환(세션 갱신용).
-// bio·avatarUrl은 빈 문자열이면 null로 저장(미설정·제거).
+// 회원 본인 프로필(닉네임·자기소개·아바타) 변경. bio·avatarUrl은 빈 문자열이면 null(미설정·제거).
+// nickname(세션 갱신용)과 교체로 버려진 이전 아바타 URL(파일 정리용, 변경 없으면 null)을 반환.
 export async function updateProfile(
   id: string,
   input: { nickname: string; bio: string; avatarUrl: string },
-): Promise<string> {
+): Promise<{ nickname: string; replacedAvatarUrl: string | null }> {
   const nickname = input.nickname.trim();
   const bio = input.bio.trim();
-  const avatarUrl = input.avatarUrl.trim();
+  const avatarUrl = input.avatarUrl.trim() || null;
+  const before = await prisma.user.findUnique({
+    where: { id },
+    select: { avatarUrl: true },
+  });
   await prisma.user.update({
     where: { id },
-    data: { nickname, bio: bio || null, avatarUrl: avatarUrl || null },
+    data: { nickname, bio: bio || null, avatarUrl },
   });
-  return nickname;
+  const old = before?.avatarUrl ?? null;
+  const replacedAvatarUrl = old && old !== avatarUrl ? old : null;
+  return { nickname, replacedAvatarUrl };
 }
 
 export async function approveUser(id: string) {
