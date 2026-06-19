@@ -19,13 +19,26 @@ const SCHEMA = [
     "viewCount" INTEGER NOT NULL DEFAULT 0,
     "publishedAt" DATETIME,
     "hiddenAt" DATETIME,
+    "seriesId" TEXT,
+    "seriesOrder" INTEGER NOT NULL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Feed_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "Feed_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Feed_seriesId_fkey" FOREIGN KEY ("seriesId") REFERENCES "Series" ("id") ON DELETE SET NULL ON UPDATE CASCADE
   )`,
+  `CREATE TABLE "Series" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "slug" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+  )`,
+  `CREATE UNIQUE INDEX "Series_slug_key" ON "Series"("slug")`,
   `CREATE UNIQUE INDEX "Feed_slug_key" ON "Feed"("slug")`,
   `CREATE INDEX "Feed_status_visibility_createdAt_idx" ON "Feed"("status", "visibility", "createdAt")`,
   `CREATE INDEX "Feed_authorId_status_publishedAt_idx" ON "Feed"("authorId", "status", "publishedAt")`,
+  `CREATE INDEX "Feed_seriesId_seriesOrder_idx" ON "Feed"("seriesId", "seriesOrder")`,
   `CREATE TABLE "View" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "entityType" TEXT NOT NULL,

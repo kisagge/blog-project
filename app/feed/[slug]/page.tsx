@@ -13,6 +13,8 @@ import FeedArticle from "@/app/feed/feed-article";
 import FeedEngagement from "@/app/feed/feed-engagement";
 import RelatedFeeds from "@/app/feed/related-feeds";
 import PrevNextNav from "@/app/feed/prev-next-nav";
+import SeriesNav from "@/app/feed/series-nav";
+import { getSeriesContext } from "@/lib/series";
 import ReadingProgressBar from "@/app/feed/reading-progress-bar";
 import BackToTopButton from "@/app/feed/back-to-top-button";
 import MemberGate from "@/app/member-gate";
@@ -139,6 +141,7 @@ export default async function FeedDetailPage({
     !!feed.authorId &&
     session.userId !== feed.authorId;
   const { prev, next } = await getAdjacentFeeds(feed, role);
+  const seriesCtx = await getSeriesContext(feed, role);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
@@ -182,6 +185,7 @@ export default async function FeedDetailPage({
         </div>
       )}
       <PrevNextNav prev={prev} next={next} />
+      {seriesCtx && <SeriesNav ctx={seriesCtx} />}
       <FeedEngagement
         feedId={feed.id}
         slug={feed.slug}

@@ -24,9 +24,12 @@ model Feed {
   viewCount Int      @default(0)        // 누적 조회수(방문자·하루 단위 중복 제거 후 집계)
   publishedAt DateTime?          // 게시(공개 전환) 시각 — 하루 게시 제한·표시용
   hiddenAt  DateTime?            // 신고로 가려진(모더레이션 숨김) 시각. null=정상. 사용자 삭제와 별개·복구 가능
+  seriesId  String?              // 속한 시리즈(관리자 글만). null=미배정
+  seriesOrder Int    @default(0) // 시리즈 내 순서(asc)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   author    User?     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  series    Series?   @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   comments  Comment[]
   likes     Like[]
   bookmarks Bookmark[]
@@ -36,6 +39,19 @@ model Feed {
   @@index([status, visibility, createdAt])
   // 내 글/하루 게시(listMyPosts·countPublishedToday): authorId + status + publishedAt.
   @@index([authorId, status, publishedAt])
+  // 시리즈 글 순서 조회(getSeriesPosts): seriesId + seriesOrder.
+  @@index([seriesId, seriesOrder])
+}
+
+// 글 시리즈(관리자 큐레이션). slug로 유니크. 가시성은 포함 글에서 파생(태그 패턴).
+model Series {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  feeds       Feed[]
 }
 
 // 태그 사전. slug로 유니크(한글 보존 정규화 키). name은 표시용 원형.

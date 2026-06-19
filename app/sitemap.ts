@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 비로그인도 볼 수 있는 전체공개 콘텐츠만 색인 대상(회원공개·비공개 제외).
-  const [feeds, dfs] = await Promise.all([
+  const [feeds, dfs, publicSeries] = await Promise.all([
     prisma.feed.findMany({
       where: { status: "published", visibility: "public", hiddenAt: null },
       select: { slug: true, updatedAt: true },
@@ -15,6 +15,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     prisma.dfCharacter.findMany({
       where: { visibility: "public" },
       select: { serverId: true, characterId: true, createdAt: true },
+    }),
+    // 전체공개 글이 1개 이상인 시리즈만.
+    prisma.series.findMany({
+      where: {
+        feeds: {
+          some: {
+            status: "published",
+            visibility: "public",
+            hiddenAt: null,
+          },
+        },
+      },
+      select: { slug: true, updatedAt: true },
     }),
   ]);
 
@@ -24,6 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_ORIGIN}/feed`, lastModified: now },
     { url: `${SITE_ORIGIN}/feed/popular`, lastModified: now },
     { url: `${SITE_ORIGIN}/feed/tags`, lastModified: now },
+    { url: `${SITE_ORIGIN}/series`, lastModified: now },
     { url: `${SITE_ORIGIN}/df`, lastModified: now },
   ];
   const feedPages: MetadataRoute.Sitemap = feeds.map((f) => ({
@@ -34,6 +48,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${SITE_ORIGIN}/df/${d.serverId}/${d.characterId}`,
     lastModified: d.createdAt,
   }));
+  const seriesPages: MetadataRoute.Sitemap = publicSeries.map((s) => ({
+    url: `${SITE_ORIGIN}/series/${s.slug}`,
+    lastModified: s.updatedAt,
+  }));
 
-  return [...staticPages, ...feedPages, ...dfPages];
+  return [...staticPages, ...feedPages, ...dfPages, ...seriesPages];
 }

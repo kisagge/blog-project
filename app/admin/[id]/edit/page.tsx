@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import FeedForm from "@/app/admin/feed-form";
 import { updateFeed } from "@/app/admin/actions";
 import { getFeedById } from "@/lib/feeds";
+import { listSeries } from "@/lib/series";
 
 export default async function EditFeedPage({
   params,
@@ -10,7 +11,7 @@ export default async function EditFeedPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const feed = await getFeedById(id);
+  const [feed, series] = await Promise.all([getFeedById(id), listSeries()]);
   if (!feed) notFound();
 
   const action = updateFeed.bind(null, feed.id);
@@ -27,6 +28,7 @@ export default async function EditFeedPage({
       </div>
       <FeedForm
         action={action}
+        seriesOptions={series.map((s) => ({ id: s.id, title: s.title }))}
         submitLabel="수정"
         defaultValues={{
           title: feed.title,
@@ -35,6 +37,7 @@ export default async function EditFeedPage({
           content: feed.content,
           visibility: feed.visibility as "public" | "members" | "private",
           tags: feed.feedTags.map((ft) => ft.tag.name).join(", "),
+          seriesId: feed.seriesId,
         }}
       />
     </section>

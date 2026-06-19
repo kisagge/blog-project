@@ -41,7 +41,7 @@
 | 34  | 프로필 bio·아바타            | `User.bio`/`avatarUrl` 추가 + 계정 폼·`/u/[id]` 표시. 회원 업로드(`saveImage` 공유, `getMemberSession` 가드), avatarUrl 로컬 경로 zod 검증                                                          | 완료 |
 | 35  | 핵심 컴포넌트 테스트         | `comment-section`(SSE 배선)·`comment-item`(권한·수정 흐름)·`share-bar`·`nav-drawer` RTL + `merge` 순수 로직. 서버액션·EventSource·toast `vi.mock` 격리                                              | 완료 |
 | 36  | 회원 글 인라인 이미지 업로드 | 회원 에디터 본문 이미지 업로드(현재 외부 URL만). #34 아바타 인프라(`saveImage`·`getMemberSession`·레이트리밋·매직바이트) 재사용, 커서 위치에 `![](?w&h)` 삽입 → CLS-safe 렌더                       | 완료 |
-| 37  | 시리즈/컬렉션                | 연관 글을 순서 있는 시리즈로 묶고 시리즈 인덱스 + 글 내 '시리즈 이전/다음' 표시. 평면 태그 외 콘텐츠 구조화(스키마+UI)                                                                              | 보류 |
+| 37  | 시리즈/컬렉션                | 관리자 글을 순서 있는 시리즈로 묶음 — `/series` 인덱스·`/series/[slug]`·글 상세 시리즈 박스(N편 중 K번째+이전/다음). `Feed.seriesId/seriesOrder`+`Series`, 가시성 파생, feed-form 지정+dnd 재정렬   | 완료 |
 | 38  | 회원 팔로우 + 활동 피드      | 회원 간 팔로우(User↔User), 팔로잉 회원 새 글 피드, 팔로우 알림. 커뮤니티 참여도↑(스키마·피드·알림 확장)                                                                                             | 보류 |
 | 39  | 운영 견고성                  | `/api/health`(DB ping) + compose/Docker healthcheck로 컨테이너 행 감지 + 관리자 액션 감사 로그(누가·무엇을·언제). 운영 안정·추적성                                                                  | 보류 |
 | 40  | 태그 전용 라우트             | `/feed/tags/[slug]` 라우트(현재 `?tag=` 쿼리만) — 태그별 canonical·OG·`CollectionPage` JSON-LD. SEO 보강                                                                                            | 보류 |
