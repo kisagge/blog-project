@@ -36,6 +36,7 @@ export const ACTION_LIMITS = {
   signup: { limit: 5, windowMs: 10 * 60_000 }, // 가입 스팸
   passwordReset: { limit: 5, windowMs: 10 * 60_000 }, // 코드 요청(이메일당 60s 쿨다운은 별개)
   report: { limit: 10, windowMs: 10 * 60_000 }, // 신고 남용
+  avatarUpload: { limit: 20, windowMs: 10 * 60_000 }, // 회원 아바타 업로드(디스크 채우기 방지)
 } as const;
 
 // 액션 레이트리밋. 허용이면 true. id는 IP(비로그인) 또는 userId(로그인).

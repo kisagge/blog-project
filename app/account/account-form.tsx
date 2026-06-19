@@ -67,7 +67,6 @@ export default function AccountForm({
           <div className="flex flex-col gap-2">
             <input
               ref={fileRef}
-              id="avatar-file"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={onPickFile}
