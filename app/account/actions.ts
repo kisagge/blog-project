@@ -1,9 +1,9 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getMemberSession } from "@/lib/dal";
-import { NicknameSchema } from "@/lib/validation";
+import { ProfileSchema } from "@/lib/validation";
 import {
-  updateNickname,
+  updateProfile,
   isNicknameTaken,
   NICKNAME_TAKEN_MESSAGE,
 } from "@/lib/users";
@@ -12,22 +12,24 @@ import type { FormState } from "@/lib/form-state";
 
 export type AccountState = FormState;
 
-export async function updateNicknameAction(
+export async function updateProfileAction(
   _state: AccountState,
   formData: FormData,
 ): Promise<AccountState> {
   const session = await getMemberSession();
   if (!session) return { error: "로그인이 필요합니다." };
 
-  const parsed = NicknameSchema.safeParse({
+  const parsed = ProfileSchema.safeParse({
     nickname: String(formData.get("nickname") ?? ""),
+    bio: String(formData.get("bio") ?? ""),
+    avatarUrl: String(formData.get("avatarUrl") ?? ""),
   });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
 
   if (await isNicknameTaken(parsed.data.nickname, session.userId))
     return { errors: { nickname: [NICKNAME_TAKEN_MESSAGE] } };
 
-  const nickname = await updateNickname(session.userId, parsed.data.nickname);
+  const nickname = await updateProfile(session.userId, parsed.data);
   await createMemberSession(session.userId, nickname); // 세션 닉네임 갱신
   revalidatePath("/", "layout"); // 헤더/드로어 닉네임 반영
   return { done: true };

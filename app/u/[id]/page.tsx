@@ -6,6 +6,7 @@ import { listMemberPosts } from "@/lib/member-posts";
 import { getCommentsByUser } from "@/lib/comments";
 import { kstDate, isoInstant } from "@/lib/kst";
 import MemberGate from "@/app/member-gate";
+import Avatar from "@/app/avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -52,16 +53,24 @@ export default async function MemberProfilePage({
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-16">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {profile.nickname}
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          가입{" "}
-          <time dateTime={isoInstant(profile.createdAt)}>
-            {kstDate(profile.createdAt)}
-          </time>
-        </p>
+      <header className="flex items-start gap-4">
+        <Avatar src={profile.avatarUrl} nickname={profile.nickname} size={80} />
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {profile.nickname}
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            가입{" "}
+            <time dateTime={isoInstant(profile.createdAt)}>
+              {kstDate(profile.createdAt)}
+            </time>
+          </p>
+          {profile.bio && (
+            <p className="mt-3 text-sm whitespace-pre-line text-zinc-600 dark:text-zinc-400">
+              {profile.bio}
+            </p>
+          )}
+        </div>
       </header>
 
       <section className="flex flex-col gap-3">

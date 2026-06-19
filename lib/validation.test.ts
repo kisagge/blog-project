@@ -3,6 +3,7 @@ import {
   feedFormToObject,
   SignupSchema,
   ResetPasswordSchema,
+  ProfileSchema,
 } from "@/lib/validation";
 
 describe("FeedFormSchema", () => {
@@ -89,5 +90,43 @@ describe("feedFormToObject", () => {
     const fd = new FormData();
     fd.set("visibility", "xyz");
     expect(feedFormToObject(fd).visibility).toBe("private");
+  });
+});
+
+describe("ProfileSchema", () => {
+  const base = { nickname: "철수", bio: "", avatarUrl: "" };
+
+  test("빈 bio·avatar 허용", () => {
+    expect(ProfileSchema.safeParse(base).success).toBe(true);
+  });
+
+  test("bio 160자 초과 거부", () => {
+    const r = ProfileSchema.safeParse({ ...base, bio: "가".repeat(161) });
+    expect(r.success).toBe(false);
+  });
+
+  test("avatarUrl: 우리 업로드 경로(쿼리 포함)만 허용", () => {
+    expect(
+      ProfileSchema.safeParse({
+        ...base,
+        avatarUrl: "/uploads/ab12-cd.png?w=80&h=80",
+      }).success,
+    ).toBe(true);
+    expect(
+      ProfileSchema.safeParse({ ...base, avatarUrl: "/uploads/x.gif" }).success,
+    ).toBe(false); // 미지원 확장자
+  });
+
+  test("avatarUrl: 외부 URL·javascript·비-uploads 경로 거부", () => {
+    for (const bad of [
+      "https://evil.com/a.png",
+      "javascript:alert(1)",
+      "/etc/passwd",
+      "/uploads/../secret.png",
+    ]) {
+      expect(ProfileSchema.safeParse({ ...base, avatarUrl: bad }).success).toBe(
+        false,
+      );
+    }
   });
 });

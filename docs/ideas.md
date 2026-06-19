@@ -38,5 +38,5 @@
 | 31  | 초안 자동저장            | 작성 에디터 localStorage 디바운스 자동저장(새로고침·이탈 시 작업 유실 방지). 누적/용량 안전(키 overwrite·TTL·스윕·quota 재시도)                                                                     | 완료 |
 | 32  | 관리자 피드 검색         | `/admin/feeds`에 검색 입력 — `getAdminFeedsPage`에 제목·슬러그 contains(초안 포함·전체개수 페이지네이션 유지, 서버렌더 GET). 공개 FTS는 status=published 고정이라 미재사용                          | 완료 |
 | 33  | 홈 구조화 데이터         | 홈에 `WebSite`/`Organization` JSON-LD(`buildSiteJsonLd`, `@id` 상호참조 + SearchAction 사이트링크 검색창). 기존 structured-data 확장                                                                | 완료 |
-| 34  | 프로필 bio·아바타        | `User.bio`/`avatarUrl` 추가 + 계정 폼·`/u/[id]` 표시(기존 업로드 재사용)                                                                                                                            | 보류 |
+| 34  | 프로필 bio·아바타        | `User.bio`/`avatarUrl` 추가 + 계정 폼·`/u/[id]` 표시. 회원 업로드(`saveImage` 공유, `getMemberSession` 가드), avatarUrl 로컬 경로 zod 검증                                                          | 완료 |
 | 35  | 핵심 컴포넌트 테스트     | `comment-section`·`comment-item`(SSE·수정·삭제)·`share-bar`·`nav-drawer` RTL 테스트                                                                                                                 | 보류 |

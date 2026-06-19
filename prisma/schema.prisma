@@ -72,6 +72,8 @@ model User {
   id           String   @id @default(uuid())
   email        String   @unique
   nickname     String
+  bio          String?             // 자기소개(최대 160자, 선택)
+  avatarUrl    String?             // 프로필 이미지 경로(/uploads/<uuid>.<ext>, 회원 업로드)
   passwordHash String              // "saltHex:hashHex" (scrypt)
   role         String   @default("member")    // "member" | "admin"(예약 작성자)
   status       String   @default("pending")   // "pending" | "approved" | "rejected"

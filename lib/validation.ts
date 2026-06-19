@@ -68,6 +68,26 @@ const nicknameField = z
 
 export const NicknameSchema = z.object({ nickname: nicknameField });
 
+// 자기소개: 선택, 최대 160자.
+const bioField = z.string().trim().max(160, "자기소개는 160자 이하.");
+
+// 아바타: 빈 문자열(제거) 또는 우리 업로드 경로만 — 외부 URL·javascript: 등 주입 차단.
+const avatarUrlField = z
+  .string()
+  .trim()
+  .refine(
+    (v) =>
+      v === "" || /^\/uploads\/[a-f0-9-]+\.(jpg|jpeg|png|webp)(\?.*)?$/.test(v),
+    "올바른 아바타 이미지가 아닙니다.",
+  );
+
+// 프로필(내 정보) 수정 공용: 닉네임 + 자기소개 + 아바타.
+export const ProfileSchema = z.object({
+  nickname: nicknameField,
+  bio: bioField,
+  avatarUrl: avatarUrlField,
+});
+
 // 회원 글(임시저장·게시) 입력. 본문은 마크다운(외부 이미지 URL 허용, 업로드 없음).
 export const MemberPostSchema = z.object({
   tags: z.string().trim().optional(),

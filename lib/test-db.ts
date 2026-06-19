@@ -46,6 +46,8 @@ const SCHEMA = [
     "id" TEXT NOT NULL PRIMARY KEY,
     "email" TEXT NOT NULL,
     "nickname" TEXT NOT NULL,
+    "bio" TEXT,
+    "avatarUrl" TEXT,
     "passwordHash" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'member',
     "status" TEXT NOT NULL DEFAULT 'pending',

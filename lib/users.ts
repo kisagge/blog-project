@@ -81,6 +81,8 @@ export async function findUserByEmail(email: string) {
 export type MemberProfile = {
   id: string;
   nickname: string;
+  bio: string | null;
+  avatarUrl: string | null;
   createdAt: Date;
   status: UserStatus;
 };
@@ -91,7 +93,14 @@ export async function getMemberProfile(
 ): Promise<MemberProfile | null> {
   const u = await prisma.user.findFirst({
     where: { id, role: "member" },
-    select: { id: true, nickname: true, createdAt: true, status: true },
+    select: {
+      id: true,
+      nickname: true,
+      bio: true,
+      avatarUrl: true,
+      createdAt: true,
+      status: true,
+    },
   });
   return u ? { ...u, status: u.status as UserStatus } : null;
 }
@@ -114,14 +123,20 @@ export async function authenticateMember(
   return { ok: true, user: { id: user.id, nickname: user.nickname } };
 }
 
-// 회원 본인 닉네임 변경. 변경된 닉네임 반환(세션 갱신용).
-export async function updateNickname(
+// 회원 본인 프로필(닉네임·자기소개·아바타) 변경. 변경된 닉네임 반환(세션 갱신용).
+// bio·avatarUrl은 빈 문자열이면 null로 저장(미설정·제거).
+export async function updateProfile(
   id: string,
-  nickname: string,
+  input: { nickname: string; bio: string; avatarUrl: string },
 ): Promise<string> {
-  const trimmed = nickname.trim();
-  await prisma.user.update({ where: { id }, data: { nickname: trimmed } });
-  return trimmed;
+  const nickname = input.nickname.trim();
+  const bio = input.bio.trim();
+  const avatarUrl = input.avatarUrl.trim();
+  await prisma.user.update({
+    where: { id },
+    data: { nickname, bio: bio || null, avatarUrl: avatarUrl || null },
+  });
+  return nickname;
 }
 
 export async function approveUser(id: string) {

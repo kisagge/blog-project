@@ -139,12 +139,30 @@ describe("users", () => {
     expect(after?.rejectedAt).toBeNull();
   });
 
-  test("updateNickname은 닉네임을 trim해 저장하고 반환", async () => {
+  test("updateProfile은 닉네임 trim 저장·반환 + bio/avatar 저장(getMemberProfile 반영)", async () => {
     const u = await m.findUserByEmail("a@x.com");
-    const result = await m.updateNickname(u!.id, "  새닉네임  ");
+    const result = await m.updateProfile(u!.id, {
+      nickname: "  새닉네임  ",
+      bio: "  안녕하세요  ",
+      avatarUrl: "/uploads/abc-123.png?w=80&h=80",
+    });
     expect(result).toBe("새닉네임");
-    const after = await m.findUserByEmail("a@x.com");
-    expect(after?.nickname).toBe("새닉네임");
+    const prof = await m.getMemberProfile(u!.id);
+    expect(prof?.nickname).toBe("새닉네임");
+    expect(prof?.bio).toBe("안녕하세요");
+    expect(prof?.avatarUrl).toBe("/uploads/abc-123.png?w=80&h=80");
+  });
+
+  test("updateProfile: bio/avatar 빈값이면 null로 저장(제거)", async () => {
+    const u = await m.findUserByEmail("a@x.com");
+    await m.updateProfile(u!.id, {
+      nickname: "새닉네임",
+      bio: "   ",
+      avatarUrl: "",
+    });
+    const prof = await m.getMemberProfile(u!.id);
+    expect(prof?.bio).toBeNull();
+    expect(prof?.avatarUrl).toBeNull();
   });
 
   test("isNicknameTaken: 다른 회원·관리자 닉네임은 taken, 본인·미사용은 아님", async () => {
