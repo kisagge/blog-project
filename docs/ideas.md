@@ -39,4 +39,4 @@
 | 32  | 관리자 피드 검색         | `/admin/feeds`에 검색 입력 — `getAdminFeedsPage`에 제목·슬러그 contains(초안 포함·전체개수 페이지네이션 유지, 서버렌더 GET). 공개 FTS는 status=published 고정이라 미재사용                          | 완료 |
 | 33  | 홈 구조화 데이터         | 홈에 `WebSite`/`Organization` JSON-LD(`buildSiteJsonLd`, `@id` 상호참조 + SearchAction 사이트링크 검색창). 기존 structured-data 확장                                                                | 완료 |
 | 34  | 프로필 bio·아바타        | `User.bio`/`avatarUrl` 추가 + 계정 폼·`/u/[id]` 표시. 회원 업로드(`saveImage` 공유, `getMemberSession` 가드), avatarUrl 로컬 경로 zod 검증                                                          | 완료 |
-| 35  | 핵심 컴포넌트 테스트     | `comment-section`·`comment-item`(SSE·수정·삭제)·`share-bar`·`nav-drawer` RTL 테스트                                                                                                                 | 보류 |
+| 35  | 핵심 컴포넌트 테스트     | `comment-section`(SSE 배선)·`comment-item`(권한·수정 흐름)·`share-bar`·`nav-drawer` RTL + `merge` 순수 로직. 서버액션·EventSource·toast `vi.mock` 격리                                              | 완료 |

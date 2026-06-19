@@ -142,7 +142,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 380**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 405**.
 
 ### 4.12 Content reporting & moderation
 
@@ -232,5 +232,5 @@ Body images rendered without dimensions, shifting the layout on load (CLS). Sinc
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 380); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 405); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
