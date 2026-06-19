@@ -23,3 +23,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # node 베이스이미지는 LTS 라인(현 24.x)만 자동 추적 — 비-LTS Current(25/26 등)
+    # 메이저 점프는 무시하고, 차기 LTS로의 승격은 수동으로 처리(안정성 우선).
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]

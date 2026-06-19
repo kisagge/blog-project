@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # 공통 베이스 — 런타임/빌드 모두가 쓰는 최소 구성(빌드 툴 없음)
-FROM node:22-slim AS base
+FROM node:24-slim AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 WORKDIR /app
