@@ -13,6 +13,7 @@ export const FeedFormSchema = z.object({
   content: z.string().min(1, "본문을 입력하세요."),
   visibility: z.enum(["public", "members", "private"]),
   tags: z.string().trim().optional(), // 콤마 구분 원본(정규화·상한은 parseTags)
+  seriesId: z.string().trim().optional(), // "" = 미배정(시리즈 select 값)
 });
 
 export type FeedFormValues = z.infer<typeof FeedFormSchema>;
@@ -27,8 +28,22 @@ export function feedFormToObject(formData: FormData) {
     content: String(formData.get("content") ?? ""),
     visibility: v === "public" || v === "members" ? v : "private",
     tags: String(formData.get("tags") ?? ""),
+    seriesId: String(formData.get("seriesId") ?? ""),
   };
 }
+
+// 시리즈 생성·수정 입력(관리자). slug는 글 slug와 동일 규칙.
+export const SeriesSchema = z.object({
+  title: z.string().trim().min(1, "제목을 입력하세요."),
+  slug: z
+    .string()
+    .trim()
+    .regex(
+      /^[a-z0-9-]+$/,
+      "slug는 소문자·숫자·하이픈(-)만 사용할 수 있습니다.",
+    ),
+  description: z.string().trim().optional(),
+});
 
 export const CommentSchema = z.object({
   content: z

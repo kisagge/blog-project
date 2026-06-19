@@ -8,6 +8,7 @@ import { setAdminNickname } from "@/lib/comment-actor";
 import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
 import { parseTags, setFeedTags } from "@/lib/tags";
+import { assignFeedSeries } from "@/lib/series";
 
 export type FeedFormState =
   | { errors?: Record<string, string[]>; message?: string }
@@ -15,6 +16,7 @@ export type FeedFormState =
 
 function revalidateFeed() {
   revalidatePath("/feed", "layout"); // 목록 + 모든 상세
+  revalidatePath("/series", "layout"); // 시리즈 목록·페이지(배정 변동 반영)
   revalidatePath("/admin");
 }
 
@@ -28,9 +30,10 @@ export async function createFeed(
     return { errors: parsed.error.flatten().fieldErrors };
   }
   try {
-    const { tags, ...feedData } = parsed.data;
+    const { tags, seriesId, ...feedData } = parsed.data;
     const feed = await prisma.feed.create({ data: feedData });
     await setFeedTags(feed.id, parseTags(tags ?? ""));
+    await assignFeedSeries(feed.id, seriesId || null);
   } catch {
     return {
       message: "이미 사용 중인 slug일 수 있습니다.",
@@ -52,9 +55,10 @@ export async function updateFeed(
     return { errors: parsed.error.flatten().fieldErrors };
   }
   try {
-    const { tags, ...feedData } = parsed.data;
+    const { tags, seriesId, ...feedData } = parsed.data;
     await prisma.feed.update({ where: { id }, data: feedData });
     await setFeedTags(id, parseTags(tags ?? ""));
+    await assignFeedSeries(id, seriesId || null);
   } catch {
     return {
       message: "저장 실패(중복 slug 등).",

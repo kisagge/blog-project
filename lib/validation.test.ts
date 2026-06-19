@@ -4,6 +4,7 @@ import {
   SignupSchema,
   ResetPasswordSchema,
   ProfileSchema,
+  SeriesSchema,
 } from "@/lib/validation";
 
 describe("FeedFormSchema", () => {
@@ -90,6 +91,22 @@ describe("feedFormToObject", () => {
     const fd = new FormData();
     fd.set("visibility", "xyz");
     expect(feedFormToObject(fd).visibility).toBe("private");
+  });
+});
+
+describe("SeriesSchema", () => {
+  test("유효한 제목·slug 통과", () => {
+    expect(
+      SeriesSchema.safeParse({ title: "연재", slug: "my-series" }).success,
+    ).toBe(true);
+  });
+  test("slug 대문자·공백·빈 제목 거부", () => {
+    expect(
+      SeriesSchema.safeParse({ title: "x", slug: "My Series" }).success,
+    ).toBe(false);
+    expect(SeriesSchema.safeParse({ title: "", slug: "ok" }).success).toBe(
+      false,
+    );
   });
 });
 

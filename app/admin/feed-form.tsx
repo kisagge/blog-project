@@ -32,13 +32,16 @@ type Props = {
     content?: string;
     visibility?: "public" | "members" | "private";
     tags?: string;
+    seriesId?: string | null;
   };
+  seriesOptions?: { id: string; title: string }[];
   submitLabel: string;
 };
 
 export default function FeedForm({
   action,
   defaultValues,
+  seriesOptions = [],
   submitLabel,
 }: Props) {
   const [state, formAction, pending] = useActionState<FeedFormState, FormData>(
@@ -241,6 +244,23 @@ export default function FeedForm({
             <option value="private">비공개(초안)</option>
           </select>
         </label>
+        {seriesOptions.length > 0 && (
+          <label className="flex items-center gap-2 text-sm">
+            시리즈
+            <select
+              name="seriesId"
+              defaultValue={d.seriesId ?? ""}
+              className="rounded border border-black/15 bg-transparent px-2 py-1 dark:border-white/20"
+            >
+              <option value="">없음</option>
+              {seriesOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {state?.message && (
           <p role="alert" className="text-sm text-red-600">
             {state.message}
