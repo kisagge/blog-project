@@ -36,7 +36,7 @@
 | 29  | CI 위생 + 의존성 자동화  | `prettier --check`·`pnpm audit(critical)` CI 게이트 + `.github/dependabot.yml`(npm·actions·docker 주간 그룹화, 공급망·포맷 회귀 차단)                                                               | 완료 |
 | 30  | 예약 발행                | 글에 예약 시각 설정 → GitHub Actions cron(백업 워크플로 패턴)이 도래 시 draft→published 전환                                                                                                        | 보류 |
 | 31  | 초안 자동저장            | 작성 에디터 localStorage 디바운스 자동저장(새로고침·이탈 시 작업 유실 방지). 누적/용량 안전(키 overwrite·TTL·스윕·quota 재시도)                                                                     | 완료 |
-| 32  | 관리자 피드 검색         | `/admin/feeds`에 검색 입력(기존 `searchFeeds` FTS 재사용)                                                                                                                                           | 보류 |
+| 32  | 관리자 피드 검색         | `/admin/feeds`에 검색 입력 — `getAdminFeedsPage`에 제목·슬러그 contains(초안 포함·전체개수 페이지네이션 유지, 서버렌더 GET). 공개 FTS는 status=published 고정이라 미재사용                          | 완료 |
 | 33  | 홈 구조화 데이터         | 홈에 `WebSite`/`Organization` JSON-LD(SEO 보강, 기존 structured-data 확장)                                                                                                                          | 보류 |
 | 34  | 프로필 bio·아바타        | `User.bio`/`avatarUrl` 추가 + 계정 폼·`/u/[id]` 표시(기존 업로드 재사용)                                                                                                                            | 보류 |
 | 35  | 핵심 컴포넌트 테스트     | `comment-section`·`comment-item`(SSE·수정·삭제)·`share-bar`·`nav-drawer` RTL 테스트                                                                                                                 | 보류 |

@@ -137,10 +137,11 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 - 검색은 300ms 디바운스, **요청 시퀀스(reqId)로 빠른 타이핑 시 늦게 온 응답을 폐기**해 레이스 컨디션 방지. `?q=` URL 동기화로 결과 공유 가능.
 - **스니펫·하이라이트**: 검색 시 결과 카드에 summary 대신 **매치 중심 본문 발췌**를 표시(`makeSnippet` — 마크다운 제거 후 첫 매치 토큰 ±radius 윈도우, 잘리면 `…`). 본문(content)은 목록 SELECT에 없어 **페이지 슬라이스 id로만 1쿼리** 추가 조회(비검색·저장목록은 미조회). 제목·발췌의 검색 토큰은 `<mark>`로 강조하되 **문자열을 분할해 매치 조각만 엘리먼트로 감싸**(정규식 특수문자 이스케이프) HTML 주입 없이 XSS 안전.
 - **관련 글 추천**: 글 상세 하단에 같은 태그를 공유하는 글을 추천(`getRelatedFeeds`). `feedTags.some` + `listableVisibilities(role)`(검색과 동일 접근 게이트)로 후보를 뽑고 **공유 태그 수 → 최신** 순으로 재정렬(self·비공개/숨김/초안 제외, 태그 없으면 미표시).
+- **관리자 피드 검색**: `/admin/feeds`는 공개용 FTS(`status=published` 고정·`hasMore` 반환)와 달리 **초안 포함·전체개수 페이지네이션**이 필요해, `getAdminFeedsPage(page,size,q)`에 **제목·슬러그 contains** 필터를 더한 서버렌더 GET 폼으로 구현. `Pager`는 `query` prop으로 페이지 이동 시 `?q=`를 보존. 공개 FTS 재사용 대신 가벼운 contains로 초안 가시성·total 일관성 유지.
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 360 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 365 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -229,5 +230,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 360), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 365), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
