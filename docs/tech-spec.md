@@ -82,7 +82,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 - **승인 흐름**: 가입은 `pending` 생성 → 관리자 승인 시 `approved`. 거절은 행을 지우지 않고 `rejected` + 사유 기록 → 같은 이메일 재신청 시 같은 행을 `pending`으로 되돌려 과거 사유를 관리자에게 보존.
 - **비밀번호 재설정**: 6자리 코드를 메일로 발송(scrypt 해시 저장, 평문 미보관), 3분 만료 + 시도 횟수 제한 + 재발송 쿨다운(메일 폭탄 방지). SMTP 미설정 환경에선 콘솔 로그로 폴백해 로컬 개발을 막지 않음.
 - 비밀번호 해시는 표준 라이브러리 `scrypt`(`salt:hash`)로 자체 구현, 외부 의존성 없이 검증.
-- **프로필 bio·아바타**: 회원이 `/account`에서 자기소개(160자)와 아바타를 편집해 `/u/[id]`에 표시. 아바타는 **회원 업로드**(관리자 전용 `uploadImage`와 별개 — 저장 로직을 `lib/save-image.ts` `saveImage`로 공유하고 가드만 `getMemberSession`으로 교체). `avatarUrl`은 외부 URL·`javascript:` 주입을 막기 위해 **`/uploads/<uuid>.<ext>` 로컬 경로만** zod로 검증, 빈값은 제거. 표시는 이미지 없으면 닉네임 이니셜 플레이스홀더(공용 `Avatar`).
+- **프로필 bio·아바타**: 회원이 `/account`에서 자기소개(160자)와 아바타를 편집해 `/u/[id]`에 표시. 아바타는 **회원 업로드**(관리자 전용 `uploadImage`와 별개 — 저장 로직을 `lib/save-image.ts` `saveImage`로 공유하고 가드만 `getMemberSession`+회원별 레이트리밋으로 교체). `avatarUrl`은 외부 URL·`javascript:` 주입을 막기 위해 **`/uploads/<uuid>.<ext>` 로컬 경로만** zod로 검증, 빈값은 제거. 표시는 이미지 없으면 닉네임 이니셜 플레이스홀더(공용 `Avatar`). 업로드는 선언 MIME뿐 아니라 **매직바이트**(`sniffImageType`)로 실제 내용을 검증해 위장 파일을 차단하고(관리자·회원 공통), 아바타 교체·제거 시 **이전 파일을 디스크에서 정리**(`deleteUpload`).
 
 ### 4.5 공개 범위 3단계 접근 제어 (피드·던파 공용)
 
@@ -142,7 +142,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 375 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 380 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -232,5 +232,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 375), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 380), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

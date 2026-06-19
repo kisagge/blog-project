@@ -146,20 +146,39 @@ describe("users", () => {
       bio: "  안녕하세요  ",
       avatarUrl: "/uploads/abc-123.png?w=80&h=80",
     });
-    expect(result).toBe("새닉네임");
+    expect(result.nickname).toBe("새닉네임");
+    expect(result.replacedAvatarUrl).toBeNull(); // 이전 아바타 없음
     const prof = await m.getMemberProfile(u!.id);
     expect(prof?.nickname).toBe("새닉네임");
     expect(prof?.bio).toBe("안녕하세요");
     expect(prof?.avatarUrl).toBe("/uploads/abc-123.png?w=80&h=80");
   });
 
-  test("updateProfile: bio/avatar 빈값이면 null로 저장(제거)", async () => {
+  test("updateProfile: 아바타 교체 시 이전 URL을 replacedAvatarUrl로 반환", async () => {
     const u = await m.findUserByEmail("a@x.com");
-    await m.updateProfile(u!.id, {
+    const changed = await m.updateProfile(u!.id, {
+      nickname: "새닉네임",
+      bio: "안녕하세요",
+      avatarUrl: "/uploads/def-456.webp",
+    });
+    expect(changed.replacedAvatarUrl).toBe("/uploads/abc-123.png?w=80&h=80");
+    // 동일 값으로 다시 저장하면 교체 없음 → null
+    const same = await m.updateProfile(u!.id, {
+      nickname: "새닉네임",
+      bio: "안녕하세요",
+      avatarUrl: "/uploads/def-456.webp",
+    });
+    expect(same.replacedAvatarUrl).toBeNull();
+  });
+
+  test("updateProfile: bio/avatar 빈값이면 null로 저장(제거) + 이전 아바타 반환", async () => {
+    const u = await m.findUserByEmail("a@x.com");
+    const removed = await m.updateProfile(u!.id, {
       nickname: "새닉네임",
       bio: "   ",
       avatarUrl: "",
     });
+    expect(removed.replacedAvatarUrl).toBe("/uploads/def-456.webp"); // 제거도 교체로 간주
     const prof = await m.getMemberProfile(u!.id);
     expect(prof?.bio).toBeNull();
     expect(prof?.avatarUrl).toBeNull();
