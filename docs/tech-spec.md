@@ -36,7 +36,7 @@ CI/CD: main push → GitHub Actions
 
 | 영역       | 기술                            | 버전       | 선택 이유                                                              |
 | ---------- | ------------------------------- | ---------- | ---------------------------------------------------------------------- |
-| 프레임워크 | Next.js (App Router)            | 16.2.7     | Server Actions·RSC로 API 레이어 없이 데이터 변경 처리                  |
+| 프레임워크 | Next.js (App Router)            | 16.2.9     | Server Actions·RSC로 API 레이어 없이 데이터 변경 처리                  |
 | UI         | React / Tailwind CSS            | 19.2 / v4  | —                                                                      |
 | ORM/DB     | Prisma / SQLite                 | 7.8 / —    | 드라이버 어댑터(better-sqlite3 12.10)로 런타임 쿼리 엔진 바이너리 제거 |
 | 인증       | jose (JWT)                      | 6.2        | 미들웨어에서도 검증 가능한 경량 서명                                   |

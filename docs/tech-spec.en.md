@@ -36,7 +36,7 @@ CI/CD: push to main → GitHub Actions
 
 | Area         | Tech                            | Version    | Rationale                                                                     |
 | ------------ | ------------------------------- | ---------- | ----------------------------------------------------------------------------- |
-| Framework    | Next.js (App Router)            | 16.2.7     | Server Actions/RSC handle mutations without a separate API layer              |
+| Framework    | Next.js (App Router)            | 16.2.9     | Server Actions/RSC handle mutations without a separate API layer              |
 | UI           | React / Tailwind CSS            | 19.2 / v4  | —                                                                             |
 | ORM/DB       | Prisma / SQLite                 | 7.8 / —    | Driver adapter (better-sqlite3 12.10) removes the runtime query-engine binary |
 | Auth         | jose (JWT)                      | 6.2        | Lightweight signing that verifies even in middleware                          |
