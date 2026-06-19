@@ -70,9 +70,12 @@ export async function deleteSeriesAction(formData: FormData) {
   redirect("/admin/series");
 }
 
-export async function reorderSeriesAction(orderedFeedIds: string[]) {
+export async function reorderSeriesAction(
+  seriesId: string,
+  orderedFeedIds: string[],
+) {
   await verifySession();
-  await reorderSeries(orderedFeedIds);
+  await reorderSeries(seriesId, orderedFeedIds);
   revalidateSeries();
 }
 

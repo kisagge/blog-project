@@ -146,7 +146,7 @@ describe("멤버십·순서 변경", () => {
     expect(posts.map((p) => p.slug)).toEqual(["a", "b", "c", "d", "e"]);
   });
   test("reorderSeries: 주어진 순서로 재배치", async () => {
-    await m.reorderSeries(["b", "a", "c", "d", "e"]);
+    await m.reorderSeries("s1", ["b", "a", "c", "d", "e"]);
     expect((await m.getSeriesPosts("s1", "admin")).map((p) => p.slug)).toEqual([
       "b",
       "a",

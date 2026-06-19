@@ -42,7 +42,7 @@ export default async function EditSeriesPage({
           드래그로 순서를 바꿉니다. 글 추가는 각 글 수정 화면의 ‘시리즈’에서
           지정하세요.
         </p>
-        <SeriesPostList initial={posts} />
+        <SeriesPostList seriesId={series.id} initial={posts} />
       </div>
 
       <form action={deleteSeriesAction}>

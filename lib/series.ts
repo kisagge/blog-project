@@ -206,11 +206,18 @@ export async function removeFromSeries(feedId: string) {
   await prisma.feed.update({ where: { id: feedId }, data: { seriesId: null } });
 }
 
-// 주어진 순서(id 배열)대로 seriesOrder를 0,1,2…로 갱신(reorderFeatured 패턴).
-export async function reorderSeries(orderedFeedIds: string[]) {
+// 주어진 순서(id 배열)대로 seriesOrder를 0,1,2…로 갱신. 해당 시리즈 소속 글만
+// 갱신(updateMany where {id, seriesId})해 타 시리즈 오염을 방지.
+export async function reorderSeries(
+  seriesId: string,
+  orderedFeedIds: string[],
+) {
   await prisma.$transaction(
     orderedFeedIds.map((id, i) =>
-      prisma.feed.update({ where: { id }, data: { seriesOrder: i } }),
+      prisma.feed.updateMany({
+        where: { id, seriesId },
+        data: { seriesOrder: i },
+      }),
     ),
   );
 }

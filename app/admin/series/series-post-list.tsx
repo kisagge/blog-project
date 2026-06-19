@@ -21,7 +21,13 @@ import { reorderSeriesAction, removeFromSeriesAction } from "./actions";
 
 type Item = { id: string; title: string; slug: string; visibility: string };
 
-export default function SeriesPostList({ initial }: { initial: Item[] }) {
+export default function SeriesPostList({
+  seriesId,
+  initial,
+}: {
+  seriesId: string;
+  initial: Item[];
+}) {
   const [items, setItems] = useState(initial);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -38,7 +44,10 @@ export default function SeriesPostList({ initial }: { initial: Item[] }) {
       const to = prev.findIndex((i) => i.id === over.id);
       if (from < 0 || to < 0) return prev;
       const next = arrayMove(prev, from, to);
-      void reorderSeriesAction(next.map((i) => i.id));
+      void reorderSeriesAction(
+        seriesId,
+        next.map((i) => i.id),
+      );
       return next;
     });
   }
