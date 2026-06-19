@@ -31,7 +31,9 @@ const uri =
 console.log("\n=== 관리자 TOTP 시크릿 ===\n");
 console.log(`ADMIN_TOTP_SECRET=${secret}\n`);
 console.log("Google Authenticator 등록 (둘 중 하나):");
-console.log("  1) 수동 입력: 위 시크릿을 '직접 키 입력'으로 추가 (계정 이름: admin)");
+console.log(
+  "  1) 수동 입력: 위 시크릿을 '직접 키 입력'으로 추가 (계정 이름: admin)",
+);
 console.log("  2) QR 스캔: 아래 otpauth URI로 QR을 만들어 스캔\n");
 console.log(`${uri}\n`);
 console.log(

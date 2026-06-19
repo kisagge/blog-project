@@ -42,6 +42,7 @@ app/
   actions/auth.ts          # "use server" — login, logout
 proxy.ts                   # /admin/* optimistic 보호(쿠키만 확인 → 미인증 시 /login)
 ```
+
 - 공개 페이지는 slug, **관리자 내부는 id(uuid)**로 접근.
 
 ## 3. Server Actions (모두 `verifySession` 선검증)
@@ -57,13 +58,14 @@ proxy.ts                   # /admin/* optimistic 보호(쿠키만 확인 → 미
 
 ```ts
 FeedFormSchema = z.object({
-  title:   z.string().min(1),
-  slug:    z.string().regex(/^[a-z0-9-]+$/, "소문자·숫자·하이픈만"),
+  title: z.string().min(1),
+  slug: z.string().regex(/^[a-z0-9-]+$/, "소문자·숫자·하이픈만"),
   summary: z.string().optional(),
   content: z.string().min(1),
   published: z.boolean(),
-})
+});
 ```
+
 - 폼은 `useActionState`로 필드별 에러 표시(slug 형식, 필수 누락).
 - slug 중복(unique 위반)은 Prisma 에러를 잡아 "이미 쓰는 slug" 메시지로.
 

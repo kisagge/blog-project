@@ -48,11 +48,7 @@ export default function SignupForm({ siteKey }: { siteKey?: string }) {
         </p>
       )}
       <TurnstileWidget siteKey={siteKey} resetSignal={state} />
-      <button
-        type="submit"
-        disabled={pending}
-        className={PRIMARY_BTN}
-      >
+      <button type="submit" disabled={pending} className={PRIMARY_BTN}>
         {pending ? "신청 중…" : "가입 신청"}
       </button>
       <p className="text-sm text-zinc-500">

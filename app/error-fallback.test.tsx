@@ -20,7 +20,9 @@ describe("ErrorFallback", () => {
   });
 
   test("digest가 있으면 오류 코드를 표시하고, 없으면 표시하지 않는다", () => {
-    const { rerender } = render(<ErrorFallback retry={() => {}} digest="abc123" />);
+    const { rerender } = render(
+      <ErrorFallback retry={() => {}} digest="abc123" />,
+    );
     expect(screen.getByText("오류 코드: abc123")).toBeInTheDocument();
 
     rerender(<ErrorFallback retry={() => {}} />);

@@ -14,8 +14,7 @@ export async function submitReportAction(
   const actor = await getCommentActor();
   if (!actor) return { error: "로그인이 필요합니다." };
   // 신고 남용 방지(회원당). 동일 대상 중복은 createReport의 유니크 제약이 별도 차단.
-  if (!allowAction("report", actor.userId))
-    return { error: TOO_MANY_REQUESTS };
+  if (!allowAction("report", actor.userId)) return { error: TOO_MANY_REQUESTS };
   const parsed = ReportSchema.safeParse({
     reason: formData.get("reason"),
     detail: formData.get("detail") || undefined,

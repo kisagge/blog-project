@@ -23,7 +23,7 @@ export default function RelatedFeeds({ items }: { items: RelatedFeed[] }) {
               className="group flex items-center justify-between gap-3 text-sm"
             >
               <span className="truncate group-hover:underline">{f.title}</span>
-              <span className="shrink-0 text-xs tabular-nums text-zinc-500">
+              <span className="shrink-0 text-xs text-zinc-500 tabular-nums">
                 조회 {f.viewCount.toLocaleString()}
               </span>
             </Link>

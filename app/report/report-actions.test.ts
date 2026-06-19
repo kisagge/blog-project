@@ -47,7 +47,11 @@ describe("submitReportAction", () => {
   });
 
   test("레이트리밋: 회원당 한도 초과 시 차단", async () => {
-    gca.mockResolvedValue({ userId: "rl-report", nickname: "n", role: "member" });
+    gca.mockResolvedValue({
+      userId: "rl-report",
+      nickname: "n",
+      role: "member",
+    });
     cr.mockResolvedValue({ ok: true, created: true, firstForTarget: false });
     const { limit } = ACTION_LIMITS.report;
     for (let i = 0; i < limit; i++) {

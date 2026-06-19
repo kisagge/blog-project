@@ -30,11 +30,7 @@ export default function ResetForm() {
           {state.error}
         </p>
       )}
-      <button
-        type="submit"
-        disabled={pending}
-        className={PRIMARY_BTN}
-      >
+      <button type="submit" disabled={pending} className={PRIMARY_BTN}>
         {pending ? "변경 중…" : "비밀번호 변경"}
       </button>
     </form>

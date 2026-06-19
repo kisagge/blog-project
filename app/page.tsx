@@ -47,7 +47,10 @@ export default async function Home() {
         <section className="flex flex-col gap-4">
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg font-semibold tracking-tight">최근 글</h2>
-            <Link href="/feed" className="text-sm text-zinc-500 hover:underline">
+            <Link
+              href="/feed"
+              className="text-sm text-zinc-500 hover:underline"
+            >
               더 보기 →
             </Link>
           </div>
@@ -87,7 +90,11 @@ export default async function Home() {
             title="커뮤니티"
             desc="회원들의 글 · 회원 전용"
           />
-          <SectionCard href="/feed/popular" title="인기 글" desc="조회수 높은 글" />
+          <SectionCard
+            href="/feed/popular"
+            title="인기 글"
+            desc="조회수 높은 글"
+          />
           <SectionCard href="/feed/tags" title="태그" desc="주제별 모아보기" />
         </ul>
       </section>

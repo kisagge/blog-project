@@ -3,7 +3,9 @@ import { highlightText } from "./highlight";
 
 describe("highlightText", () => {
   test("매치를 <mark>로 감싼다(대소문자 무시)", () => {
-    const { container } = render(<div>{highlightText("Hello World", "world")}</div>);
+    const { container } = render(
+      <div>{highlightText("Hello World", "world")}</div>,
+    );
     const marks = container.querySelectorAll("mark");
     expect(marks).toHaveLength(1);
     expect(marks[0].textContent).toBe("World");

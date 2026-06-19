@@ -32,11 +32,7 @@ export default function RequestForm({ siteKey }: { siteKey?: string }) {
         </p>
       )}
       <TurnstileWidget siteKey={siteKey} resetSignal={state} />
-      <button
-        type="submit"
-        disabled={pending}
-        className={PRIMARY_BTN}
-      >
+      <button type="submit" disabled={pending} className={PRIMARY_BTN}>
         {pending ? "전송 중…" : "인증 코드 전송"}
       </button>
       <p className="text-sm text-zinc-500">

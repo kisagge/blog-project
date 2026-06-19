@@ -168,7 +168,9 @@ export async function getAdjacentFeeds(
     status: "published",
     hiddenAt: null,
     visibility: { in: listableVisibilities(role) },
-    ...(feed.authorId === null ? { authorId: null } : { authorId: { not: null } }),
+    ...(feed.authorId === null
+      ? { authorId: null }
+      : { authorId: { not: null } }),
     id: { not: feed.id },
   } as const;
   const select = { slug: true, title: true } as const;

@@ -18,7 +18,10 @@ function recentKstDays(days: number): string[] {
 }
 
 // groupBy 결과(빈 날 없음)를 윈도우에 맞춰 0으로 채운다.
-function fillTrend(window: string[], counts: Map<string, number>): TrendPoint[] {
+function fillTrend(
+  window: string[],
+  counts: Map<string, number>,
+): TrendPoint[] {
   return window.map((day) => ({ day, count: counts.get(day) ?? 0 }));
 }
 

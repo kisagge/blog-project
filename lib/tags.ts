@@ -55,7 +55,11 @@ export async function getTagsWithCounts(
   });
   const countByTag = new Map(grouped.map((g) => [g.tagId, g._count._all]));
   return tags
-    .map((t) => ({ name: t.name, slug: t.slug, count: countByTag.get(t.id) ?? 0 }))
+    .map((t) => ({
+      name: t.name,
+      slug: t.slug,
+      count: countByTag.get(t.id) ?? 0,
+    }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ko"));
 }
 

@@ -27,7 +27,10 @@ afterAll(async () => {
 describe("member-posts 임시저장", () => {
   test("임시저장은 최대 3개, 4번째는 거부", async () => {
     for (let i = 0; i < m.DRAFT_LIMIT; i++) {
-      const r = await m.saveDraft(userId, { title: `초안${i}`, content: "본문" });
+      const r = await m.saveDraft(userId, {
+        title: `초안${i}`,
+        content: "본문",
+      });
       expect(r.ok).toBe(true);
     }
     expect(await m.countMyDrafts(userId)).toBe(3);
@@ -84,7 +87,10 @@ describe("member-posts 게시", () => {
       });
       expect(r.ok).toBe(true);
     }
-    const over = await m.publishPost(fresh.id, { title: "초과", content: "본문" });
+    const over = await m.publishPost(fresh.id, {
+      title: "초과",
+      content: "본문",
+    });
     expect(over.ok).toBe(false);
   });
 
@@ -110,10 +116,15 @@ describe("member-posts 게시", () => {
   });
 
   test("게시 글 slug는 회원공개·고유", async () => {
-    const r = await m.publishPost(otherId, { title: "Hello World", content: "c" });
+    const r = await m.publishPost(otherId, {
+      title: "Hello World",
+      content: "c",
+    });
     expect(r.ok).toBe(true);
     if (r.ok) {
-      const row = await prisma.feed.findFirst({ where: { slug: r.value.slug } });
+      const row = await prisma.feed.findFirst({
+        where: { slug: r.value.slug },
+      });
       expect(row?.visibility).toBe("members");
       expect(row?.authorId).toBe(otherId);
     }
@@ -123,7 +134,10 @@ describe("member-posts 게시", () => {
     const author = (await makeUser(prisma)).id;
     await m.publishPost(author, { title: "공개글1", content: "c" });
     await m.saveDraft(author, { title: "내초안", content: "c" }); // 초안 제외
-    await m.publishPost((await makeUser(prisma)).id, { title: "타인글", content: "c" }); // 타인 제외
+    await m.publishPost((await makeUser(prisma)).id, {
+      title: "타인글",
+      content: "c",
+    }); // 타인 제외
 
     const list = await m.listMemberPosts(author);
     expect(list).toHaveLength(1);

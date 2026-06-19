@@ -59,7 +59,9 @@ describe("setFeedTags", () => {
     });
     expect(f1tags.map((t) => t.tag.slug)).toEqual(["일상"]);
     // 던파 Tag는 f2가 아직 쓰므로 잔존
-    expect(await prisma.tag.findUnique({ where: { slug: "던파" } })).not.toBeNull();
+    expect(
+      await prisma.tag.findUnique({ where: { slug: "던파" } }),
+    ).not.toBeNull();
   });
 
   test("빈 배열이면 태그 전부 제거", async () => {
@@ -75,8 +77,14 @@ describe("getTagsWithCounts", () => {
     const pub1 = await makeFeed(prisma, { visibility: "public" });
     const pub2 = await makeFeed(prisma, { visibility: "public" });
     const mem = await makeFeed(prisma, { visibility: "members" });
-    const hidden = await makeFeed(prisma, { visibility: "public", hiddenAt: new Date() });
-    const draft = await makeFeed(prisma, { visibility: "public", status: "draft" });
+    const hidden = await makeFeed(prisma, {
+      visibility: "public",
+      hiddenAt: new Date(),
+    });
+    const draft = await makeFeed(prisma, {
+      visibility: "public",
+      status: "draft",
+    });
     await m.setFeedTags(pub1.id, ["디스공개"]);
     await m.setFeedTags(pub2.id, ["디스공개"]); // 같은 태그 2건
     await m.setFeedTags(mem.id, ["디스회원"]);

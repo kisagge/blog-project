@@ -60,7 +60,11 @@ export default function FeedList({
       if (query.trim()) params.set("q", query.trim());
       if (tag) params.set("tag", tag);
       const qs = params.toString();
-      window.history.replaceState(null, "", qs ? `${basePath}?${qs}` : basePath);
+      window.history.replaceState(
+        null,
+        "",
+        qs ? `${basePath}?${qs}` : basePath,
+      );
       const res = await loadFeeds(query, 0, author, tag);
       if (myReq !== reqIdRef.current) return; // 더 최신 검색이 진행 중이면 폐기
       setItems(res.items);

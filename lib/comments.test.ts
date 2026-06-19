@@ -67,7 +67,11 @@ describe("comments", () => {
       },
     });
     await m.addComment({ feedId: f.id, userId: alice, content: "회원댓글" });
-    await m.addComment({ feedId: f.id, userId: adminU.id, content: "관리자댓글" });
+    await m.addComment({
+      feedId: f.id,
+      userId: adminU.id,
+      content: "관리자댓글",
+    });
     const byContent = new Map(
       (await m.getFeedComments(f.id, { sort: "newest" })).items.map((c) => [
         c.content,
@@ -238,7 +242,11 @@ describe("comments", () => {
     const f = await prisma.feed.create({
       data: { slug: "fe", title: "FE", content: "c", visibility: "public" },
     });
-    const r = await m.addComment({ feedId: f.id, userId: alice, content: "원본" });
+    const r = await m.addComment({
+      feedId: f.id,
+      userId: alice,
+      content: "원본",
+    });
     const id = (r as { ok: true; id: string }).id;
     const res = await m.editComment(id, alice, "  고친 내용  ");
     expect(res).toEqual({ ok: true, content: "고친 내용" }); // trim
@@ -251,7 +259,11 @@ describe("comments", () => {
     const f = await prisma.feed.create({
       data: { slug: "fe2", title: "FE2", content: "c", visibility: "public" },
     });
-    const r = await m.addComment({ feedId: f.id, userId: alice, content: "내것" });
+    const r = await m.addComment({
+      feedId: f.id,
+      userId: alice,
+      content: "내것",
+    });
     const id = (r as { ok: true; id: string }).id;
     // 비작성자
     expect(await m.editComment(id, bob, "탈취")).toEqual({
@@ -279,10 +291,20 @@ describe("getCommentsByUser", () => {
       })
     ).id;
     await prisma.comment.create({
-      data: { feedId, userId: u, content: "첫", createdAt: new Date(2026, 0, 1) },
+      data: {
+        feedId,
+        userId: u,
+        content: "첫",
+        createdAt: new Date(2026, 0, 1),
+      },
     });
     await prisma.comment.create({
-      data: { feedId, userId: u, content: "둘", createdAt: new Date(2026, 0, 2) },
+      data: {
+        feedId,
+        userId: u,
+        content: "둘",
+        createdAt: new Date(2026, 0, 2),
+      },
     });
     await prisma.comment.create({
       data: {
@@ -335,7 +357,12 @@ describe("getCommentsByUser", () => {
       })
     ).id;
     const priv = await prisma.feed.create({
-      data: { slug: "secret", title: "비밀", content: "c", visibility: "private" },
+      data: {
+        slug: "secret",
+        title: "비밀",
+        content: "c",
+        visibility: "private",
+      },
     });
     const draft = await prisma.feed.create({
       data: {
@@ -347,10 +374,17 @@ describe("getCommentsByUser", () => {
       },
     });
     const open = await prisma.feed.create({
-      data: { slug: "open", title: "공개", content: "c", visibility: "members" },
+      data: {
+        slug: "open",
+        title: "공개",
+        content: "c",
+        visibility: "members",
+      },
     });
     for (const f of [priv.id, draft.id, open.id]) {
-      await prisma.comment.create({ data: { feedId: f, userId: u, content: "x" } });
+      await prisma.comment.create({
+        data: { feedId: f, userId: u, content: "x" },
+      });
     }
     const list = await m.getCommentsByUser(u, 20);
     expect(list.map((c) => c.feed.slug)).toEqual(["open"]); // 비공개·초안 제외

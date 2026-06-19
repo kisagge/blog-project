@@ -16,10 +16,12 @@
 ## Task 1: 이미지 검증 유틸 (TDD)
 
 **Files:**
+
 - Create: `lib/upload.ts`
 - Create: `lib/upload.test.ts`
 
 **Step 1: 실패 테스트 작성** — `lib/upload.test.ts`:
+
 ```ts
 import { describe, test, expect } from "vitest";
 import { checkImage, MAX_IMAGE_BYTES } from "@/lib/upload";
@@ -47,6 +49,7 @@ describe("checkImage", () => {
 **Step 2: 실패 확인** — `pnpm test lib/upload.test.ts` → 모듈 없음으로 FAIL.
 
 **Step 3: 구현** — `lib/upload.ts`:
+
 ```ts
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -56,12 +59,16 @@ const EXT_BY_TYPE: Record<string, string> = {
   "image/webp": "webp",
 };
 
-export type ImageCheck = { ok: true; ext: string } | { ok: false; error: string };
+export type ImageCheck =
+  | { ok: true; ext: string }
+  | { ok: false; error: string };
 
 export function checkImage(type: string, size: number): ImageCheck {
   const ext = EXT_BY_TYPE[type];
-  if (!ext) return { ok: false, error: "jpg/png/webp 이미지만 업로드할 수 있습니다." };
-  if (size > MAX_IMAGE_BYTES) return { ok: false, error: "이미지는 5MB 이하만 업로드할 수 있습니다." };
+  if (!ext)
+    return { ok: false, error: "jpg/png/webp 이미지만 업로드할 수 있습니다." };
+  if (size > MAX_IMAGE_BYTES)
+    return { ok: false, error: "이미지는 5MB 이하만 업로드할 수 있습니다." };
   return { ok: true, ext };
 }
 ```
@@ -69,6 +76,7 @@ export function checkImage(type: string, size: number): ImageCheck {
 **Step 4: 통과 확인** — `pnpm test lib/upload.test.ts` → PASS.
 
 **Step 5: Commit**
+
 ```bash
 git add lib/upload.ts lib/upload.test.ts
 git commit -m "feat(upload): 이미지 형식/크기 검증 유틸 + 테스트"
@@ -79,9 +87,11 @@ git commit -m "feat(upload): 이미지 형식/크기 검증 유틸 + 테스트"
 ## Task 2: 업로드 Server Action
 
 **Files:**
+
 - Create: `app/admin/upload-action.ts`
 
 **Step 1: 작성**
+
 ```ts
 "use server";
 import { randomUUID } from "crypto";
@@ -104,7 +114,10 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
 
   const name = `${randomUUID()}.${check.ext}`;
   await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(join(UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
+  await writeFile(
+    join(UPLOAD_DIR, name),
+    Buffer.from(await file.arrayBuffer()),
+  );
   return { url: `/uploads/${name}` };
 }
 ```
@@ -112,6 +125,7 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
 **Step 2: 타입체크** — `npx tsc --noEmit` → 에러 없음.
 
 **Step 3: Commit**
+
 ```bash
 git add app/admin/upload-action.ts
 git commit -m "feat(upload): 관리자 이미지 업로드 Server Action"
@@ -124,9 +138,11 @@ git commit -m "feat(upload): 관리자 이미지 업로드 Server Action"
 > 프로덕션은 nginx가 `/uploads`를 가로채므로 이 핸들러는 로컬 dev에서만 동작. dev/prod 모두 URL은 `/uploads/<name>`로 동일.
 
 **Files:**
+
 - Create: `app/uploads/[name]/route.ts`
 
 **Step 1: 작성**
+
 ```ts
 import { readFile } from "fs/promises";
 import { join } from "path";
@@ -139,7 +155,10 @@ const MIME: Record<string, string> = {
   webp: "image/webp",
 };
 
-export async function GET(_req: Request, { params }: { params: Promise<{ name: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ name: string }> },
+) {
   const { name } = await params;
   // uuid.ext 형태만 허용 (경로 조작 차단)
   if (!/^[a-f0-9-]+\.(jpg|jpeg|png|webp)$/i.test(name)) {
@@ -163,6 +182,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ name: s
 **Step 2: 타입체크** — `npx tsc --noEmit` → 에러 없음.
 
 **Step 3: Commit**
+
 ```bash
 git add app/uploads
 git commit -m "feat(upload): dev용 /uploads 서빙 route handler(경로 검증 포함)"
@@ -173,9 +193,11 @@ git commit -m "feat(upload): dev용 /uploads 서빙 route handler(경로 검증 
 ## Task 4: 작성 폼에 이미지 첨부 UI
 
 **Files:**
+
 - Modify: `app/admin/feed-form.tsx`
 
 **Step 1: 전체 교체** (textarea에 ref + 이미지 input + 커서 삽입)
+
 ```tsx
 "use client";
 import { useActionState, useRef, useState } from "react";
@@ -194,8 +216,15 @@ type Props = {
   submitLabel: string;
 };
 
-export default function FeedForm({ action, defaultValues, submitLabel }: Props) {
-  const [state, formAction, pending] = useActionState<FeedFormState, FormData>(action, undefined);
+export default function FeedForm({
+  action,
+  defaultValues,
+  submitLabel,
+}: Props) {
+  const [state, formAction, pending] = useActionState<FeedFormState, FormData>(
+    action,
+    undefined,
+  );
   const d = defaultValues ?? {};
   const err = state?.errors ?? {};
 
@@ -240,10 +269,20 @@ export default function FeedForm({ action, defaultValues, submitLabel }: Props) 
         <input name="slug" defaultValue={d.slug} className={inputCls} />
       </Field>
       <Field label="요약 (선택)" error={err.summary}>
-        <input name="summary" defaultValue={d.summary ?? ""} className={inputCls} />
+        <input
+          name="summary"
+          defaultValue={d.summary ?? ""}
+          className={inputCls}
+        />
       </Field>
       <Field label="본문 (마크다운)" error={err.content}>
-        <textarea ref={contentRef} name="content" defaultValue={d.content} rows={12} className={inputCls} />
+        <textarea
+          ref={contentRef}
+          name="content"
+          defaultValue={d.content}
+          rows={12}
+          className={inputCls}
+        />
         <div className="mt-2 flex items-center gap-3 text-sm">
           <label className="cursor-pointer rounded border border-black/15 px-2 py-1 dark:border-white/20">
             이미지 첨부
@@ -263,17 +302,32 @@ export default function FeedForm({ action, defaultValues, submitLabel }: Props) 
         <input type="checkbox" name="published" defaultChecked={d.published} />
         공개
       </label>
-      {state?.message && <p className="text-sm text-red-600">{state.message}</p>}
-      <button type="submit" disabled={pending} className="w-fit rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background disabled:opacity-50">
+      {state?.message && (
+        <p className="text-sm text-red-600">{state.message}</p>
+      )}
+      <button
+        type="submit"
+        disabled={pending}
+        className="bg-foreground text-background w-fit rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+      >
         {pending ? "저장 중…" : submitLabel}
       </button>
     </form>
   );
 }
 
-const inputCls = "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
+const inputCls =
+  "rounded border border-black/15 bg-transparent px-3 py-2 dark:border-white/20";
 
-function Field({ label, error, children }: { label: string; error?: string[]; children: React.ReactNode }) {
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string[];
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium">{label}</label>
@@ -287,6 +341,7 @@ function Field({ label, error, children }: { label: string; error?: string[]; ch
 **Step 2: 타입체크** — `npx tsc --noEmit` → 에러 없음.
 
 **Step 3: Commit**
+
 ```bash
 git add app/admin/feed-form.tsx
 git commit -m "feat(admin): 작성 폼 이미지 첨부 → 본문 마크다운 삽입"
@@ -297,9 +352,11 @@ git commit -m "feat(admin): 작성 폼 이미지 첨부 → 본문 마크다운 
 ## Task 5: next.config bodySizeLimit + 본문 이미지 스타일 + ignore
 
 **Files:**
+
 - Modify: `next.config.ts`, `app/feed/[slug]/page.tsx`, `.gitignore`, `.dockerignore`
 
 **Step 1: `next.config.ts`** — Server Action 바디 한도 상향(5MB + 여유)
+
 ```ts
 import type { NextConfig } from "next";
 
@@ -318,14 +375,17 @@ export default nextConfig;
 `[&_img]:max-w-full`, `[&_img]:rounded`, `[&_img]:my-4` 를 기존 `[&_a]:underline ...` 체인에 추가.
 
 **Step 3: ignore** — `.gitignore`와 `.dockerignore`에 각각 추가:
+
 ```
 /data/uploads
 ```
+
 (로컬 업로드물이 git/이미지에 안 들어가게)
 
 **Step 4: 검증** — `npx tsc --noEmit && npx eslint .` 통과.
 
 **Step 5: Commit**
+
 ```bash
 git add next.config.ts app/feed/\[slug\]/page.tsx .gitignore .dockerignore
 git commit -m "build: serverActions bodySizeLimit 6mb + 본문 img 스타일 + uploads ignore"
@@ -336,17 +396,20 @@ git commit -m "build: serverActions bodySizeLimit 6mb + 본문 img 스타일 + u
 ## Task 6: 컨테이너 업로드 디렉토리 (compose + entrypoint)
 
 **Files:**
+
 - Modify: `compose.yaml`, `docker-entrypoint.sh`
 
 **Step 1: `compose.yaml`** — environment에 `UPLOAD_DIR` 추가 (볼륨 `/data`는 이미 마운트됨)
+
 ```yaml
-    environment:
-      DATABASE_URL: "file:/data/prod.db"
-      NODE_ENV: "production"
-      UPLOAD_DIR: "/data/uploads"
+environment:
+  DATABASE_URL: "file:/data/prod.db"
+  NODE_ENV: "production"
+  UPLOAD_DIR: "/data/uploads"
 ```
 
 **Step 2: `docker-entrypoint.sh`** — migrate 앞에 업로드 디렉토리 보장
+
 ```sh
 #!/bin/sh
 set -e
@@ -359,6 +422,7 @@ exec ./node_modules/.bin/next start -p 3010 -H 0.0.0.0
 ```
 
 **Step 3: Commit**
+
 ```bash
 git add compose.yaml docker-entrypoint.sh
 git commit -m "build: 컨테이너 UPLOAD_DIR(/data/uploads) + entrypoint mkdir"
@@ -369,9 +433,11 @@ git commit -m "build: 컨테이너 UPLOAD_DIR(/data/uploads) + entrypoint mkdir"
 ## Task 7: 배포 가이드 — nginx /uploads + 권한
 
 **Files:**
+
 - Modify: `docs/deploy/lightsail.md`
 
 **Step 1:** nginx 서버블록의 `location / { ... }` 위에 추가하도록 문서화:
+
 ```nginx
   location /uploads/ {
     alias /srv/byjang/data/uploads/;
@@ -379,7 +445,9 @@ git commit -m "build: 컨테이너 UPLOAD_DIR(/data/uploads) + entrypoint mkdir"
     access_log off;
   }
 ```
+
 그리고 "최초 1회 업로드 디렉토리 권한" 안내 추가:
+
 ```bash
 sudo mkdir -p /srv/byjang/data/uploads
 sudo chown -R 999:999 /srv/byjang/data/uploads   # 컨테이너 uid(nextjs)
@@ -387,6 +455,7 @@ sudo systemctl reload nginx
 ```
 
 **Step 2: Commit**
+
 ```bash
 git add docs/deploy/lightsail.md
 git commit -m "docs(deploy): nginx /uploads 서빙 + 업로드 디렉토리 권한"
@@ -397,31 +466,38 @@ git commit -m "docs(deploy): nginx /uploads 서빙 + 업로드 디렉토리 권�
 ## Task 8: 최종 검증 + PR
 
 **Step 1: 게이트**
+
 ```bash
 npx tsc --noEmit && npx eslint . && pnpm test && rm -rf .next && npx next build
 ```
+
 Expected: 모두 통과.
 
 **Step 2: 로컬 수동 검증**
+
 ```bash
 # .env에 UPLOAD_DIR 없으면 기본 data/uploads 사용. 관리자 로그인 상태에서:
 pnpm dev  # http://localhost:3010/admin/new
 ```
+
 - 이미지 첨부 → 본문에 `![](/uploads/<uuid>.png)` 삽입 확인
 - 저장 → 글 상세에서 이미지 렌더 확인
 - `http://localhost:3010/uploads/<uuid>.png` 직접 접근 200(route handler)
 - gif 첨부 시 에러 메시지, 5MB 초과 에러 확인
 
 **Step 3: 푸시 + PR** (사용자 승인 후)
+
 ```bash
 git push -u origin feature/image-upload
 gh pr create --base main --head feature/image-upload --title "feat: 피드 본문 이미지 업로드" --body "..."
 ```
 
 **Step 4: 배포 시 주의 (PR 본문/안내에 명시)**
+
 - 머지·자동배포 후 **서버에서 nginx `/uploads` location 추가 + reload**, `data/uploads` 권한(999) 1회 설정 필요(가이드대로). 이게 빠지면 업로드 파일이 404.
 
 ---
 
 ## 작업 순서 요약
+
 1 검증유틸(TDD) → 2 업로드 액션 → 3 dev 서빙 → 4 폼 UI → 5 config/스타일/ignore → 6 컨테이너 dir → 7 배포가이드 → 8 검증+PR

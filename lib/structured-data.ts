@@ -21,7 +21,11 @@ export function buildFeedJsonLd(
 ): object {
   const url = absoluteUrl(`/feed/${feed.slug}`);
   const author = feed.authorId
-    ? { "@type": "Person", name: authorName, url: absoluteUrl(`/u/${feed.authorId}`) }
+    ? {
+        "@type": "Person",
+        name: authorName,
+        url: absoluteUrl(`/u/${feed.authorId}`),
+      }
     : { "@type": "Person", name: authorName };
 
   const blogPosting: Record<string, unknown> = {
@@ -52,12 +56,20 @@ export function buildFeedJsonLd(
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "홈", item: absoluteUrl("/") },
-      { "@type": "ListItem", position: 2, name: "피드", item: absoluteUrl("/feed") },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "피드",
+        item: absoluteUrl("/feed"),
+      },
       { "@type": "ListItem", position: 3, name: feed.title, item: url },
     ],
   };
 
-  return { "@context": "https://schema.org", "@graph": [blogPosting, breadcrumb] };
+  return {
+    "@context": "https://schema.org",
+    "@graph": [blogPosting, breadcrumb],
+  };
 }
 
 // JSON-LD를 <script> 안에 넣기 위한 직렬화. '<'를 유니코드 이스케이프해

@@ -78,6 +78,8 @@ describe("LikeButton 재접속 재동기화 vs 디바운스", () => {
       es.onopen?.(); // 재접속 → resync
     });
     expect(getLikeSummaryAction).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: /좋아요 5/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /좋아요 5/ }),
+    ).toBeInTheDocument();
   });
 });

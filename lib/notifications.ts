@@ -57,7 +57,11 @@ export async function createNotification(
 // 여러 회원에게 동일 알림을 일괄 생성 + 각자 SSE 미읽음 수 반영(N+1 회피).
 // createMany는 전부-또는-전무지만 호출부가 fire-and-forget(.catch)라 부분 실패 격리는
 // 불필요 — 균일 insert라 부분 실패도 사실상 없음.
-async function createNotifications(userIds: string[], body: string, url?: string) {
+async function createNotifications(
+  userIds: string[],
+  body: string,
+  url?: string,
+) {
   if (userIds.length === 0) return;
   await prisma.notification.createMany({
     data: userIds.map((userId) => ({ userId, body, url })),
@@ -69,7 +73,8 @@ async function createNotifications(userIds: string[], body: string, url?: string
     _count: { _all: true },
   });
   const countMap = new Map(counts.map((c) => [c.userId, c._count._all]));
-  for (const userId of userIds) publishUnread(userId, countMap.get(userId) ?? 0);
+  for (const userId of userIds)
+    publishUnread(userId, countMap.get(userId) ?? 0);
 }
 
 export async function listNotifications(userId: string, take = 30) {

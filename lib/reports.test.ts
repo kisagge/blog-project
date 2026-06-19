@@ -27,8 +27,9 @@ beforeAll(async () => {
   reporter = (await makeUser(prisma)).id;
   other = (await makeUser(prisma)).id;
   const feed = await makeFeed(prisma, { slug: "host", title: "호스트글" });
-  commentId = (await makeComment(prisma, feed.id, author, { content: "내 댓글" }))
-    .id;
+  commentId = (
+    await makeComment(prisma, feed.id, author, { content: "내 댓글" })
+  ).id;
   memberFeedId = (
     await makeFeed(prisma, {
       slug: "member-post",
@@ -74,7 +75,10 @@ describe("createReport", () => {
       targetId: commentId,
       reason: "spam",
     });
-    expect(r).toEqual({ ok: false, error: "본인 콘텐츠는 신고할 수 없습니다." });
+    expect(r).toEqual({
+      ok: false,
+      error: "본인 콘텐츠는 신고할 수 없습니다.",
+    });
   });
 
   test("없는 대상은 거부", async () => {
@@ -174,7 +178,11 @@ describe("queue · 모더레이션 전이", () => {
     expect(c?.hiddenAt).not.toBeNull();
     expect(
       await prisma.report.count({
-        where: { targetType: "comment", targetId: commentId, status: "pending" },
+        where: {
+          targetType: "comment",
+          targetId: commentId,
+          status: "pending",
+        },
       }),
     ).toBe(0);
     expect(
@@ -214,7 +222,11 @@ describe("queue · 모더레이션 전이", () => {
     expect(f?.hiddenAt).toBeNull();
     expect(
       await prisma.report.count({
-        where: { targetType: "feed", targetId: memberFeedId, status: "dismissed" },
+        where: {
+          targetType: "feed",
+          targetId: memberFeedId,
+          status: "dismissed",
+        },
       }),
     ).toBe(2); // reporter + other 두 신고 모두 기각
   });

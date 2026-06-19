@@ -20,7 +20,9 @@ describe("PrevNextNav", () => {
   });
 
   test("한쪽이 null이면 그쪽은 렌더 안 함", () => {
-    render(<PrevNextNav prev={null} next={{ slug: "newer", title: "다음제목" }} />);
+    render(
+      <PrevNextNav prev={null} next={{ slug: "newer", title: "다음제목" }} />,
+    );
     expect(screen.queryByText("← 이전 글")).toBeNull();
     expect(screen.getByText("다음 글 →")).toBeInTheDocument();
   });

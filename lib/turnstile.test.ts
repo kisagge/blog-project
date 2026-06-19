@@ -52,10 +52,7 @@ describe("verifyTurnstile", () => {
 
   test("fetch 예외는 false(fail-closed)", async () => {
     process.env.TURNSTILE_SECRET_KEY = "sec";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockRejectedValue(new Error("network")),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
     expect(await m.verifyTurnstile("tok")).toBe(false);
   });
 });

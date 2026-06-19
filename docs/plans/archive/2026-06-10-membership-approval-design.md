@@ -66,6 +66,7 @@ type SessionPayload =
 ## 6. 어드민 승인 UI (`/admin`)
 
 사이트 토글 카드 아래 **"가입 대기 회원"** 섹션:
+
 - 대기자 목록(이메일·닉네임·신청일) + **승인**/**거절** 버튼.
 - 승인 회원 목록 + **삭제**(회원 제거).
 - 서버 액션: `approveUser(id)`, `rejectUser(id)`(삭제), `removeUser(id)`(삭제). 모두 `verifySession()` 보호.

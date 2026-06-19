@@ -54,7 +54,9 @@ export async function requestCode(
     });
   } catch (e) {
     console.error("[forgot-password] requestCode 실패:", e);
-    return { error: "코드 전송 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요." };
+    return {
+      error: "코드 전송 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.",
+    };
   }
   redirect("/forgot-password/verify");
 }

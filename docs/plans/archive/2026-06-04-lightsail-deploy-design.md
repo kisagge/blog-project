@@ -31,7 +31,7 @@
   - `deps`(node:22-slim + 빌드툴): `pnpm install` — better-sqlite3 네이티브 컴파일 + `prisma generate`.
   - `builder`: 소스 복사 + `next build`(standalone 산출).
   - `runner`(node:22-slim, 비루트): standalone 출력(`.next/standalone`, `.next/static`, `public`) + `app/generated/prisma` + better-sqlite3 네이티브 `.node` 포함 확인. `EXPOSE 3010`, entrypoint로 기동.
-- `.dockerignore`: node_modules, .next, .git, *.db, docs 등.
+- `.dockerignore`: node_modules, .next, .git, \*.db, docs 등.
 
 ## 3. SQLite 영속 + 마이그레이션
 

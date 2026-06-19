@@ -61,7 +61,9 @@ describe("extractToc", () => {
 
 describe("stripMarkdown", () => {
   test("코드블록·기호·링크를 평문으로", () => {
-    expect(stripMarkdown("# 제목\n**굵게** [링크](http://x)")).toContain("제목");
+    expect(stripMarkdown("# 제목\n**굵게** [링크](http://x)")).toContain(
+      "제목",
+    );
     expect(stripMarkdown("```\ncode\n```\n본문")).not.toContain("code");
     const s = stripMarkdown("**굵게** `코드`");
     expect(s).not.toContain("*");

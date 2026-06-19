@@ -2,7 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import LoginRequiredModal from "./login-required-modal";
 import { useFeedEvent } from "./feed-events-context";
-import { getLikeSummaryAction, toggleLikeAction } from "./comments/comment-actions";
+import {
+  getLikeSummaryAction,
+  toggleLikeAction,
+} from "./comments/comment-actions";
 
 export default function LikeButton({
   feedId,

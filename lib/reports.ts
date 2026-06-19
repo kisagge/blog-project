@@ -31,7 +31,8 @@ export async function createReport(input: CreateInput): Promise<CreateResult> {
         user: { select: { role: true } },
       },
     });
-    if (!c || c.deletedAt) return { ok: false, error: "대상을 찾을 수 없습니다." };
+    if (!c || c.deletedAt)
+      return { ok: false, error: "대상을 찾을 수 없습니다." };
     if (c.user.role === "admin")
       return { ok: false, error: "신고할 수 없는 콘텐츠입니다." };
     ownerId = c.userId;
@@ -55,7 +56,13 @@ export async function createReport(input: CreateInput): Promise<CreateResult> {
   // 중복 신고는 unique 제약(targetType,targetId,reporterId) 위반 → 무시(created=false).
   try {
     await prisma.report.create({
-      data: { reporterId, targetType, targetId, reason, detail: detail?.trim() || null },
+      data: {
+        reporterId,
+        targetType,
+        targetId,
+        reason,
+        detail: detail?.trim() || null,
+      },
     });
     // 이 대상의 첫 pending 신고면 관리자 알림 1회만(브리게이딩 스팸 완화).
     const pendingCount = await prisma.report.count({
@@ -264,7 +271,9 @@ export async function countPendingReportTargets(): Promise<number> {
 export async function countHiddenTargets(): Promise<number> {
   const [comments, feeds] = await Promise.all([
     prisma.comment.count({ where: { hiddenAt: { not: null } } }),
-    prisma.feed.count({ where: { hiddenAt: { not: null }, authorId: { not: null } } }),
+    prisma.feed.count({
+      where: { hiddenAt: { not: null }, authorId: { not: null } },
+    }),
   ]);
   return comments + feeds;
 }

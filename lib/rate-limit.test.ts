@@ -24,7 +24,8 @@ describe("allowAction", () => {
   test("scope 한도까지 허용, 초과 차단", () => {
     const id = `u-${Math.random()}`;
     const { limit } = ACTION_LIMITS.report;
-    for (let i = 0; i < limit; i++) expect(allowAction("report", id)).toBe(true);
+    for (let i = 0; i < limit; i++)
+      expect(allowAction("report", id)).toBe(true);
     expect(allowAction("report", id)).toBe(false);
   });
 

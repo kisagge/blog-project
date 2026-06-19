@@ -286,16 +286,36 @@ describe("notification prefs", () => {
 
   test("notifyCommentMention: 멘션 대상 구독에만 푸시를 배치 전송", async () => {
     const from = await prisma.user.create({
-      data: { email: "pf@x.com", nickname: "푸시작성", passwordHash: "-", status: "approved" },
+      data: {
+        email: "pf@x.com",
+        nickname: "푸시작성",
+        passwordHash: "-",
+        status: "approved",
+      },
     });
     const u1 = await prisma.user.create({
-      data: { email: "p1@x.com", nickname: "푸시하나", passwordHash: "-", status: "approved" },
+      data: {
+        email: "p1@x.com",
+        nickname: "푸시하나",
+        passwordHash: "-",
+        status: "approved",
+      },
     });
     const u2 = await prisma.user.create({
-      data: { email: "p2@x.com", nickname: "푸시둘", passwordHash: "-", status: "approved" },
+      data: {
+        email: "p2@x.com",
+        nickname: "푸시둘",
+        passwordHash: "-",
+        status: "approved",
+      },
     });
     const u3 = await prisma.user.create({
-      data: { email: "p3@x.com", nickname: "푸시안됨", passwordHash: "-", status: "approved" },
+      data: {
+        email: "p3@x.com",
+        nickname: "푸시안됨",
+        passwordHash: "-",
+        status: "approved",
+      },
     });
     // 각 회원 구독(미멘션 u3 포함) — u3 엔드포인트로는 전송되면 안 됨.
     for (const [u, ep] of [
@@ -319,12 +339,20 @@ describe("notification prefs", () => {
     });
     expect(findManySpy).toHaveBeenCalledTimes(1); // 대상 수 무관 1쿼리
     findManySpy.mockRestore();
-    const endpoints = sendNotification.mock.calls.map((c) => c[0].endpoint).sort();
+    const endpoints = sendNotification.mock.calls
+      .map((c) => c[0].endpoint)
+      .sort();
     expect(endpoints).toEqual(["https://push/ep1", "https://push/ep2"]);
     // 멘션 대상 둘 다 인앱 1건씩(createMany 경로).
-    expect(await prisma.notification.count({ where: { userId: u1.id } })).toBe(1);
-    expect(await prisma.notification.count({ where: { userId: u2.id } })).toBe(1);
-    expect(await prisma.notification.count({ where: { userId: u3.id } })).toBe(0);
+    expect(await prisma.notification.count({ where: { userId: u1.id } })).toBe(
+      1,
+    );
+    expect(await prisma.notification.count({ where: { userId: u2.id } })).toBe(
+      1,
+    );
+    expect(await prisma.notification.count({ where: { userId: u3.id } })).toBe(
+      0,
+    );
   });
 
   test("notifyCommentReply: 수신자가 답글 알림 off면 미생성(on이면 생성)", async () => {

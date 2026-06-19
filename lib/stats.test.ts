@@ -24,7 +24,12 @@ describe("stats", () => {
     const today = kstDay();
     for (const vid of ["a", "b", "c"]) {
       await prisma.view.create({
-        data: { entityType: "feed", entityId: "fX", visitorId: vid, day: today },
+        data: {
+          entityType: "feed",
+          entityId: "fX",
+          visitorId: vid,
+          day: today,
+        },
       });
     }
     await prisma.view.create({
@@ -70,10 +75,22 @@ describe("stats", () => {
 
   test("getTopFeeds: 누적 조회순, 숨김/초안 제외", async () => {
     await prisma.feed.create({
-      data: { slug: "t1", title: "T1", content: "c", visibility: "public", viewCount: 50 },
+      data: {
+        slug: "t1",
+        title: "T1",
+        content: "c",
+        visibility: "public",
+        viewCount: 50,
+      },
     });
     await prisma.feed.create({
-      data: { slug: "t2", title: "T2", content: "c", visibility: "public", viewCount: 100 },
+      data: {
+        slug: "t2",
+        title: "T2",
+        content: "c",
+        visibility: "public",
+        viewCount: 100,
+      },
     });
     await prisma.feed.create({
       data: {
