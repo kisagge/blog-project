@@ -3,6 +3,10 @@
 // 공유 링크는 항상 운영 도메인 기준 정규 URL을 사용(localhost·미리보기 주소 방지).
 export const SITE_ORIGIN = "https://by-jang-blog.xyz";
 
+// 사이트 식별 상수(구조화 데이터·메타 공용 출처).
+export const SITE_NAME = "BY Playground";
+export const SITE_DESCRIPTION = "생각과 기록을 남기는 개인 공간";
+
 export function absoluteUrl(path: string): string {
   return SITE_ORIGIN + (path.startsWith("/") ? path : `/${path}`);
 }
