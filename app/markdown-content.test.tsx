@@ -38,4 +38,24 @@ describe("MarkdownContent", () => {
     // highlight.js가 키워드 등 토큰을 span으로 감쌈.
     expect(container.querySelector("pre code .hljs-keyword")).not.toBeNull();
   });
+
+  test("본문 이미지: ?w&h를 width/height로 부여 + loading=lazy(CLS 방지)", () => {
+    const { container } = render(
+      <MarkdownContent content={"![설명](/uploads/a.jpg?w=800&h=600)"} />,
+    );
+    const img = container.querySelector("img")!;
+    expect(img.getAttribute("width")).toBe("800");
+    expect(img.getAttribute("height")).toBe("600");
+    expect(img.getAttribute("loading")).toBe("lazy");
+    expect(img.getAttribute("alt")).toBe("설명");
+  });
+
+  test("쿼리 없는(외부) 이미지: width 없이 lazy만", () => {
+    const { container } = render(
+      <MarkdownContent content={"![](https://example.com/x.jpg)"} />,
+    );
+    const img = container.querySelector("img")!;
+    expect(img.getAttribute("width")).toBeNull();
+    expect(img.getAttribute("loading")).toBe("lazy");
+  });
 });

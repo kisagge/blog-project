@@ -138,7 +138,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 356 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 360 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -214,11 +214,18 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **두 에디터**: 회원 에디터는 controlled state라 값으로 저장/복원, 관리자 폼은 uncontrolled라 `form onInput`으로 `FormData`를 읽어 저장하고 복원 시 `elements.namedItem`으로 값을 채움(이미지 삽입 후엔 합성 `input` 이벤트로 자동저장이 잡게). 저장본이 초기값과 다를 때만 `DraftRestoreBanner`로 **복원/무시**를 제안(자동 덮어쓰기 안 함).
 - **수명주기**: 제출 시 키 삭제(성공은 리다이렉트로 종료). 검증 실패로 리다이렉트가 없으면 `state` 변화 effect가 현재 값을 **재저장**해 데이터 유실 창을 닫음.
 
+### 4.22 이미지 CLS 방지 + lazy-load
+
+본문 이미지가 치수 없이 렌더돼 로드 시 레이아웃이 밀리던(CLS) 문제를 제거. nginx가 `/uploads/*`를 직접 서빙해 `next/image`가 부적합하므로 **plain `<img>` + 치수 속성**으로 해결.
+
+- **업로드 시 치수 측정**: `uploadImage`가 버퍼를 `image-size`(헤더만 파싱)로 읽어 삽입 마크다운 URL에 `?w=&h=`를 실음(`lib/image-size.ts`는 `server-only` — `lib/upload.ts`가 클라에서도 쓰이므로 격리). 손상·미지원은 null → 쿼리만 생략(업로드는 계속).
+- **렌더**: `MarkdownContent`의 커스텀 `img`가 src 쿼리에서 w/h를 파싱해 `width/height`를 부여 → 브라우저가 종횡비로 공간을 예약(시프트 0), `[&_img]:h-auto`로 반응형 유지. 모든 본문 이미지에 `loading="lazy" decoding="async"`. 쿼리 없는 외부 이미지는 lazy만. 쿼리는 nginx·dev 라우트가 무시(파일 그대로 서빙).
+
 ## 5. 성과 요약
 
 - 런타임 이미지 **2.05GB → 876MB (−57%)**, 배포 첫 pull **10분 32초 → 37초**
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 356), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 360), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
