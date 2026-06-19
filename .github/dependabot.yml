@@ -10,6 +10,11 @@ updates:
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+    # @types/node 메이저는 node 런타임 LTS(현 24)에 맞춰 고정 — 비-LTS 메이저(25 등)
+    # 자동 제안 방지. node 베이스이미지 승격과 함께 수동으로 올린다.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
