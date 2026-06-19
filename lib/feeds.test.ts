@@ -450,6 +450,36 @@ describe("searchFeeds", () => {
     expect(allSlugs).not.toContain("umem-1");
     expect(allSlugs).not.toContain("udraft-1");
   });
+
+  test("getAdminFeedsPage q: 제목 부분일치 + 필터된 total", async () => {
+    const r = await getAdminFeedsPage(1, 10, "고양이");
+    expect(r.items.map((f) => f.slug)).toEqual(["pub-3"]);
+    expect(r.total).toBe(1);
+  });
+
+  test("getAdminFeedsPage q: 슬러그 부분일치(회원 동일슬러그 접미는 authorId로 제외)", async () => {
+    const r = await getAdminFeedsPage(1, 10, "mem-1");
+    // 슬러그 'umem-1'도 'mem-1'을 포함하나 회원 글이라 제외.
+    expect(r.items.map((f) => f.slug)).toEqual(["mem-1"]);
+  });
+
+  test("getAdminFeedsPage q: 비공개(초안) 글도 관리자 검색에 포함", async () => {
+    const r = await getAdminFeedsPage(1, 10, "오직비공개단어");
+    expect(r.items.map((f) => f.slug)).toEqual(["draft-1"]);
+    expect(r.items[0].visibility).toBe("private");
+  });
+
+  test("getAdminFeedsPage q: 회원 글 제목 일치해도 제외(authorId null 유지)", async () => {
+    const r = await getAdminFeedsPage(1, 10, "회원작성단어");
+    expect(r.items).toHaveLength(0);
+    expect(r.total).toBe(0);
+  });
+
+  test("getAdminFeedsPage q: 미일치 → 빈 목록·total 0", async () => {
+    const r = await getAdminFeedsPage(1, 10, "없는검색어zzz");
+    expect(r.items).toHaveLength(0);
+    expect(r.total).toBe(0);
+  });
 });
 
 describe("getPublicTopFeeds", () => {

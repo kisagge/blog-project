@@ -247,15 +247,24 @@ export const getFeedBySlug = cache(async (slug: string) => {
 export const ADMIN_PAGE_SIZE = 20;
 
 // 관리자용: 초안 포함, 최신순, 페이지 단위(기본 20). 목록 + 전체 개수 반환.
+// q가 있으면 제목·슬러그 부분일치로 필터(관리자 CMS 탐색용 — 초안 포함 유지).
 export async function getAdminFeedsPage(
   page: number,
   pageSize = ADMIN_PAGE_SIZE,
+  q = "",
 ) {
   const take = pageSize;
   const skip = (Math.max(1, page) - 1) * take;
+  const term = q.trim();
+  const where = {
+    authorId: null, // 관리자 CMS는 관리자 글만(회원 글 제외)
+    ...(term && {
+      OR: [{ title: { contains: term } }, { slug: { contains: term } }],
+    }),
+  };
   const [items, total] = await Promise.all([
     prisma.feed.findMany({
-      where: { authorId: null }, // 관리자 CMS는 관리자 글만(회원 글 제외)
+      where,
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -267,7 +276,7 @@ export async function getAdminFeedsPage(
       skip,
       take,
     }),
-    prisma.feed.count({ where: { authorId: null } }),
+    prisma.feed.count({ where }),
   ]);
   return { items, total, pageSize: take };
 }

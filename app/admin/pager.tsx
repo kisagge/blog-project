@@ -1,21 +1,29 @@
 import Link from "next/link";
 
 // 서버 렌더 페이지네이션: 이전/다음 + "현재/전체". basePath에 ?page= 를 붙인다.
+// query: 이미 인코딩된 추가 쿼리(예 `q=foo`)로, 페이지 이동 시에도 보존한다.
 export default function Pager({
   page,
   total,
   pageSize,
   basePath,
+  query = "",
 }: {
   page: number;
   total: number;
   pageSize: number;
   basePath: string;
+  query?: string;
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (totalPages <= 1) return null;
   const current = Math.min(Math.max(1, page), totalPages);
-  const href = (p: number) => (p <= 1 ? basePath : `${basePath}?page=${p}`);
+  const href = (p: number) => {
+    const parts = [];
+    if (p > 1) parts.push(`page=${p}`);
+    if (query) parts.push(query);
+    return parts.length ? `${basePath}?${parts.join("&")}` : basePath;
+  };
   const linkCls =
     "rounded border border-black/15 px-3 py-1 hover:bg-black/[.03] dark:border-white/20 dark:hover:bg-white/[.05]";
   const disabledCls =
