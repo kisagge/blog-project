@@ -141,7 +141,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 365 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). 전체 **17 → 370 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -180,6 +180,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **빌더 분리**: `lib/structured-data.ts`(순수)가 `@graph`로 BlogPosting+Breadcrumb를 만들고 기존 `absoluteUrl`·`isoInstant`를 재사용. `datePublished=publishedAt ?? createdAt`, `dateModified=updatedAt`, 작성자는 회원이면 `Person`+`/u/{id}` URL·관리자면 이름만, `image`는 동적 OG 라우트, `publisher`는 사이트 Organization+로고.
 - **게이팅**: **전체공개·게시 글만** JSON-LD 주입(OG 이미지와 동일 — 회원공개/비공개/초안은 미노출로 게이트 콘텐츠가 구조화 데이터로 새지 않음). canonical은 열람 가능한 글에 설정해 `?c=`·`?sort=` 쿼리 중복 인덱싱 방지.
 - **안전 주입**: `dangerouslySetInnerHTML`로 인라인하되 직렬화 시 `<`를 `<`로 이스케이프해 제목/요약의 `</script>`가 마크업을 깨거나 주입되지 않게 함(CSP `script-src 'unsafe-inline'`라 nonce 불필요).
+- **홈 사이트 식별**: 홈(`/`)엔 `buildSiteJsonLd()`로 **`WebSite` + `Organization`** `@graph`를 1회 주입(`@id`로 상호 참조). `WebSite.potentialAction`의 **`SearchAction`**(target `/feed?q={search_term_string}` — 기존 공개 검색 라우트)으로 구글 사이트링크 검색창 후보를 제공. 사이트명·설명은 `lib/share.ts` 공용 상수(`SITE_NAME`/`SITE_DESCRIPTION`)에서 가져와 글 상세 publisher와 일치시킴.
 
 ### 4.17 발견성 페이지 (인기 글·태그 인덱스)
 
@@ -230,5 +231,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 365), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 370), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

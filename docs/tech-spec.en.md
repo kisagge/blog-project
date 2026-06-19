@@ -141,7 +141,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 365**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). Test count grew from **17 to 370**.
 
 ### 4.12 Content reporting & moderation
 
@@ -180,6 +180,7 @@ Post detail pages emit **schema.org JSON-LD** (`BlogPosting` + `BreadcrumbList`)
 - **Separate builder**: `lib/structured-data.ts` (pure) assembles a `@graph` of BlogPosting + Breadcrumb, reusing the existing `absoluteUrl`/`isoInstant`. `datePublished = publishedAt ?? createdAt`, `dateModified = updatedAt`; the author is a `Person` with a `/u/{id}` URL for members or name-only for the admin; `image` is the dynamic OG route; `publisher` is the site Organization + logo.
 - **Gating**: JSON-LD is injected **only for public, published posts** (matching the OG image — members-only/private/draft are excluded so gated content never leaks into structured data). The canonical is set on any viewable post to prevent duplicate indexing from `?c=`/`?sort=` query params.
 - **Safe injection**: inlined via `dangerouslySetInnerHTML`, but serialization escapes `<` to `<` so a `</script>` in a title/summary can't break or inject markup (no nonce needed since CSP allows `script-src 'unsafe-inline'`).
+- **Home site identity**: the home page (`/`) injects a `WebSite` + `Organization` `@graph` once via `buildSiteJsonLd()` (cross-referenced by `@id`). `WebSite.potentialAction` is a **`SearchAction`** (target `/feed?q={search_term_string}` — the existing public search route), offering a Google sitelinks search box. Site name/description come from shared constants in `lib/share.ts` (`SITE_NAME`/`SITE_DESCRIPTION`), matching the post-detail publisher.
 
 ### 4.17 Discovery pages (popular posts, tag index)
 
@@ -230,5 +231,5 @@ Body images rendered without dimensions, shifting the layout on load (CLS). Sinc
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 365); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 370); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

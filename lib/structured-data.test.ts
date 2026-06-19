@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { buildFeedJsonLd, jsonLdHtml } from "@/lib/structured-data";
+import {
+  buildFeedJsonLd,
+  buildSiteJsonLd,
+  jsonLdHtml,
+} from "@/lib/structured-data";
 
 const base = {
   slug: "hello-world",
@@ -73,6 +77,54 @@ describe("buildFeedJsonLd", () => {
       buildFeedJsonLd({ ...base, publishedAt: null }, "글쓴이"),
     )[0];
     expect(post.datePublished).toBe("2026-06-10T00:00:00.000Z");
+  });
+});
+
+describe("buildSiteJsonLd", () => {
+  test("@graph에 WebSite + Organization 2개", () => {
+    const json = buildSiteJsonLd();
+    expect((json as Record<string, string>)["@context"]).toBe(
+      "https://schema.org",
+    );
+    const g = graph(json);
+    expect(g.map((n) => n["@type"])).toEqual(["WebSite", "Organization"]);
+  });
+
+  test("WebSite: 사이트명·URL·설명·언어 + publisher가 Organization @id 참조", () => {
+    const [website, org] = graph(buildSiteJsonLd());
+    expect(website.name).toBe("BY Playground");
+    expect(website.url).toBe("https://by-jang-blog.xyz/");
+    expect(website.description).toBe("생각과 기록을 남기는 개인 공간");
+    expect(website.inLanguage).toBe("ko-KR");
+    // 그래프 연결: WebSite.publisher.@id === Organization.@id
+    expect((website.publisher as Record<string, string>)["@id"]).toBe(
+      org["@id"],
+    );
+  });
+
+  test("WebSite.potentialAction: SearchAction이 /feed?q= 템플릿", () => {
+    const website = graph(buildSiteJsonLd())[0];
+    const action = website.potentialAction as Record<string, unknown>;
+    expect(action["@type"]).toBe("SearchAction");
+    expect((action.target as Record<string, string>).urlTemplate).toBe(
+      "https://by-jang-blog.xyz/feed?q={search_term_string}",
+    );
+    expect(action["query-input"]).toBe("required name=search_term_string");
+  });
+
+  test("Organization: @id·이름·URL·로고", () => {
+    const org = graph(buildSiteJsonLd())[1];
+    expect(org["@id"]).toBe("https://by-jang-blog.xyz/#organization");
+    expect(org.name).toBe("BY Playground");
+    expect(org.url).toBe("https://by-jang-blog.xyz/");
+    expect((org.logo as Record<string, string>).url).toBe(
+      "https://by-jang-blog.xyz/icons/icon-512.png",
+    );
+  });
+
+  test("jsonLdHtml(buildSiteJsonLd())는 유효 JSON", () => {
+    const parsed = JSON.parse(jsonLdHtml(buildSiteJsonLd()));
+    expect(parsed["@graph"]).toHaveLength(2);
   });
 });
 

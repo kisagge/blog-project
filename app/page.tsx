@@ -3,6 +3,7 @@ import { guardPublicAccess } from "@/lib/site-config";
 import { searchFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
 import { kstDate, isoInstant } from "@/lib/kst";
+import { buildSiteJsonLd, jsonLdHtml } from "@/lib/structured-data";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,11 @@ export default async function Home() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-14 px-6 py-16">
+      {/* 사이트 식별 구조화 데이터(WebSite + Organization) — 홈에서만 주입 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(buildSiteJsonLd()) }}
+      />
       {/* 히어로 */}
       <section className="flex flex-col gap-5">
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">

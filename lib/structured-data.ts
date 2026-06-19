@@ -1,4 +1,4 @@
-import { absoluteUrl } from "@/lib/share";
+import { absoluteUrl, SITE_NAME, SITE_DESCRIPTION } from "@/lib/share";
 import { isoInstant } from "@/lib/kst";
 
 // 글 상세용 schema.org 구조화 데이터(JSON-LD) 빌더. 순수 모듈 — 서버 컴포넌트에서 사용.
@@ -39,7 +39,7 @@ export function buildFeedJsonLd(
     image: absoluteUrl(`/feed/${feed.slug}/opengraph-image`), // 동적 OG 1200×630
     publisher: {
       "@type": "Organization",
-      name: "BY Playground",
+      name: SITE_NAME,
       logo: {
         "@type": "ImageObject",
         url: absoluteUrl("/icons/icon-512.png"),
@@ -70,6 +70,37 @@ export function buildFeedJsonLd(
     "@context": "https://schema.org",
     "@graph": [blogPosting, breadcrumb],
   };
+}
+
+// 홈용 사이트 식별 JSON-LD(WebSite + Organization). 홈에서 1회 주입.
+// WebSite.potentialAction(SearchAction)로 구글 사이트링크 검색창 후보 제공(/feed?q=).
+export function buildSiteJsonLd(): object {
+  const orgId = absoluteUrl("/#organization");
+  const org = {
+    "@type": "Organization",
+    "@id": orgId,
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+    logo: { "@type": "ImageObject", url: absoluteUrl("/icons/icon-512.png") },
+  };
+  const website = {
+    "@type": "WebSite",
+    "@id": absoluteUrl("/#website"),
+    name: SITE_NAME,
+    url: absoluteUrl("/"),
+    description: SITE_DESCRIPTION,
+    inLanguage: "ko-KR",
+    publisher: { "@id": orgId },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: absoluteUrl("/feed?q={search_term_string}"),
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+  return { "@context": "https://schema.org", "@graph": [website, org] };
 }
 
 // JSON-LD를 <script> 안에 넣기 위한 직렬화. '<'를 유니코드 이스케이프해
