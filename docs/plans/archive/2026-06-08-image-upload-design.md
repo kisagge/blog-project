@@ -33,6 +33,7 @@
 ```
 uploadImage(formData): Promise<{ url } | { error }>
 ```
+
 - `verifySession()` (관리자 아니면 거부).
 - `file = formData.get("file") as File`.
 - 검증: MIME·확장자 화이트리스트(jpg/jpeg/png/webp), `file.size <= 5MB`.

@@ -17,10 +17,12 @@
 ## Task 1: standalone 출력 + .dockerignore
 
 **Files:**
+
 - Modify: `next.config.ts`
 - Create: `.dockerignore`
 
 **Step 1: `next.config.ts`에 standalone 추가**
+
 ```ts
 import type { NextConfig } from "next";
 
@@ -32,6 +34,7 @@ export default nextConfig;
 ```
 
 **Step 2: `.dockerignore`**
+
 ```
 node_modules
 .next
@@ -55,6 +58,7 @@ Run: `rm -rf .next && npx next build && ls .next/standalone/server.js && ls .nex
 Expected: `.next/standalone/server.js` 존재. better-sqlite3 `.node` 포함 여부 기록(Dockerfile 설계 입력).
 
 **Step 4: Commit**
+
 ```bash
 git add next.config.ts .dockerignore
 git commit -m "build: Next standalone 출력 + .dockerignore"
@@ -65,10 +69,12 @@ git commit -m "build: Next standalone 출력 + .dockerignore"
 ## Task 2: Dockerfile + entrypoint
 
 **Files:**
+
 - Create: `Dockerfile`
 - Create: `docker-entrypoint.sh`
 
 **Step 1: `Dockerfile`** (멀티스테이지; better-sqlite3 컴파일, prisma generate, standalone, runner에 prisma CLI/schema/migrations + dotenv 포함)
+
 ```dockerfile
 # syntax=docker/dockerfile:1
 
@@ -122,6 +128,7 @@ ENTRYPOINT ["./docker-entrypoint.sh"]
 > (pnpm은 `.pnpm` 심볼릭이므로, standalone 트레이싱이 실제 파일을 복사했는지 build/run 검증으로 확인.)
 
 **Step 2: `docker-entrypoint.sh`**
+
 ```sh
 #!/bin/sh
 set -e
@@ -132,6 +139,7 @@ exec node server.js
 ```
 
 **Step 3: Commit**
+
 ```bash
 git add Dockerfile docker-entrypoint.sh
 git commit -m "build: 멀티스테이지 Dockerfile + migrate deploy entrypoint"
@@ -142,9 +150,11 @@ git commit -m "build: 멀티스테이지 Dockerfile + migrate deploy entrypoint"
 ## Task 3: compose.yaml (서버용)
 
 **Files:**
+
 - Create: `compose.yaml`
 
 **Step 1: 작성**
+
 ```yaml
 services:
   web:
@@ -159,9 +169,11 @@ services:
       - "127.0.0.1:3010:3010"
     restart: unless-stopped
 ```
+
 > 서버 `/srv/byjang/.env`에 `ADMIN_PASSWORD`, `SESSION_SECRET`만 둔다(DATABASE_URL/NODE_ENV는 compose가 지정). `ports`를 loopback에 바인딩해 외부 비노출(nginx만 접근).
 
 **Step 2: Commit**
+
 ```bash
 git add compose.yaml
 git commit -m "build: 서버 배포용 compose.yaml(SQLite 볼륨, loopback 바인딩)"
@@ -172,9 +184,11 @@ git commit -m "build: 서버 배포용 compose.yaml(SQLite 볼륨, loopback 바�
 ## Task 4: GitHub Actions 워크플로
 
 **Files:**
+
 - Create: `.github/workflows/deploy.yml`
 
 **Step 1: 작성**
+
 ```yaml
 name: Deploy
 
@@ -240,6 +254,7 @@ jobs:
             docker compose up -d
             docker image prune -f
 ```
+
 > `secrets.GITHUB_TOKEN`은 자동 제공(GHCR push용). 서버 pull은 이미지가 public이라 인증 불필요. `SSH_HOST/SSH_USER/SSH_KEY`는 사용자가 등록.
 
 **Step 2: YAML 문법 점검**
@@ -247,6 +262,7 @@ Run: `python3 -c "import yaml,sys; yaml.safe_load(open('.github/workflows/deploy
 Expected: `YAML OK`
 
 **Step 3: Commit**
+
 ```bash
 git add .github/workflows/deploy.yml
 git commit -m "ci: test→GHCR build/push→SSH 배포 워크플로"
@@ -257,9 +273,11 @@ git commit -m "ci: test→GHCR build/push→SSH 배포 워크플로"
 ## Task 5: 배포 가이드 문서
 
 **Files:**
+
 - Create: `docs/deploy/lightsail.md`
 
 **Step 1: 작성** — 아래 내용(서버 1회 설정 전 과정):
+
 - Lightsail 인스턴스(Ubuntu 24.04, x86_64) 생성, 고정 IP `3.34.132.108` 연결, 방화벽 22/80/443.
 - 서버 패키지 설치:
   ```bash
@@ -310,6 +328,7 @@ git commit -m "ci: test→GHCR build/push→SSH 배포 워크플로"
 - 롤백: `docker compose pull` 대신 특정 태그 `ghcr.io/...:<sha>`로 `compose.yaml` 수정 후 `up -d`.
 
 **Step 2: Commit**
+
 ```bash
 git add docs/deploy/lightsail.md
 git commit -m "docs: Lightsail 인프라 설정 + nginx/certbot/시크릿 배포 가이드"
@@ -323,6 +342,7 @@ git commit -m "docs: Lightsail 인프라 설정 + nginx/certbot/시크릿 배포
 Run: `docker version --format '{{.Server.Version}}' 2>/dev/null && echo HAS_DOCKER || echo NO_DOCKER`
 
 **분기 A — 로컬 Docker 있음:**
+
 ```bash
 docker build -t byjang-test .
 # 임시 볼륨으로 기동 (테스트 env)
@@ -334,9 +354,11 @@ curl -s -o /dev/null -w "/feed=%{http_code}\n" http://localhost:3010/feed   # 20
 docker logs byjang-test | grep -i "migrate\|started\|error" | head
 docker rm -f byjang-test && rm -rf .docker-data
 ```
+
 빌드 실패 시(better-sqlite3 native/dotenv/prisma 누락) Dockerfile의 보완 COPY를 추가하고 재빌드.
 
 **분기 B — 로컬 Docker 없음:**
+
 - Docker 빌드 검증은 push 후 GitHub Actions `build-and-push` job 로그로 수행한다(서버 시크릿 없이도 build/push까지 검증됨; `deploy` job은 SSH 시크릿 없으면 실패하지만 그 전 단계까지 통과로 이미지 빌드 가능성 확인).
 - 로컬에서는 정적 점검만: `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/deploy.yml'))"`, Dockerfile 린트(가능하면 `hadolint` 없으면 생략).
 
@@ -351,20 +373,25 @@ Expected: 모두 통과(standalone 빌드 포함).
 ## Task 7: 푸시 + PR
 
 **Step 1: 푸시**
+
 ```bash
 git push -u origin feature/lightsail-deploy
 ```
-> push 시 워크플로가 도는데, 서버 시크릿(SSH_*)이 아직 없으면 `deploy` job만 실패한다(정상). `test`·`build-and-push` 통과로 이미지 빌드 가능성·CI 게이트 검증.
+
+> push 시 워크플로가 도는데, 서버 시크릿(SSH\_\*)이 아직 없으면 `deploy` job만 실패한다(정상). `test`·`build-and-push` 통과로 이미지 빌드 가능성·CI 게이트 검증.
 
 **Step 2: PR 생성**
+
 ```bash
 gh pr create --base main --head feature/lightsail-deploy --title "Lightsail Docker 배포 + GitHub Actions (4단계)" --body "..."
 ```
 
 **Step 3: 사용자 안내**
+
 - 서버 1회 설정(`docs/deploy/lightsail.md`) → GitHub Secrets 등록 → 이미지 public 전환 → 재실행 시 deploy까지 성공.
 
 ---
 
 ## 작업 순서 요약
+
 1 standalone+dockerignore → 2 Dockerfile+entrypoint → 3 compose → 4 workflow → 5 배포 가이드 → 6 검증(로컬 docker 또는 CI) → 7 push+PR

@@ -25,32 +25,28 @@ export async function ogImage(
   const text = title.length > 70 ? `${title.slice(0, 70)}…` : title;
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          height: "100%",
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          background: "#0F172A",
-          color: "#ffffff",
-          padding: "72px 80px",
-          fontFamily: "Pretendard",
-        }}
-      >
-        <div style={{ fontSize: 30, color: "#94a3b8" }}>{subtitle}</div>
-        <div style={{ display: "flex", fontSize: 64, lineHeight: 1.25 }}>
-          {text}
-        </div>
-        <div style={{ fontSize: 26, color: "#64748b" }}>by-jang-blog.xyz</div>
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        background: "#0F172A",
+        color: "#ffffff",
+        padding: "72px 80px",
+        fontFamily: "Pretendard",
+      }}
+    >
+      <div style={{ fontSize: 30, color: "#94a3b8" }}>{subtitle}</div>
+      <div style={{ display: "flex", fontSize: 64, lineHeight: 1.25 }}>
+        {text}
       </div>
-    ),
+      <div style={{ fontSize: 26, color: "#64748b" }}>by-jang-blog.xyz</div>
+    </div>,
     {
       ...OG_SIZE,
-      fonts: [
-        { name: "Pretendard", data: font, weight: 600, style: "normal" },
-      ],
+      fonts: [{ name: "Pretendard", data: font, weight: 600, style: "normal" }],
     },
   );
 }

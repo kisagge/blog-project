@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: vi.fn() }));
-vi.mock("@/lib/client-ip", () => ({ getClientIp: vi.fn(async () => "1.2.3.4") }));
+vi.mock("@/lib/client-ip", () => ({
+  getClientIp: vi.fn(async () => "1.2.3.4"),
+}));
 vi.mock("@/lib/users", () => ({ createPendingUser: vi.fn() }));
 
 import { signup } from "@/app/signup/actions";
@@ -72,6 +74,8 @@ describe("signup action", () => {
       const r = await signup(undefined, fd(VALID));
       expect(r?.error).not.toBe(TOO_MANY_REQUESTS);
     }
-    expect(await signup(undefined, fd(VALID))).toEqual({ error: TOO_MANY_REQUESTS });
+    expect(await signup(undefined, fd(VALID))).toEqual({
+      error: TOO_MANY_REQUESTS,
+    });
   });
 });

@@ -18,7 +18,9 @@ export default function BackToTopButton() {
 
   function toTop() {
     // JS smooth는 전역 CSS scroll-behavior override가 적용되지 않으므로 직접 분기.
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   }
 

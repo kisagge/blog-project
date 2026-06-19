@@ -58,7 +58,7 @@ export default async function StatsPage() {
                 className="flex items-center justify-between gap-3 py-2 text-sm"
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="w-5 shrink-0 text-right tabular-nums text-zinc-400">
+                  <span className="w-5 shrink-0 text-right text-zinc-400 tabular-nums">
                     {i + 1}
                   </span>
                   <Link
@@ -68,7 +68,7 @@ export default async function StatsPage() {
                     {f.title}
                   </Link>
                 </span>
-                <span className="shrink-0 tabular-nums text-zinc-500">
+                <span className="shrink-0 text-zinc-500 tabular-nums">
                   조회 {f.viewCount.toLocaleString()}
                 </span>
               </li>

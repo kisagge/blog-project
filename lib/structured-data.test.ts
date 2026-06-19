@@ -78,7 +78,9 @@ describe("buildFeedJsonLd", () => {
 
 describe("jsonLdHtml", () => {
   test("'<'를 이스케이프해 </script> 주입을 차단하되 JSON은 유효", () => {
-    const html = jsonLdHtml(buildFeedJsonLd({ ...base, title: "</script><b>x" }, "글쓴이"));
+    const html = jsonLdHtml(
+      buildFeedJsonLd({ ...base, title: "</script><b>x" }, "글쓴이"),
+    );
     expect(html).not.toContain("<");
     expect(html).toContain("\\u003c");
     // 이스케이프를 되돌리면 그대로 파싱 가능(유효 JSON).

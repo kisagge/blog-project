@@ -1,5 +1,13 @@
 // @vitest-environment node
-import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 import { encrypt } from "@/lib/jwt";
 
@@ -9,13 +17,17 @@ vi.mock("server-only", () => ({}));
 let token: string | undefined;
 vi.mock("next/headers", () => ({
   cookies: async () => ({
-    get: (k: string) => (k === "session" && token ? { value: token } : undefined),
+    get: (k: string) =>
+      k === "session" && token ? { value: token } : undefined,
   }),
 }));
 
 // redirect는 NEXT_REDIRECT throw로 흉내.
 const redirectMock = vi.fn((url: string) => {
-  const e = new Error("NEXT_REDIRECT") as Error & { digest?: string; url?: string };
+  const e = new Error("NEXT_REDIRECT") as Error & {
+    digest?: string;
+    url?: string;
+  };
   e.digest = "NEXT_REDIRECT";
   e.url = url;
   throw e;
@@ -42,10 +54,20 @@ beforeAll(async () => {
   cleanup = db.cleanup;
   prisma = db.prisma as Prisma;
   const a = await prisma.user.create({
-    data: { email: "ap@x.com", nickname: "승인", passwordHash: "-", status: "approved" },
+    data: {
+      email: "ap@x.com",
+      nickname: "승인",
+      passwordHash: "-",
+      status: "approved",
+    },
   });
   const p = await prisma.user.create({
-    data: { email: "pe@x.com", nickname: "대기", passwordHash: "-", status: "pending" },
+    data: {
+      email: "pe@x.com",
+      nickname: "대기",
+      passwordHash: "-",
+      status: "pending",
+    },
   });
   approvedId = a.id;
   pendingId = p.id;
@@ -67,15 +89,28 @@ describe("dal", () => {
   });
 
   test("승인 member: role member, getMemberSession 세션, isBlockedMember false", async () => {
-    token = await encrypt({ role: "member", userId: approvedId, nickname: "승인", expiresAt: exp });
+    token = await encrypt({
+      role: "member",
+      userId: approvedId,
+      nickname: "승인",
+      expiresAt: exp,
+    });
     const dal = await freshDal();
     expect(await dal.getViewerRole()).toBe("member");
-    expect(await dal.getMemberSession()).toMatchObject({ role: "member", userId: approvedId });
+    expect(await dal.getMemberSession()).toMatchObject({
+      role: "member",
+      userId: approvedId,
+    });
     expect(await dal.isBlockedMember()).toBe(false);
   });
 
   test("미승인(차단) member: getMemberSession null, isBlockedMember true", async () => {
-    token = await encrypt({ role: "member", userId: pendingId, nickname: "대기", expiresAt: exp });
+    token = await encrypt({
+      role: "member",
+      userId: pendingId,
+      nickname: "대기",
+      expiresAt: exp,
+    });
     const dal = await freshDal();
     expect(await dal.getMemberSession()).toBeNull();
     expect(await dal.isBlockedMember()).toBe(true);
@@ -90,7 +125,12 @@ describe("dal", () => {
   });
 
   test("비admin: verifySession이 redirect('/login') throw", async () => {
-    token = await encrypt({ role: "member", userId: approvedId, nickname: "승인", expiresAt: exp });
+    token = await encrypt({
+      role: "member",
+      userId: approvedId,
+      nickname: "승인",
+      expiresAt: exp,
+    });
     const dal = await freshDal();
     await expect(dal.verifySession()).rejects.toThrow("NEXT_REDIRECT");
     expect(redirectMock).toHaveBeenCalledWith("/login");

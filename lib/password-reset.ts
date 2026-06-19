@@ -33,7 +33,10 @@ export async function requestPasswordReset(
       orderBy: { createdAt: "desc" },
       select: { createdAt: true, expiresAt: true },
     });
-    if (recent && Date.now() - recent.createdAt.getTime() < RESEND_COOLDOWN_MS) {
+    if (
+      recent &&
+      Date.now() - recent.createdAt.getTime() < RESEND_COOLDOWN_MS
+    ) {
       return { expiresAt: recent.expiresAt };
     }
     const code = generateCode();

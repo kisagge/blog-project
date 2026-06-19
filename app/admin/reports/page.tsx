@@ -45,7 +45,10 @@ export default async function AdminReportsPage() {
                   <p className="mt-1 text-xs text-zinc-500">
                     작성자{" "}
                     {q.authorId ? (
-                      <Link href={`/u/${q.authorId}`} className="hover:underline">
+                      <Link
+                        href={`/u/${q.authorId}`}
+                        className="hover:underline"
+                      >
                         {q.authorNickname}
                       </Link>
                     ) : (

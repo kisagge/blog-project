@@ -15,7 +15,9 @@ const KEY = "byjang-draft:admin:new";
 
 describe("FeedForm 초안 자동저장(uncontrolled)", () => {
   test("입력 시 초안이 localStorage에 저장", async () => {
-    const { container } = render(<FeedForm action={action} submitLabel="저장" />);
+    const { container } = render(
+      <FeedForm action={action} submitLabel="저장" />,
+    );
     const ta = container.querySelector(
       'textarea[name="content"]',
     ) as HTMLTextAreaElement;
@@ -41,14 +43,20 @@ describe("FeedForm 초안 자동저장(uncontrolled)", () => {
         },
       }),
     );
-    const { container } = render(<FeedForm action={action} submitLabel="저장" />);
+    const { container } = render(
+      <FeedForm action={action} submitLabel="저장" />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "복원" }));
     expect(
-      (container.querySelector('input[name="title"]') as HTMLInputElement).value,
+      (container.querySelector('input[name="title"]') as HTMLInputElement)
+        .value,
     ).toBe("제목초안");
     expect(
-      (container.querySelector('textarea[name="content"]') as HTMLTextAreaElement)
-        .value,
+      (
+        container.querySelector(
+          'textarea[name="content"]',
+        ) as HTMLTextAreaElement
+      ).value,
     ).toBe("본문초안");
   });
 });

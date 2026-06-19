@@ -44,11 +44,7 @@ export default function SigninForm({ siteKey }: { siteKey?: string }) {
         </p>
       )}
       <TurnstileWidget siteKey={siteKey} resetSignal={state} />
-      <button
-        type="submit"
-        disabled={pending}
-        className={PRIMARY_BTN}
-      >
+      <button type="submit" disabled={pending} className={PRIMARY_BTN}>
         {pending ? "확인 중…" : "로그인"}
       </button>
       <div className="flex items-center justify-between text-sm text-zinc-500">

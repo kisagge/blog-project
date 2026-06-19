@@ -49,7 +49,9 @@ export default function FeedCardItem({
           ) : (
             <span>{card.authorName} · </span>
           ))}
-        <time dateTime={isoInstant(card.createdAt)}>{kstDate(card.createdAt)}</time>
+        <time dateTime={isoInstant(card.createdAt)}>
+          {kstDate(card.createdAt)}
+        </time>
         <span> · 조회 {card.viewCount.toLocaleString()}</span>
       </p>
       {card.tags.length > 0 && (

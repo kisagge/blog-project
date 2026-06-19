@@ -67,7 +67,9 @@ export function pruneDrafts(): void {
     const survivors: { key: string; savedAt: number }[] = [];
     for (const k of keys) {
       try {
-        const p = JSON.parse(store.getItem(k) || "null") as Stored<unknown> | null;
+        const p = JSON.parse(
+          store.getItem(k) || "null",
+        ) as Stored<unknown> | null;
         const savedAt = p && typeof p.savedAt === "number" ? p.savedAt : 0;
         if (Date.now() - savedAt > TTL_MS) {
           store.removeItem(k); // 만료

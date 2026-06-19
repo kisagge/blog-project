@@ -10,10 +10,13 @@ export async function proxy(req: NextRequest) {
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!rateLimit(`req:${ip}`, REQ_LIMIT, REQ_WINDOW_MS)) {
-    return new NextResponse("요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", {
-      status: 429,
-      headers: { "Retry-After": "10" },
-    });
+    return new NextResponse(
+      "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+      {
+        status: 429,
+        headers: { "Retry-After": "10" },
+      },
+    );
   }
 
   // 관리자 경로 가드.

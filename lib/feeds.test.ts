@@ -261,7 +261,10 @@ describe("searchFeeds", () => {
         updatedAt: new Date(2026, 2, 4),
       },
     });
-    const { items } = await searchFeeds({ role: "anon", q: "사과나무 바나나칩" });
+    const { items } = await searchFeeds({
+      role: "anon",
+      q: "사과나무 바나나칩",
+    });
     expect(items.map((f) => f.slug)).toEqual(["and-both"]);
     await prisma.feed.delete({ where: { id: "and-both" } });
     await prisma.feed.delete({ where: { id: "and-one" } });
@@ -350,8 +353,13 @@ describe("searchFeeds", () => {
   test("author=admin: 관리자 글만(회원 글 제외)", async () => {
     // 회원 작성 글은 author=admin에 안 나옴
     expect(
-      (await searchFeeds({ role: "member", q: "회원작성단어", author: "admin" }))
-        .items,
+      (
+        await searchFeeds({
+          role: "member",
+          q: "회원작성단어",
+          author: "admin",
+        })
+      ).items,
     ).toHaveLength(0);
     // 관리자 회원공개 글은 나옴
     const a = await searchFeeds({
@@ -369,8 +377,13 @@ describe("searchFeeds", () => {
     expect(m.items.map((f) => f.slug)).toContain("umem-1");
     // 관리자 회원공개 글(mem-1)은 회원 목록에 없음
     expect(
-      (await searchFeeds({ role: "member", q: "회원전용단어", author: "member" }))
-        .items,
+      (
+        await searchFeeds({
+          role: "member",
+          q: "회원전용단어",
+          author: "member",
+        })
+      ).items,
     ).toHaveLength(0);
     // 작성자 닉네임이 실려옴
     const card = m.items.find((f) => f.slug === "umem-1");
@@ -381,7 +394,14 @@ describe("searchFeeds", () => {
     const { setFeedTags } = await import("@/lib/tags");
     const mk = async (id: string, vis = "public", status = "published") => {
       await prisma.feed.create({
-        data: { id, slug: id, title: id, content: "c", visibility: vis, status },
+        data: {
+          id,
+          slug: id,
+          title: id,
+          content: "c",
+          visibility: vis,
+          status,
+        },
       });
     };
     await mk("rel-base");
@@ -449,7 +469,11 @@ describe("getPublicTopFeeds", () => {
     await mk("top-a", { visibility: "public", viewCount: 500 });
     await mk("top-b", { visibility: "public", viewCount: 300 });
     await mk("top-mem", { visibility: "members", viewCount: 999 });
-    await mk("top-hidden", { visibility: "public", viewCount: 999, hiddenAt: new Date() });
+    await mk("top-hidden", {
+      visibility: "public",
+      viewCount: 999,
+      hiddenAt: new Date(),
+    });
 
     const anon = (await getPublicTopFeeds("anon")).map((f) => f.slug);
     expect(anon).not.toContain("top-hidden"); // 신고 숨김 제외

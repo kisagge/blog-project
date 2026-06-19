@@ -102,7 +102,10 @@ export default function CommentItem({
         ) : (
           <span className="font-medium">{node.nickname}</span>
         )}
-        <time dateTime={isoInstant(node.createdAt)} className="text-xs text-zinc-400">
+        <time
+          dateTime={isoInstant(node.createdAt)}
+          className="text-xs text-zinc-400"
+        >
           {kstDateTime(node.createdAt)}
         </time>
         {node.edited && !gone && (

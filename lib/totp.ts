@@ -52,7 +52,10 @@ export function verifyTotp(
     const counter = step + w;
     if (counter < 0) continue;
     const candidate = Buffer.from(hotp(key, counter));
-    if (candidate.length === target.length && timingSafeEqual(candidate, target))
+    if (
+      candidate.length === target.length &&
+      timingSafeEqual(candidate, target)
+    )
       return true;
   }
   return false;

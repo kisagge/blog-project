@@ -55,8 +55,8 @@ app/
 ## 데이터 접근 레이어 — `lib/feeds.ts`
 
 ```ts
-getPublishedFeeds()   // where published=true, orderBy createdAt desc, 목록용 필드만 select
-getFeedBySlug(slug)   // where { slug, published: true }, 없으면 null
+getPublishedFeeds(); // where published=true, orderBy createdAt desc, 목록용 필드만 select
+getFeedBySlug(slug); // where { slug, published: true }, 없으면 null
 ```
 
 - **공개 페이지는 항상 `published: true`만 노출** (초안 차단을 where 조건으로 강제).

@@ -48,11 +48,7 @@ export default function LoginForm({
           {state.error}
         </p>
       )}
-      <button
-        type="submit"
-        disabled={pending}
-        className={PRIMARY_BTN}
-      >
+      <button type="submit" disabled={pending} className={PRIMARY_BTN}>
         {pending ? "확인 중…" : "로그인"}
       </button>
     </form>

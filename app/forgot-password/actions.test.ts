@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: vi.fn() }));
-vi.mock("@/lib/client-ip", () => ({ getClientIp: vi.fn(async () => "1.2.3.4") }));
+vi.mock("@/lib/client-ip", () => ({
+  getClientIp: vi.fn(async () => "1.2.3.4"),
+}));
 vi.mock("@/lib/password-reset", () => ({
   requestPasswordReset: vi.fn(),
   verifyResetCode: vi.fn(),
@@ -123,14 +125,22 @@ describe("verifyCode (2단계)", () => {
   });
 
   test("코드 형식 오류 → error", async () => {
-    getCk.mockResolvedValue({ email: "a@x.com", expiresAt: "", verified: false });
+    getCk.mockResolvedValue({
+      email: "a@x.com",
+      expiresAt: "",
+      verified: false,
+    });
     expect(await verifyCode(undefined, fd({ code: "12" }))).toEqual({
       error: "6자리 숫자 코드를 입력하세요.",
     });
   });
 
   test("코드 불일치 → error(verifyResetCode 결과)", async () => {
-    getCk.mockResolvedValue({ email: "a@x.com", expiresAt: "", verified: false });
+    getCk.mockResolvedValue({
+      email: "a@x.com",
+      expiresAt: "",
+      verified: false,
+    });
     vrc.mockResolvedValue({ ok: false, error: "코드가 일치하지 않습니다." });
     expect(await verifyCode(undefined, fd({ code: "123456" }))).toEqual({
       error: "코드가 일치하지 않습니다.",
@@ -138,11 +148,15 @@ describe("verifyCode (2단계)", () => {
   });
 
   test("성공 → setResetCookie(verified:true) + redirect(reset)", async () => {
-    getCk.mockResolvedValue({ email: "a@x.com", expiresAt: "", verified: false });
+    getCk.mockResolvedValue({
+      email: "a@x.com",
+      expiresAt: "",
+      verified: false,
+    });
     vrc.mockResolvedValue({ ok: true });
-    await expect(
-      verifyCode(undefined, fd({ code: "123456" })),
-    ).rejects.toThrow("NEXT_REDIRECT");
+    await expect(verifyCode(undefined, fd({ code: "123456" }))).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
     expect(setCk).toHaveBeenCalledWith(
       expect.objectContaining({ email: "a@x.com", verified: true }),
     );
@@ -152,15 +166,26 @@ describe("verifyCode (2단계)", () => {
 
 describe("submitNewPassword (3단계)", () => {
   test("미인증 쿠키 → redirect(forgot-password)", async () => {
-    getCk.mockResolvedValue({ email: "a@x.com", expiresAt: "", verified: false });
+    getCk.mockResolvedValue({
+      email: "a@x.com",
+      expiresAt: "",
+      verified: false,
+    });
     await expect(
-      submitNewPassword(undefined, fd({ password: "Abcdef1!", confirm: "Abcdef1!" })),
+      submitNewPassword(
+        undefined,
+        fd({ password: "Abcdef1!", confirm: "Abcdef1!" }),
+      ),
     ).rejects.toThrow("NEXT_REDIRECT");
     expect(rd).toHaveBeenCalledWith("/forgot-password");
   });
 
   test("비밀번호 불일치 → zod 필드 에러", async () => {
-    getCk.mockResolvedValue({ email: "a@x.com", expiresAt: "", verified: true });
+    getCk.mockResolvedValue({
+      email: "a@x.com",
+      expiresAt: "",
+      verified: true,
+    });
     const r = await submitNewPassword(
       undefined,
       fd({ password: "Abcdef1!", confirm: "Different1!" }),
@@ -170,10 +195,17 @@ describe("submitNewPassword (3단계)", () => {
   });
 
   test("성공 → clearResetCookie + redirect(signin?reset=1)", async () => {
-    getCk.mockResolvedValue({ email: "a@x.com", expiresAt: "", verified: true });
+    getCk.mockResolvedValue({
+      email: "a@x.com",
+      expiresAt: "",
+      verified: true,
+    });
     rp.mockResolvedValue({ ok: true });
     await expect(
-      submitNewPassword(undefined, fd({ password: "Abcdef1!", confirm: "Abcdef1!" })),
+      submitNewPassword(
+        undefined,
+        fd({ password: "Abcdef1!", confirm: "Abcdef1!" }),
+      ),
     ).rejects.toThrow("NEXT_REDIRECT");
     expect(clearCk).toHaveBeenCalled();
     expect(rd).toHaveBeenCalledWith("/signin?reset=1");

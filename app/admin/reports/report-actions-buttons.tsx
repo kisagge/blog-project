@@ -13,8 +13,10 @@ type Props = {
   kind: "pending" | "hidden";
 };
 
-const OUTLINE = "rounded border border-black/15 px-2 py-1 text-xs disabled:opacity-50 dark:border-white/20";
-const DANGER_OUTLINE = "rounded border border-red-300 px-2 py-1 text-xs text-red-600 disabled:opacity-50";
+const OUTLINE =
+  "rounded border border-black/15 px-2 py-1 text-xs disabled:opacity-50 dark:border-white/20";
+const DANGER_OUTLINE =
+  "rounded border border-red-300 px-2 py-1 text-xs text-red-600 disabled:opacity-50";
 
 /** 신고 큐 액션(숨김/기각) 또는 가려진 항목 액션(숨김 해제). 공용 ConfirmDialog 사용. */
 export default function ReportActionButtons({

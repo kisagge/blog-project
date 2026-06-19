@@ -14,7 +14,7 @@ export default function StatBarList({ data }: { data: TrendPoint[] }) {
           <span className="flex-1">
             <span
               aria-hidden
-              className="block h-3 rounded bg-foreground/70"
+              className="bg-foreground/70 block h-3 rounded"
               style={{ width: `${(d.count / max) * 100}%` }}
             />
           </span>

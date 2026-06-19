@@ -159,7 +159,11 @@ export async function editCommentAction(
   const res = await editComment(commentId, actor.userId, content);
   if (!res.ok) return { error: res.error };
   revalidate(slug);
-  publishComment(feedId, { kind: "edited", id: commentId, content: res.content });
+  publishComment(feedId, {
+    kind: "edited",
+    id: commentId,
+    content: res.content,
+  });
   return { ok: true };
 }
 

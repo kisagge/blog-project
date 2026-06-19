@@ -61,12 +61,19 @@ describe("backup-db.sh", () => {
 
     // 복원: gunzip → 무결성·행 수 확인.
     const restored = join(dir, "restored.db");
-    execFileSync("sh", ["-c", `gunzip -c '${join(backups, files[0])}' > '${restored}'`]);
+    execFileSync("sh", [
+      "-c",
+      `gunzip -c '${join(backups, files[0])}' > '${restored}'`,
+    ]);
     expect(
-      execFileSync("sqlite3", [restored, "PRAGMA integrity_check;"]).toString().trim(),
+      execFileSync("sqlite3", [restored, "PRAGMA integrity_check;"])
+        .toString()
+        .trim(),
     ).toBe("ok");
     expect(
-      execFileSync("sqlite3", [restored, "SELECT count(*) FROM t;"]).toString().trim(),
+      execFileSync("sqlite3", [restored, "SELECT count(*) FROM t;"])
+        .toString()
+        .trim(),
     ).toBe("2");
   });
 

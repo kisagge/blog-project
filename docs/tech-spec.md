@@ -65,6 +65,8 @@ CI/CD: main push → GitHub Actions
 - **디스크 고갈**: 누적된 미사용 이미지로 `/`가 차서 레이어 압축 해제가 정지 → `pull` 전 정리 단계 추가 + 단계별 계측 로깅.
 - **메모리 부족(OOM)**: 512MB 인스턴스에서 배포 중 OOM으로 컨테이너 사망(→ 504) → 스왑 2GB 추가로 해소, 인스턴스 증설 권고.
 - **배포 워크플로**: `test → build/push(GHCR) → SSH 배포(+ `prisma migrate deploy`)`. 수동 트리거(workflow_dispatch) 지원, 타임아웃으로 실패 가시화.
+- **CI 위생 게이트**: test 잡이 `tsc → eslint → prettier --check → vitest → pnpm audit(--prod --audit-level critical)`를 통과해야 빌드·배포로 진행. 포맷·**critical 런타임 취약점** 회귀를 머지 전 차단(현 prod 취약점은 전부 `prisma>@prisma/dev>hono` 전이의존이라 critical 게이트는 green 유지, high/moderate는 Dependabot이 처리).
+- **의존성 자동화**: `.github/dependabot.yml`이 npm·GitHub Actions·Docker 베이스이미지를 주간 점검, minor/patch는 그룹 PR 1개로 묶고 major는 개별 PR로 분리(공급망·핀 회귀 차단, PR 노이즈 최소화).
 
 ### 4.3 Prisma 7 드라이버 어댑터
 

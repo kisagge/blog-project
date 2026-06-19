@@ -13,11 +13,11 @@
 
 `Feed`에 컬럼 추가:
 
-| 컬럼          | 타입            | 의미                                            |
-| ------------- | --------------- | ----------------------------------------------- |
-| `authorId`    | `String?`       | `null`=관리자/기존 글, 값=회원 작성자(User.id)  |
-| `status`      | `String`        | `"draft"` \| `"published"` (기본 `published`)   |
-| `publishedAt` | `DateTime?`     | 게시(공개 전환) 시각. 하루 게시 제한·표시에 사용 |
+| 컬럼          | 타입        | 의미                                             |
+| ------------- | ----------- | ------------------------------------------------ |
+| `authorId`    | `String?`   | `null`=관리자/기존 글, 값=회원 작성자(User.id)   |
+| `status`      | `String`    | `"draft"` \| `"published"` (기본 `published`)    |
+| `publishedAt` | `DateTime?` | 게시(공개 전환) 시각. 하루 게시 제한·표시에 사용 |
 
 - `author User? @relation(onDelete: Cascade)` — 회원 삭제 시 그 회원의 글도 삭제.
 - `@@index([authorId, status])`.
