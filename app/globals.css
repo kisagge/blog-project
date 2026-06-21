@@ -77,6 +77,17 @@ body {
     box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 18%, transparent);
   }
 
+  /* 버튼·링크·summary 키보드 포커스 시 일관된 가시 링(브라우저 기본 대체).
+     이 요소들엔 outline-none 인라인이 없어 outline이 정상 적용됨. */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid color-mix(in srgb, currentColor 50%, transparent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   /* 얇고 은은한 테마 대응 스크롤바(페이지·댓글 입력 등). */
   * {
     scrollbar-width: thin;

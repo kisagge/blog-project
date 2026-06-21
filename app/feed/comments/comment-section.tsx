@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { CommentNode, CommentSort } from "@/lib/comments";
 import { ToastViewport, useToast } from "@/app/toast";
+import { prefersReducedMotion } from "@/lib/motion";
 import { useFeedEvent } from "../feed-events-context";
 import CommentForm from "./comment-form";
 import CommentItem from "./comment-item";
@@ -67,7 +68,10 @@ export default function CommentSection({
     requestAnimationFrame(() => {
       const el = document.getElementById(`comment-${id}`);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.scrollIntoView({
+          behavior: prefersReducedMotion() ? "auto" : "smooth",
+          block: "center",
+        });
         setHighlightId(id);
       } else {
         // 삭제됐거나(답글 없는 댓글 hard delete) 현재 페이지에 없는 댓글로의 딥링크.
