@@ -147,7 +147,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 450 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 454 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -194,7 +194,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 
 - **인기 글**: `getPublicTopFeeds(role)`가 누적 조회수순으로 게시·미숨김 글을 **뷰어 가시 범위**(`listableVisibilities`)로 반환 — admin 전용 `getTopFeeds`와 달리 visibility를 필터해 공개 노출에 안전. 카드 UI는 `FeedCardItem` 재사용.
 - **태그 인덱스**: `getTagsWithCounts(role)`가 `feedTag.groupBy` + 관계 `where`(가시 글)로 글 수를 집계해, **가시 글이 1개 이상인 태그만** 글 수와 함께 내림차순 반환(비공개/숨김 전용 태그는 빈 링크가 되지 않게 제외).
-- **태그 전용 라우트** `/feed/tags/[slug]`: 기존 `?tag=` 쿼리 필터 대신 **태그별 canonical URL + `CollectionPage`/`ItemList`/`BreadcrumbList` JSON-LD**(`buildTagJsonLd`)를 가진 SSR 라우트. `getFeedsByTag(slug, role)`가 해당 태그·뷰어 가시 글(관리자+회원)을 최신순 반환(태그 인덱스와 동일 범위라 클릭 시 404 없음; 가시 글 0 && 비admin → 404로 비공개 전용 태그 은닉), 카드·구조화 데이터 모두 `listableVisibilities(role)` 가시분만 노출. 태그 칩(카드·인덱스)을 이 라우트로 모아 내부 링크 집중, sitemap에 전체공개 태그 페이지 추가. `?tag=`는 하위호환 유지.
+- **태그 전용 라우트** `/feed/tags/[slug]`: 기존 `?tag=` 쿼리 필터 대신 **태그별 canonical URL + `CollectionPage`/`ItemList`/`BreadcrumbList` JSON-LD**(`buildTagJsonLd`)를 가진 SSR 라우트. `getFeedsByTag(slug, role)`가 해당 태그·뷰어 가시 글(관리자+회원)을 최신순 반환(태그 인덱스와 동일 범위라 클릭 시 404 없음; 가시 글 0 && 비admin → 404로 비공개 전용 태그 은닉), 카드·구조화 데이터 모두 `listableVisibilities(role)` 가시분만 노출. 태그 칩(카드·인덱스)을 이 라우트로 모아 내부 링크 집중, sitemap에 전체공개 태그 페이지 추가. `?tag=`는 하위호환 유지. **유니코드 정규화**: 슬러그는 저장 시 `slugifyTag`가 NFC로 통일하고 조회(`getTagBySlug`·`getFeedsByTag`)는 NFC·NFD를 함께 매칭 — Next가 요청 경로를 NFC로 정규화하므로, NFD(자모 분해형, macOS 입력 등)로 저장된 한글 태그 클릭이 404 나던 회귀를 마이그레이션 없이 해소.
 - **프로필 댓글 딥링크**: `/u/[id]` 최근 댓글 클릭 시 `/feed/{slug}?c={commentId}`로 이동해 해당 댓글/대댓글로 스크롤·하이라이트(알림 딥링크와 동일 메커니즘 — `comment-item`이 대댓글이면 부모 스레드 자동 펼침).
 - 진입은 nav 드로어·홈 둘러보기 카드·sitemap(전체공개 관리자 글이 있는 개별 태그 URL 포함)에 추가.
 
@@ -240,5 +240,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 450), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 454), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

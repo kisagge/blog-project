@@ -3,6 +3,7 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 import { makeSnippet } from "@/lib/content";
+import { tagSlugVariants } from "@/lib/tags";
 
 export const FEED_PAGE_SIZE = 10;
 
@@ -159,13 +160,14 @@ export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
 // 태그 전용 라우트용: 해당 태그가 달린 게시·미숨김·뷰어 가시 글(관리자+회원) 최신순.
 // 태그는 전역 사전이고 인덱스(getTagsWithCounts)도 작성자 무관 집계라, 상세도 작성자
 // 무관으로 맞춰 인덱스↔상세 불일치(회원 글 태그 클릭 시 404)를 제거. 개인 블로그 규모상 무페이지네이션.
+// 슬러그는 NFC·NFD 두 형태로 매칭 — NFD로 저장된 한글 태그도 NFC 요청 경로로 찾는다.
 export async function getFeedsByTag(slug: string, role: ViewerRole) {
   return prisma.feed.findMany({
     where: {
       status: "published",
       hiddenAt: null,
       visibility: { in: listableVisibilities(role) },
-      feedTags: { some: { tag: { slug } } },
+      feedTags: { some: { tag: { slug: { in: tagSlugVariants(slug) } } } },
     },
     orderBy: { createdAt: "desc" },
     select: FEED_LIST_SELECT,

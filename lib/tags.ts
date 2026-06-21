@@ -5,15 +5,25 @@ import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 export const MAX_TAGS = 5; // 글당 최대 태그 수
 export const MAX_TAG_LEN = 20; // 태그 1개 최대 길이
 
-// 정규화 슬러그: trim → 소문자 → 내부 공백을 하이픈으로 → 연속/양끝 하이픈 정리.
-// 한글 등 비ASCII는 보존(제거하지 않음).
+// 정규화 슬러그: trim → 유니코드 NFC → 소문자 → 내부 공백을 하이픈으로 → 연속/양끝 하이픈 정리.
+// 한글 등 비ASCII는 보존(제거하지 않음). NFC 정규화로 자모 분해형(NFD, 예: macOS 입력)도
+// 합성형으로 통일 — Next가 요청 경로를 NFC로 정규화하므로 저장 슬러그도 NFC여야 조회가 맞는다.
 export function slugifyTag(name: string): string {
   return name
     .trim()
+    .normalize("NFC")
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+// 슬러그 조회용 정규화 변형: NFC·NFD를 함께 반환(중복 제거).
+// 기존에 NFD로 저장된 슬러그도 마이그레이션 없이 찾도록, 조회 시 두 형태를 모두 매칭한다.
+export function tagSlugVariants(slug: string): string[] {
+  const nfc = slug.normalize("NFC");
+  const nfd = slug.normalize("NFD");
+  return nfc === nfd ? [nfc] : [nfc, nfd];
 }
 
 // 콤마 구분 입력 → 표시명 배열. slug 기준 중복 제거, 빈/초과길이 제외, 최대 MAX_TAGS개로 잘라냄.
@@ -67,8 +77,8 @@ export async function getTagsWithCounts(
 export async function getTagBySlug(
   slug: string,
 ): Promise<{ name: string; slug: string } | null> {
-  return prisma.tag.findUnique({
-    where: { slug },
+  return prisma.tag.findFirst({
+    where: { slug: { in: tagSlugVariants(slug) } },
     select: { name: true, slug: true },
   });
 }

@@ -512,6 +512,24 @@ describe("searchFeeds", () => {
   test("getFeedsByTag: 없는 태그는 빈 목록", async () => {
     expect(await getFeedsByTag("존재안함", "admin")).toHaveLength(0);
   });
+
+  test("getFeedsByTag: NFD로 저장된 한글 태그를 NFC 요청으로 찾음(태그 404 회귀 방지)", async () => {
+    // 레거시처럼 NFD 슬러그를 직접 삽입(pub-3=고양이 공개 글에 부착).
+    const nfd = "옛고양".normalize("NFD");
+    const nfc = "옛고양".normalize("NFC");
+    expect(nfd).not.toBe(nfc);
+    const tag = await prisma.tag.create({
+      data: { name: "옛고양", slug: nfd },
+    });
+    await prisma.feedTag.create({ data: { feedId: "pub-3", tagId: tag.id } });
+    // Next가 경로를 NFC로 정규화해 NFC로 들어와도 NFD 저장분이 매칭돼야 한다.
+    expect((await getFeedsByTag(nfc, "anon")).map((f) => f.slug)).toEqual([
+      "pub-3",
+    ]);
+    expect((await getFeedsByTag(nfd, "anon")).map((f) => f.slug)).toEqual([
+      "pub-3",
+    ]);
+  });
 });
 
 describe("getPublicTopFeeds", () => {
