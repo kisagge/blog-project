@@ -18,11 +18,18 @@ export function slugifyTag(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-// 슬러그 조회용 정규화 변형: NFC·NFD를 함께 반환(중복 제거).
-// 기존에 NFD로 저장된 슬러그도 마이그레이션 없이 찾도록, 조회 시 두 형태를 모두 매칭한다.
+// 슬러그 조회용 정규화 변형. (1) Next는 동적 [slug] 파라미터를 URL 디코딩하지 않고
+// 넘기므로(한글 등 비ASCII는 퍼센트 인코딩 상태로 도착) 먼저 디코딩하고, (2) NFC·NFD를
+// 함께 반환해 NFD로 저장된 레거시 슬러그도 마이그레이션 없이 매칭한다. 잘못된 인코딩이면 원본 유지.
 export function tagSlugVariants(slug: string): string[] {
-  const nfc = slug.normalize("NFC");
-  const nfd = slug.normalize("NFD");
+  let decoded = slug;
+  try {
+    decoded = decodeURIComponent(slug);
+  } catch {
+    // 퍼센트 외 '%' 포함 등 잘못된 인코딩 → 원본 사용
+  }
+  const nfc = decoded.normalize("NFC");
+  const nfd = decoded.normalize("NFD");
   return nfc === nfd ? [nfc] : [nfc, nfd];
 }
 
