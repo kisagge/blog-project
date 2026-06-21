@@ -107,3 +107,25 @@ describe("getTagsWithCounts", () => {
     expect(iPub).toBeLessThan(iMem);
   });
 });
+
+describe("getTagBySlug / getPublicTagSlugs", () => {
+  test("getTagBySlug: 존재하는 slug는 표시명, 없으면 null", async () => {
+    const f = await makeFeed(prisma, { visibility: "public" });
+    await m.setFeedTags(f.id, ["바이슬러그"]);
+    expect(await m.getTagBySlug("바이슬러그")).toEqual({
+      name: "바이슬러그",
+      slug: "바이슬러그",
+    });
+    expect(await m.getTagBySlug("없는슬러그zzz")).toBeNull();
+  });
+
+  test("getPublicTagSlugs: 전체공개 글 있는 태그만(회원공개·비공개 제외)", async () => {
+    const pub = await makeFeed(prisma, { visibility: "public" });
+    const mem = await makeFeed(prisma, { visibility: "members" });
+    await m.setFeedTags(pub.id, ["퍼블릭전용"]);
+    await m.setFeedTags(mem.id, ["멤버전용태그"]);
+    const slugs = await m.getPublicTagSlugs();
+    expect(slugs).toContain("퍼블릭전용");
+    expect(slugs).not.toContain("멤버전용태그");
+  });
+});

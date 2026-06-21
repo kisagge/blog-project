@@ -4,16 +4,14 @@ import { highlightText } from "./highlight";
 import type { FeedCard } from "./feed-card";
 
 // 피드 목록 카드(제목·요약·작성자·날짜·조회수·태그). 공개 목록(FeedList)·저장 목록 공용.
-// linkAuthors=false면 작성자 닉네임을 평문으로(비회원 뷰어). basePath는 태그 필터 링크 기준.
+// linkAuthors=false면 작성자 닉네임을 평문으로(비회원 뷰어).
 export default function FeedCardItem({
   card,
   linkAuthors = true,
-  basePath = "/feed",
   highlightQuery,
 }: {
   card: FeedCard;
   linkAuthors?: boolean;
-  basePath?: string;
   highlightQuery?: string; // 검색어 — 있으면 제목·발췌의 매치를 <mark> 강조
 }) {
   // 검색 시 매치 중심 스니펫, 비검색이면 작성자 요약.
@@ -59,7 +57,7 @@ export default function FeedCardItem({
           {card.tags.map((t) => (
             <Link
               key={t.slug}
-              href={`${basePath}?tag=${encodeURIComponent(t.slug)}`}
+              href={`/feed/tags/${encodeURIComponent(t.slug)}`}
               className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
             >
               #{t.name}
