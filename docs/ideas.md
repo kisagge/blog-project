@@ -45,5 +45,5 @@
 | 38  | 회원 팔로우 + 활동 피드      | 자기참조 `Follow` 조인 + `/following` 활동 피드(authorId in 단일쿼리, 가시성 게이트) + 프로필 카운트·`FollowButton` + 팔로우 알림(`notifyOnFollow`)                                                 | 완료 |
 | 39  | 운영 견고성                  | `/api/health`(DB ping, node fetch healthcheck) + 관리자 거버넌스 감사 로그(`AuditLog`·`logAudit`·`/admin/audit`, 무엇·언제 스냅샷). 운영 안정·추적성                                                | 완료 |
 | 40  | 태그 전용 라우트             | `/feed/tags/[slug]` 라우트(현재 `?tag=` 쿼리만) — 태그별 canonical·OG·`CollectionPage` JSON-LD. SEO 보강                                                                                            | 보류 |
-| 41  | 모션·포커스 a11y 보강        | `prefers-reduced-motion` 존중(트랜지션·스크롤 애니메이션) + 가시적 포커스 링 일관 적용. AGENTS.md 접근성 원칙 충족                                                                                  | 보류 |
+| 41  | 모션·포커스 a11y 보강        | JS 스무스 스크롤(맨위로·댓글 딥링크) `prefersReducedMotion()` 존중(CSS는 기존) + 버튼·링크·summary 일관 `:focus-visible` 링. AGENTS.md 접근성 원칙 충족                                             | 완료 |
 | 42  | 댓글 이모지 리액션           | 좋아요 외 이모지 리액션(👍😂😮 등) — 댓글/글에 다중 반응. 기존 `CommentLike` 동형 확장                                                                                                              | 보류 |

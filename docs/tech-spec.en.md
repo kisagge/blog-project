@@ -147,7 +147,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 436**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 439**.
 
 ### 4.12 Content reporting & moderation
 
@@ -210,7 +210,8 @@ Three lightweight reading aids on the post detail page.
 
 - **Prev/next post**: `getAdjacentFeeds(feed, role)` fetches the chronologically adjacent post on each side within the viewer's visible range and the **same author class** (admin↔admin, member↔member) so navigation stays inside the collection the reader is browsing. Rendered in the article footer in the `RelatedFeeds` style (hidden when neither exists).
 - **Reading progress bar** (`reading-progress-bar`): a top-fixed bar reflects document scroll progress, throttled with a passive scroll listener + `requestAnimationFrame`, and is `aria-hidden` (decorative).
-- **Back-to-top** (`back-to-top-button`): appears bottom-right past a scroll threshold (not rendered when hidden, so it's out of the focus order) and scrolls to the top on click. Since JS smooth scroll isn't governed by the global CSS `scroll-behavior` override, it branches on reduced-motion via `matchMedia`.
+- **Back-to-top** (`back-to-top-button`): appears bottom-right past a scroll threshold (not rendered when hidden, so it's out of the focus order) and scrolls to the top on click.
+- **Motion & focus a11y**: CSS transitions, animations, and `scroll-behavior` are neutralized by `globals.css`'s `@media (prefers-reduced-motion: reduce)`, but **JS smooth scroll can't be stopped by a media query**, so a shared `prefersReducedMotion()` (`lib/motion`) branches at the call sites — back-to-top and comment deep-link scrolls jump instantly when reduce-motion is preferred. On top of the box-shadow focus ring for form inputs, a consistent `:focus-visible` outline ring is added globally for **buttons, links, and summary** (replacing the browser default, theme-aware via currentColor).
 
 ### 4.20 Code syntax highlighting
 
@@ -237,5 +238,5 @@ Body images rendered without dimensions, shifting the layout on load (CLS). Sinc
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 436); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 439); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
