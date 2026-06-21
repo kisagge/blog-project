@@ -12,6 +12,7 @@ const TABS = [
   { href: "/admin/reports", label: "신고" },
   { href: "/admin/df", label: "던파" },
   { href: "/admin/settings", label: "설정" },
+  { href: "/admin/audit", label: "기록" },
 ];
 
 export default function AdminNav({

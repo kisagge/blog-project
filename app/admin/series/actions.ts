@@ -9,7 +9,9 @@ import {
   deleteSeries,
   reorderSeries,
   removeFromSeries,
+  getSeriesById,
 } from "@/lib/series";
+import { logAudit } from "@/lib/audit";
 
 export type SeriesFormState =
   | { errors?: Record<string, string[]>; message?: string }
@@ -36,11 +38,19 @@ export async function createSeriesAction(
   await verifySession();
   const parsed = SeriesSchema.safeParse(toInput(formData));
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  let createdId: string | undefined;
   try {
-    await createSeries(parsed.data);
+    const s = await createSeries(parsed.data);
+    createdId = s.id;
   } catch {
     return { errors: { slug: ["이미 사용 중인 slug입니다."] } };
   }
+  await logAudit({
+    action: "series.create",
+    targetType: "series",
+    targetId: createdId,
+    summary: `시리즈 생성: ${parsed.data.title}`,
+  });
   revalidateSeries();
   redirect("/admin/series");
 }
@@ -58,6 +68,12 @@ export async function updateSeriesAction(
   } catch {
     return { errors: { slug: ["이미 사용 중인 slug입니다."] } };
   }
+  await logAudit({
+    action: "series.update",
+    targetType: "series",
+    targetId: id,
+    summary: `시리즈 수정: ${parsed.data.title}`,
+  });
   revalidateSeries();
   redirect("/admin/series");
 }
@@ -65,7 +81,16 @@ export async function updateSeriesAction(
 export async function deleteSeriesAction(formData: FormData) {
   await verifySession();
   const id = String(formData.get("id") ?? "");
-  if (id) await deleteSeries(id);
+  if (id) {
+    const s = await getSeriesById(id);
+    await deleteSeries(id);
+    await logAudit({
+      action: "series.delete",
+      targetType: "series",
+      targetId: id,
+      summary: `시리즈 삭제: ${s?.title ?? id.slice(0, 8)}`,
+    });
+  }
   revalidateSeries();
   redirect("/admin/series");
 }

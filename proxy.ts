@@ -33,6 +33,6 @@ export async function proxy(req: NextRequest) {
 export const config = {
   // 정적 자산·이미지·업로드는 제외하고 동적 요청에만 적용.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icons/|apple-icon|sw.js|manifest|uploads/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icons/|apple-icon|sw.js|manifest|uploads/|api/health(?:/|$)).*)",
   ],
 };

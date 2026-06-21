@@ -9,6 +9,16 @@ import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
 import { parseTags, setFeedTags } from "@/lib/tags";
 import { assignFeedSeries } from "@/lib/series";
+import { logAudit } from "@/lib/audit";
+
+// 감사 요약용: 회원 닉네임(없으면 id 일부).
+async function memberLabel(id: string): Promise<string> {
+  const u = await prisma.user.findUnique({
+    where: { id },
+    select: { nickname: true },
+  });
+  return u?.nickname ?? id.slice(0, 8);
+}
 
 export type FeedFormState =
   | { errors?: Record<string, string[]>; message?: string }
@@ -29,9 +39,11 @@ export async function createFeed(
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors };
   }
+  let createdId: string | undefined;
   try {
     const { tags, seriesId, ...feedData } = parsed.data;
     const feed = await prisma.feed.create({ data: feedData });
+    createdId = feed.id;
     await setFeedTags(feed.id, parseTags(tags ?? ""));
     await assignFeedSeries(feed.id, seriesId || null);
   } catch {
@@ -40,6 +52,12 @@ export async function createFeed(
       errors: { slug: ["중복되었거나 저장에 실패했습니다."] },
     };
   }
+  await logAudit({
+    action: "feed.create",
+    targetType: "feed",
+    targetId: createdId,
+    summary: `글 작성: ${parsed.data.title}`,
+  });
   revalidateFeed();
   redirect("/admin");
 }
@@ -65,6 +83,12 @@ export async function updateFeed(
       errors: { slug: ["중복되었거나 저장에 실패했습니다."] },
     };
   }
+  await logAudit({
+    action: "feed.update",
+    targetType: "feed",
+    targetId: id,
+    summary: `글 수정: ${parsed.data.title}`,
+  });
   revalidateFeed();
   redirect("/admin");
 }
@@ -72,7 +96,17 @@ export async function updateFeed(
 export async function deleteFeed(formData: FormData) {
   await verifySession();
   const id = String(formData.get("id") ?? "");
+  const feed = await prisma.feed.findUnique({
+    where: { id },
+    select: { title: true },
+  });
   await prisma.feed.delete({ where: { id } });
+  await logAudit({
+    action: "feed.delete",
+    targetType: "feed",
+    targetId: id,
+    summary: `글 삭제: ${feed?.title ?? id.slice(0, 8)}`,
+  });
   revalidateFeed();
 }
 
@@ -82,6 +116,16 @@ export async function setFeedVisibility(
 ) {
   await verifySession();
   await prisma.feed.update({ where: { id }, data: { visibility } });
+  const feed = await prisma.feed.findUnique({
+    where: { id },
+    select: { title: true },
+  });
+  await logAudit({
+    action: "feed.visibility",
+    targetType: "feed",
+    targetId: id,
+    summary: `공개범위 변경(${visibility}): ${feed?.title ?? id.slice(0, 8)}`,
+  });
   revalidateFeed();
 }
 
@@ -90,39 +134,76 @@ export async function setSitePublic(formData: FormData) {
   await verifySession();
   const enabled = formData.get("enabled") === "true";
   await setPublicEnabled(enabled);
+  await logAudit({
+    action: "site.public",
+    targetType: "site",
+    summary: enabled ? "사이트 공개(점검 해제)" : "사이트 점검 모드 전환",
+  });
   revalidatePath("/", "layout"); // 홈·피드·점검 페이지 모두 갱신
   revalidatePath("/admin");
 }
 
 export async function approveUserAction(formData: FormData) {
   await verifySession();
-  await approveUser(String(formData.get("id") ?? ""));
+  const id = String(formData.get("id") ?? "");
+  await approveUser(id);
+  await logAudit({
+    action: "member.approve",
+    targetType: "member",
+    targetId: id,
+    summary: `회원 승인: ${await memberLabel(id)}`,
+  });
   revalidatePath("/admin", "layout"); // 회원 관리 탭(대기/회원) 모두 갱신
 }
 
 export async function rejectUserAction(formData: FormData) {
   await verifySession();
-  await rejectUser(
-    String(formData.get("id") ?? ""),
-    String(formData.get("reason") ?? ""),
-  );
+  const id = String(formData.get("id") ?? "");
+  const reason = String(formData.get("reason") ?? "");
+  await rejectUser(id, reason);
+  await logAudit({
+    action: "member.reject",
+    targetType: "member",
+    targetId: id,
+    summary: `회원 거절: ${await memberLabel(id)}${reason ? ` (${reason})` : ""}`,
+  });
   revalidatePath("/admin", "layout");
 }
 
 export async function blockUserAction(formData: FormData) {
   await verifySession();
-  await blockUser(String(formData.get("id") ?? ""));
+  const id = String(formData.get("id") ?? "");
+  await blockUser(id);
+  await logAudit({
+    action: "member.block",
+    targetType: "member",
+    targetId: id,
+    summary: `회원 차단: ${await memberLabel(id)}`,
+  });
   revalidatePath("/admin/members");
 }
 
 export async function unblockUserAction(formData: FormData) {
   await verifySession();
-  await unblockUser(String(formData.get("id") ?? ""));
+  const id = String(formData.get("id") ?? "");
+  await unblockUser(id);
+  await logAudit({
+    action: "member.unblock",
+    targetType: "member",
+    targetId: id,
+    summary: `회원 차단 해제: ${await memberLabel(id)}`,
+  });
   revalidatePath("/admin/members");
 }
 
 export async function setAdminNicknameAction(formData: FormData) {
   await verifySession();
-  await setAdminNickname(String(formData.get("nickname") ?? ""));
+  const nickname = String(formData.get("nickname") ?? "");
+  await setAdminNickname(nickname);
+  await logAudit({
+    action: "admin.nickname",
+    targetType: "admin",
+    summary: `관리자 닉네임 변경: ${nickname.trim() || "(기본값)"}`,
+  });
   revalidatePath("/admin/settings");
 }
