@@ -196,7 +196,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **태그 인덱스**: `getTagsWithCounts(role)`가 `feedTag.groupBy` + 관계 `where`(가시 글)로 글 수를 집계해, **가시 글이 1개 이상인 태그만** 글 수와 함께 내림차순 반환(비공개/숨김 전용 태그는 빈 링크가 되지 않게 제외).
 - **태그 전용 라우트** `/feed/tags/[slug]`: 기존 `?tag=` 쿼리 필터 대신 **태그별 canonical URL + `CollectionPage`/`ItemList`/`BreadcrumbList` JSON-LD**(`buildTagJsonLd`)를 가진 SSR 라우트. `getFeedsByTag(slug, role)`가 해당 태그·뷰어 가시 관리자 글을 최신순 반환(가시 글 0 && 비admin → 404로 비공개 전용 태그 은닉), 카드·구조화 데이터 모두 가시분만 노출. 태그 칩(카드·인덱스)을 이 라우트로 모아 내부 링크 집중, sitemap에 전체공개 태그 페이지 추가. `?tag=`는 하위호환 유지.
 - **프로필 댓글 딥링크**: `/u/[id]` 최근 댓글 클릭 시 `/feed/{slug}?c={commentId}`로 이동해 해당 댓글/대댓글로 스크롤·하이라이트(알림 딥링크와 동일 메커니즘 — `comment-item`이 대댓글이면 부모 스레드 자동 펼침).
-- 진입은 nav 드로어·홈 둘러보기 카드·sitemap에 추가(개별 태그 URL은 카디널리티 이유로 sitemap 제외).
+- 진입은 nav 드로어·홈 둘러보기 카드·sitemap(전체공개 관리자 글이 있는 개별 태그 URL 포함)에 추가.
 
 ### 4.18 DB 자동 백업
 

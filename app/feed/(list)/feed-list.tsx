@@ -149,6 +149,7 @@ export default function FeedList({
               key={feed.slug}
               card={feed}
               linkAuthors={linkAuthors}
+              basePath={basePath}
               highlightQuery={query}
             />
           ))}

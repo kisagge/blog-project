@@ -16,7 +16,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const tag = await getTagBySlug(decodeURIComponent(slug));
+  const tag = await getTagBySlug(slug);
   if (!tag) return { title: "찾을 수 없음" };
   return {
     title: `#${tag.name}`,
@@ -31,7 +31,7 @@ export default async function TagPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const tag = await getTagBySlug(decodeURIComponent(slug));
+  const tag = await getTagBySlug(slug);
   if (!tag) notFound();
   const role = await getViewerRole();
   const feeds = await getFeedsByTag(tag.slug, role);

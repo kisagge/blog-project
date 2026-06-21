@@ -196,7 +196,7 @@ Two pages (`/feed/popular`, `/feed/tags`) surface the accumulating view counts a
 - **Tag index**: `getTagsWithCounts(role)` aggregates post counts via `feedTag.groupBy` + a relation `where` (visible posts), returning **only tags with at least one visible post** plus their counts, sorted descending (private/hidden-only tags are excluded so links never dead-end).
 - **Dedicated tag route** `/feed/tags/[slug]`: instead of the `?tag=` query filter, an SSR route with a **per-tag canonical URL + `CollectionPage`/`ItemList`/`BreadcrumbList` JSON-LD** (`buildTagJsonLd`). `getFeedsByTag(slug, role)` returns the tag's viewer-visible admin posts newest-first (zero visible + non-admin → 404, hiding private-only tags); both the cards and the structured data expose visible posts only. Tag chips (cards + index) point here to concentrate internal links, and the sitemap lists public tag pages. `?tag=` is kept for backward compatibility.
 - **Profile comment deep-link**: clicking a recent comment on `/u/[id]` navigates to `/feed/{slug}?c={commentId}`, scrolling to and highlighting that comment/reply (same mechanism as notification deep-links — `comment-item` auto-expands the parent thread when the target is a reply).
-- Entry points were added to the nav drawer, the homepage browse cards, and the sitemap (individual tag URLs are kept out of the sitemap due to cardinality).
+- Entry points were added to the nav drawer, the homepage browse cards, and the sitemap (including individual tag URLs that have at least one public admin post).
 
 ### 4.18 Automated DB backups
 
