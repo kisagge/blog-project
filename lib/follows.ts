@@ -6,7 +6,8 @@ import { notifyFollow } from "@/lib/notifications";
 export type FollowResult = { ok: true } | { error: string };
 
 // 회원이 다른 회원을 팔로우. 자기 자신·미존재·비승인·관리자 대상은 거부.
-// 중복은 upsert로 무시(idempotent). 신규 생성일 때만 알림(fire-and-forget).
+// 중복은 무시(idempotent) — 이미 있으면 조기 반환, 동시 생성 충돌(unique)도 삼킨다.
+// 알림은 실제로 새 행을 만든 경우에만(fire-and-forget).
 export async function followUser(
   followerId: string,
   followingId: string,
@@ -30,7 +31,12 @@ export async function followUser(
     where: { id: followerId },
     select: { nickname: true },
   });
-  await prisma.follow.create({ data: { followerId, followingId } });
+  try {
+    await prisma.follow.create({ data: { followerId, followingId } });
+  } catch {
+    // 동시 요청으로 그 사이 이미 생성됨(unique 충돌) → 이미 팔로우로 간주(알림 없음).
+    return { ok: true };
+  }
   if (follower) {
     void notifyFollow({
       followingId,
