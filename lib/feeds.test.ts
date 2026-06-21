@@ -530,6 +530,29 @@ describe("searchFeeds", () => {
       "pub-3",
     ]);
   });
+
+  test("getFeedsByTag: URL 인코딩 슬러그도 디코딩해 매칭(라우트 파라미터 미디코딩 회귀 방지)", async () => {
+    // 새 공개 글에 '안녕'(NFC) 태그 부착 후, Next가 넘기는 인코딩 형태로 조회.
+    const { setFeedTags } = await import("@/lib/tags");
+    await prisma.feed.create({
+      data: {
+        id: "enc-1",
+        slug: "enc-1",
+        title: "인코딩 태그 글",
+        content: "본문",
+        visibility: "public",
+        createdAt: new Date(2026, 3, 1),
+        updatedAt: new Date(2026, 3, 1),
+      },
+    });
+    await setFeedTags("enc-1", ["안녕"]);
+    expect(
+      (await getFeedsByTag("%EC%95%88%EB%85%95", "anon")).map((f) => f.slug),
+    ).toEqual(["enc-1"]);
+    // 공유 DB 오염 방지(정렬·인접 글 테스트에 영향): 생성물 제거.
+    await prisma.feedTag.deleteMany({ where: { feedId: "enc-1" } });
+    await prisma.feed.delete({ where: { id: "enc-1" } });
+  });
 });
 
 describe("getPublicTopFeeds", () => {

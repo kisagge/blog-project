@@ -51,6 +51,15 @@ describe("slugifyTag / parseTags", () => {
     expect(v).toContain("안녕".normalize("NFD"));
     expect(m.tagSlugVariants("dev")).toEqual(["dev"]);
   });
+
+  test("tagSlugVariants: URL 인코딩 입력을 디코딩해 매칭", () => {
+    // Next가 [slug]를 디코딩 안 하고 넘기는 케이스(%EC%95%88%EB%85%95 = 안녕)
+    expect(m.tagSlugVariants("%EC%95%88%EB%85%95")).toContain(
+      "안녕".normalize("NFC"),
+    );
+    // 잘못된 인코딩('%' 단독)은 원본 유지(throw 안 함)
+    expect(m.tagSlugVariants("100%")).toEqual(["100%"]);
+  });
 });
 
 describe("setFeedTags", () => {
@@ -147,6 +156,16 @@ describe("getTagBySlug / getPublicTagSlugs", () => {
     // Next가 요청 경로를 NFC로 정규화해 NFC로 들어와도 NFD 저장분을 찾는다.
     expect(await m.getTagBySlug(nfc)).not.toBeNull();
     expect(await m.getTagBySlug(nfd)).not.toBeNull();
+  });
+
+  test("getTagBySlug: URL 인코딩 한글 슬러그(%..)를 디코딩해 찾음(라우트 파라미터 미디코딩 회귀 방지)", async () => {
+    const f = await makeFeed(prisma, { visibility: "public" });
+    await m.setFeedTags(f.id, ["안녕"]); // NFC로 저장
+    // Next 동적 라우트는 [slug]를 디코딩 없이 넘긴다 → %EC%95%88%EB%85%95 그대로 조회돼도 찾아야 한다.
+    expect(await m.getTagBySlug("%EC%95%88%EB%85%95")).toEqual({
+      name: "안녕",
+      slug: "안녕",
+    });
   });
 
   test("getPublicTagSlugs: 전체공개 글 있는 태그만(회원공개·비공개 제외)", async () => {

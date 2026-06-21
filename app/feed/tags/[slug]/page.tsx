@@ -16,6 +16,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  // Next는 [slug]를 URL 디코딩하지 않고 넘긴다(한글은 퍼센트 인코딩 상태) — getTagBySlug가
+  // 내부에서 디코딩·NFC/NFD 정규화로 해소한다.
   const tag = await getTagBySlug(slug);
   if (!tag) return { title: "찾을 수 없음" };
   return {
