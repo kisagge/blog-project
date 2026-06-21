@@ -10,6 +10,7 @@ let getAdminFeedsPage: Feeds["getAdminFeedsPage"];
 let getRelatedFeeds: Feeds["getRelatedFeeds"];
 let getPublicTopFeeds: Feeds["getPublicTopFeeds"];
 let getAdjacentFeeds: Feeds["getAdjacentFeeds"];
+let getFeedsByTag: Feeds["getFeedsByTag"];
 let cleanup: () => Promise<void>;
 let prisma: Awaited<ReturnType<typeof setupTestDb>>["prisma"];
 
@@ -112,6 +113,7 @@ beforeAll(async () => {
     getRelatedFeeds,
     getPublicTopFeeds,
     getAdjacentFeeds,
+    getFeedsByTag,
   } = await import("@/lib/feeds"));
 });
 
@@ -479,6 +481,23 @@ describe("searchFeeds", () => {
     const r = await getAdminFeedsPage(1, 10, "없는검색어zzz");
     expect(r.items).toHaveLength(0);
     expect(r.total).toBe(0);
+  });
+
+  test("getFeedsByTag: 공개 태그(고양이)는 anon에 노출(pub-3)", async () => {
+    const items = await getFeedsByTag("고양이", "anon");
+    expect(items.map((f) => f.slug)).toEqual(["pub-3"]);
+  });
+
+  test("getFeedsByTag: 비공개 전용 태그(비밀태그)는 anon·member에 빈 목록, admin엔 노출", async () => {
+    expect(await getFeedsByTag("비밀태그", "anon")).toHaveLength(0);
+    expect(await getFeedsByTag("비밀태그", "member")).toHaveLength(0);
+    expect(
+      (await getFeedsByTag("비밀태그", "admin")).map((f) => f.slug),
+    ).toEqual(["draft-1"]);
+  });
+
+  test("getFeedsByTag: 없는 태그는 빈 목록", async () => {
+    expect(await getFeedsByTag("존재안함", "admin")).toHaveLength(0);
   });
 });
 

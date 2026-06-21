@@ -28,7 +28,6 @@ export default async function PopularPage() {
               key={f.slug}
               card={toFeedCard(f)}
               linkAuthors={role !== "anon"}
-              basePath="/feed"
             />
           ))}
         </ul>

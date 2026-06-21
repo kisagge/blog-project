@@ -125,7 +125,10 @@ export default async function MemberProfilePage({
           <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
             {comments.map((c) => (
               <li key={c.id} className="py-2 text-sm">
-                <Link href={`/feed/${c.feed.slug}`} className="group block">
+                <Link
+                  href={`/feed/${c.feed.slug}?c=${c.id}`}
+                  className="group block"
+                >
                   <span className="line-clamp-2 text-zinc-700 group-hover:underline dark:text-zinc-300">
                     {c.content}
                   </span>

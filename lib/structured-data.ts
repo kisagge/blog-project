@@ -103,6 +103,54 @@ export function buildSiteJsonLd(): object {
   return { "@context": "https://schema.org", "@graph": [website, org] };
 }
 
+// 태그 전용 라우트용 JSON-LD(CollectionPage + ItemList + Breadcrumb). 가시 글만 입력.
+export function buildTagJsonLd(
+  tag: { name: string; slug: string },
+  posts: { url: string; title: string }[],
+): object {
+  const url = absoluteUrl(`/feed/tags/${encodeURIComponent(tag.slug)}`);
+  const collectionPage = {
+    "@type": "CollectionPage",
+    "@id": url,
+    name: `#${tag.name}`,
+    url,
+    isPartOf: { "@id": absoluteUrl("/#website") },
+    inLanguage: "ko-KR",
+  };
+  const itemList = {
+    "@type": "ItemList",
+    itemListElement: posts.map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: p.url,
+      name: p.title,
+    })),
+  };
+  const breadcrumb = {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "홈", item: absoluteUrl("/") },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "피드",
+        item: absoluteUrl("/feed"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "태그",
+        item: absoluteUrl("/feed/tags"),
+      },
+      { "@type": "ListItem", position: 4, name: `#${tag.name}`, item: url },
+    ],
+  };
+  return {
+    "@context": "https://schema.org",
+    "@graph": [collectionPage, itemList, breadcrumb],
+  };
+}
+
 // JSON-LD를 <script> 안에 넣기 위한 직렬화. '<'를 유니코드 이스케이프해
 // 제목/요약에 "</script>"가 있어도 마크업이 깨지거나 주입되지 않게 한다.
 export function jsonLdHtml(data: object): string {

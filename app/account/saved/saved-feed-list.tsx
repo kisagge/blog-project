@@ -40,7 +40,7 @@ export default function SavedFeedList({
     <>
       <ul className="flex flex-col gap-6">
         {items.map((c) => (
-          <FeedCardItem key={c.slug} card={c} basePath="/feed" />
+          <FeedCardItem key={c.slug} card={c} />
         ))}
       </ul>
       {hasMore && (

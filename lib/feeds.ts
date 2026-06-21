@@ -156,6 +156,22 @@ export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
   });
 }
 
+// 태그 전용 라우트용: 해당 태그가 달린 게시·미숨김·뷰어 가시 관리자 글을 최신순.
+// `?tag=` 목록(searchFeeds author:"admin")과 동일 범위. 개인 블로그 규모상 무페이지네이션.
+export async function getFeedsByTag(slug: string, role: ViewerRole) {
+  return prisma.feed.findMany({
+    where: {
+      authorId: null, // 관리자 글(공개 피드)
+      status: "published",
+      hiddenAt: null,
+      visibility: { in: listableVisibilities(role) },
+      feedTags: { some: { tag: { slug } } },
+    },
+    orderBy: { createdAt: "desc" },
+    select: FEED_LIST_SELECT,
+  });
+}
+
 export type AdjacentFeed = { slug: string; title: string };
 
 // 글 상세 이전/다음 내비: 현재 글 기준 시간순 인접 1건씩(이전=더 오래된, 다음=더 최신).

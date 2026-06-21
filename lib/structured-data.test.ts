@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   buildFeedJsonLd,
   buildSiteJsonLd,
+  buildTagJsonLd,
   jsonLdHtml,
 } from "@/lib/structured-data";
 
@@ -125,6 +126,46 @@ describe("buildSiteJsonLd", () => {
   test("jsonLdHtml(buildSiteJsonLd())는 유효 JSON", () => {
     const parsed = JSON.parse(jsonLdHtml(buildSiteJsonLd()));
     expect(parsed["@graph"]).toHaveLength(2);
+  });
+});
+
+describe("buildTagJsonLd", () => {
+  const tag = { name: "개발", slug: "개발" };
+  const posts = [
+    { url: "https://by-jang-blog.xyz/feed/a", title: "글 A" },
+    { url: "https://by-jang-blog.xyz/feed/b", title: "글 B" },
+  ];
+
+  test("@graph에 CollectionPage + ItemList + BreadcrumbList", () => {
+    const g = graph(buildTagJsonLd(tag, posts));
+    expect(g.map((n) => n["@type"])).toEqual([
+      "CollectionPage",
+      "ItemList",
+      "BreadcrumbList",
+    ]);
+  });
+
+  test("CollectionPage: 태그명·canonical URL + WebSite isPartOf", () => {
+    const cp = graph(buildTagJsonLd(tag, posts))[0];
+    expect(cp.name).toBe("#개발");
+    expect(cp.url).toBe(
+      "https://by-jang-blog.xyz/feed/tags/%EA%B0%9C%EB%B0%9C",
+    );
+    expect((cp.isPartOf as Record<string, string>)["@id"]).toBe(
+      "https://by-jang-blog.xyz/#website",
+    );
+  });
+
+  test("ItemList: 글 URL을 순서대로(position 1..n)", () => {
+    const il = graph(buildTagJsonLd(tag, posts))[1];
+    const items = il.itemListElement as Record<string, unknown>[];
+    expect(items.map((i) => i.position)).toEqual([1, 2]);
+    expect(items[0].url).toBe("https://by-jang-blog.xyz/feed/a");
+  });
+
+  test("유효 JSON 직렬화", () => {
+    const parsed = JSON.parse(jsonLdHtml(buildTagJsonLd(tag, posts)));
+    expect(parsed["@graph"]).toHaveLength(3);
   });
 });
 

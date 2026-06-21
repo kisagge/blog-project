@@ -147,7 +147,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 439**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 448**.
 
 ### 4.12 Content reporting & moderation
 
@@ -193,8 +193,10 @@ Post detail pages emit **schema.org JSON-LD** (`BlogPosting` + `BreadcrumbList`)
 Two pages (`/feed/popular`, `/feed/tags`) surface the accumulating view counts and tags publicly, placed under `app/feed/` to inherit the maintenance-mode guard.
 
 - **Popular posts**: `getPublicTopFeeds(role)` returns published, non-hidden posts by cumulative view count within the **viewer's visible range** (`listableVisibilities`) — unlike the admin-only `getTopFeeds`, it filters visibility so it's safe to expose publicly. Cards reuse `FeedCardItem`.
-- **Tag index**: `getTagsWithCounts(role)` aggregates post counts via `feedTag.groupBy` + a relation `where` (visible posts), returning **only tags with at least one visible post** plus their counts, sorted descending (private/hidden-only tags are excluded so links never dead-end). Links into the existing `?tag=` filter.
-- Entry points were added to the nav drawer, the homepage browse cards, and the sitemap (individual tag URLs are kept out of the sitemap due to cardinality).
+- **Tag index**: `getTagsWithCounts(role)` aggregates post counts via `feedTag.groupBy` + a relation `where` (visible posts), returning **only tags with at least one visible post** plus their counts, sorted descending (private/hidden-only tags are excluded so links never dead-end).
+- **Dedicated tag route** `/feed/tags/[slug]`: instead of the `?tag=` query filter, an SSR route with a **per-tag canonical URL + `CollectionPage`/`ItemList`/`BreadcrumbList` JSON-LD** (`buildTagJsonLd`). `getFeedsByTag(slug, role)` returns the tag's viewer-visible admin posts newest-first (zero visible + non-admin → 404, hiding private-only tags); both the cards and the structured data expose visible posts only. Tag chips (cards + index) point here to concentrate internal links, and the sitemap lists public tag pages. `?tag=` is kept for backward compatibility.
+- **Profile comment deep-link**: clicking a recent comment on `/u/[id]` navigates to `/feed/{slug}?c={commentId}`, scrolling to and highlighting that comment/reply (same mechanism as notification deep-links — `comment-item` auto-expands the parent thread when the target is a reply).
+- Entry points were added to the nav drawer, the homepage browse cards, and the sitemap (including individual tag URLs that have at least one public admin post).
 
 ### 4.18 Automated DB backups
 
@@ -238,5 +240,5 @@ Body images rendered without dimensions, shifting the layout on load (CLS). Sinc
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 439); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 448); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

@@ -63,6 +63,39 @@ export async function getTagsWithCounts(
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ko"));
 }
 
+// 슬러그 → 태그(표시명). 없으면 null. 태그 전용 라우트 제목용.
+export async function getTagBySlug(
+  slug: string,
+): Promise<{ name: string; slug: string } | null> {
+  return prisma.tag.findUnique({
+    where: { slug },
+    select: { name: true, slug: true },
+  });
+}
+
+// sitemap용: 전체공개 관리자 글이 1개 이상인 태그 슬러그(비로그인 색인 대상).
+// authorId:null(관리자 글)로 한정 — 태그 전용 라우트가 관리자 글만 노출하므로
+// 회원 글 전용 태그가 sitemap에 올라가 404가 되는 것을 방지.
+export async function getPublicTagSlugs(): Promise<string[]> {
+  const grouped = await prisma.feedTag.groupBy({
+    by: ["tagId"],
+    where: {
+      feed: {
+        authorId: null,
+        status: "published",
+        hiddenAt: null,
+        visibility: "public",
+      },
+    },
+  });
+  if (grouped.length === 0) return [];
+  const tags = await prisma.tag.findMany({
+    where: { id: { in: grouped.map((g) => g.tagId) } },
+    select: { slug: true },
+  });
+  return tags.map((t) => t.slug);
+}
+
 // 한 글의 태그를 주어진 집합으로 교체. Tag는 slug로 upsert, FeedTag는 전량 삭제 후 재생성.
 export async function setFeedTags(
   feedId: string,

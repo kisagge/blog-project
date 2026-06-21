@@ -24,7 +24,7 @@ export default async function TagsPage() {
           {tags.map((t) => (
             <li key={t.slug}>
               <Link
-                href={`/feed?tag=${encodeURIComponent(t.slug)}`}
+                href={`/feed/tags/${encodeURIComponent(t.slug)}`}
                 className="inline-flex items-center gap-1.5 rounded bg-amber-100 px-2 py-1 text-sm font-medium text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
               >
                 #{t.name}
