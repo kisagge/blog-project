@@ -268,3 +268,14 @@ model Bookmark {
   // 저장 목록(listSavedFeeds): where userId + orderBy createdAt desc.
   @@index([userId, createdAt])
 }
+// 관리자 거버넌스 액션 감사 로그(append-only). 관리자는 싱글톤이라 "누가"는 항상 관리자.
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String   // "feed.create"·"member.block" 등 점 표기
+  targetType String   // "feed" | "member" | "report" | "series" | "site" | "admin"
+  targetId   String?
+  summary    String   // 사람이 읽는 라벨(작성 시점 스냅샷 — 대상 삭제돼도 보존)
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}

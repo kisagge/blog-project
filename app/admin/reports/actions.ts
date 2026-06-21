@@ -8,6 +8,7 @@ import {
   countPendingReportTargets,
 } from "@/lib/reports";
 import { publishReports } from "@/lib/events";
+import { logAudit } from "@/lib/audit";
 
 type ReportTargetType = "comment" | "feed";
 
@@ -35,6 +36,12 @@ export async function hideTargetAction(
   await verifySession();
   if (!isTargetType(targetType)) return;
   await hideTarget(targetType, targetId);
+  await logAudit({
+    action: "report.hide",
+    targetType: "report",
+    targetId,
+    summary: `신고 대상 숨김(${targetType})`,
+  });
   revalidate(slug);
   await broadcastReportCount();
 }
@@ -48,6 +55,12 @@ export async function unhideTargetAction(
   await verifySession();
   if (!isTargetType(targetType)) return;
   await unhideTarget(targetType, targetId);
+  await logAudit({
+    action: "report.unhide",
+    targetType: "report",
+    targetId,
+    summary: `숨김 해제·복구(${targetType})`,
+  });
   revalidate(slug);
 }
 
@@ -60,6 +73,12 @@ export async function dismissReportsAction(
   await verifySession();
   if (!isTargetType(targetType)) return;
   await dismissReports(targetType, targetId);
+  await logAudit({
+    action: "report.dismiss",
+    targetType: "report",
+    targetId,
+    summary: `신고 기각(${targetType})`,
+  });
   revalidate(slug);
   await broadcastReportCount();
 }

@@ -204,6 +204,15 @@ const SCHEMA = [
   )`,
   `CREATE UNIQUE INDEX "FeedTag_feedId_tagId_key" ON "FeedTag"("feedId", "tagId")`,
   `CREATE INDEX "FeedTag_tagId_idx" ON "FeedTag"("tagId")`,
+  `CREATE TABLE "AuditLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "action" TEXT NOT NULL,
+    "targetType" TEXT NOT NULL,
+    "targetId" TEXT,
+    "summary" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt")`,
   // 전문 검색(FTS5) — prisma/migrations/*_add_feed_fts/migration.sql과 동기화 필수.
   // external content + trigram. 트리거가 Feed 변경을 색인하므로 백필 INSERT는 불필요(빈 테이블).
   `CREATE VIRTUAL TABLE "feed_fts" USING fts5(

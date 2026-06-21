@@ -67,6 +67,8 @@ CI/CD: main push → GitHub Actions
 - **배포 워크플로**: `test → build/push(GHCR) → SSH 배포(+ `prisma migrate deploy`)`. 수동 트리거(workflow_dispatch) 지원, 타임아웃으로 실패 가시화.
 - **CI 위생 게이트**: test 잡이 `tsc → eslint → prettier --check → vitest → pnpm audit(--prod --audit-level critical)`를 통과해야 빌드·배포로 진행. 포맷·**critical 런타임 취약점** 회귀를 머지 전 차단(현 prod 취약점은 전부 `prisma>@prisma/dev>hono` 전이의존이라 critical 게이트는 green 유지, high/moderate는 Dependabot이 처리).
 - **의존성 자동화**: `.github/dependabot.yml`이 npm·GitHub Actions·Docker 베이스이미지를 주간 점검, minor/patch는 그룹 PR 1개로 묶고 major는 개별 PR로 분리(공급망·핀 회귀 차단, PR 노이즈 최소화).
+- **헬스체크 + 행 감지**: `/api/health`가 `SELECT 1` DB 핑까지 확인(상태 문자열만 반환, 내부정보 미노출)하고 `compose.yaml` `healthcheck`가 30초마다 프로브 — `restart: unless-stopped`가 못 잡는 "응답은 살아있되 DB가 죽은 행" 상태를 감지해 컨테이너를 unhealthy로 표시·재시작 유도. 런타임 이미지에 curl/wget이 없어 **node 글로벌 fetch**로 프로브, `start_period`로 `migrate deploy`+`next start` 기동 시간 확보. 헬스는 `proxy.ts` matcher에서 제외해 IP 레이트리밋·`/admin` 가드를 우회(프로브가 항상 응답).
+- **관리자 감사 로그**: 거버넌스 액션(글 CRUD·공개범위, 회원 승인/거절/차단, 신고 숨김/복구/기각, 시리즈 CRUD, 점검모드, 관리자 닉네임)을 `logAudit`로 `AuditLog`에 append. 관리자는 싱글톤이라 "누가"는 자명 → **무엇·언제 + 작성 시점 요약 스냅샷**(대상 삭제돼도 보존)을 `/admin/audit`에서 최신순 열람. `logAudit`은 best-effort(throw 안 함)라 감사 실패가 거버넌스 액션을 막지 않음.
 
 ### 4.3 Prisma 7 드라이버 어댑터
 
@@ -145,7 +147,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 433 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 436 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -235,5 +237,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 433), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 436), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
