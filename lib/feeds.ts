@@ -156,12 +156,12 @@ export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
   });
 }
 
-// 태그 전용 라우트용: 해당 태그가 달린 게시·미숨김·뷰어 가시 관리자 글을 최신순.
-// `?tag=` 목록(searchFeeds author:"admin")과 동일 범위. 개인 블로그 규모상 무페이지네이션.
+// 태그 전용 라우트용: 해당 태그가 달린 게시·미숨김·뷰어 가시 글(관리자+회원) 최신순.
+// 태그는 전역 사전이고 인덱스(getTagsWithCounts)도 작성자 무관 집계라, 상세도 작성자
+// 무관으로 맞춰 인덱스↔상세 불일치(회원 글 태그 클릭 시 404)를 제거. 개인 블로그 규모상 무페이지네이션.
 export async function getFeedsByTag(slug: string, role: ViewerRole) {
   return prisma.feed.findMany({
     where: {
-      authorId: null, // 관리자 글(공개 피드)
       status: "published",
       hiddenAt: null,
       visibility: { in: listableVisibilities(role) },
