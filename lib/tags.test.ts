@@ -36,6 +36,21 @@ describe("slugifyTag / parseTags", () => {
   test("parseTags: 최대 5개로 잘라냄", () => {
     expect(m.parseTags("1,2,3,4,5,6,7")).toEqual(["1", "2", "3", "4", "5"]);
   });
+
+  test("slugifyTag: 자모 분해형(NFD) 한글을 NFC로 정규화", () => {
+    const nfd = "안녕".normalize("NFD");
+    expect(nfd).not.toBe("안녕"); // sanity: NFD는 NFC와 다른 바이트열
+    expect(m.slugifyTag(nfd)).toBe("안녕"); // NFC로 통일
+    expect(m.slugifyTag(nfd).normalize("NFC")).toBe(m.slugifyTag(nfd));
+  });
+
+  test("tagSlugVariants: 한글은 NFC·NFD 두 형태, ASCII는 1개", () => {
+    const v = m.tagSlugVariants("안녕");
+    expect(v).toHaveLength(2);
+    expect(v).toContain("안녕".normalize("NFC"));
+    expect(v).toContain("안녕".normalize("NFD"));
+    expect(m.tagSlugVariants("dev")).toEqual(["dev"]);
+  });
 });
 
 describe("setFeedTags", () => {
@@ -117,6 +132,21 @@ describe("getTagBySlug / getPublicTagSlugs", () => {
       slug: "바이슬러그",
     });
     expect(await m.getTagBySlug("없는슬러그zzz")).toBeNull();
+  });
+
+  test("getTagBySlug: NFD로 저장된 한글 슬러그를 NFC 요청으로도 찾음(태그 404 회귀 방지)", async () => {
+    // 과거 NFD로 저장된 레거시 태그를 직접 삽입(slugifyTag를 거치지 않음).
+    const f = await makeFeed(prisma, { visibility: "public" });
+    const nfd = "옛한글".normalize("NFD");
+    const nfc = "옛한글".normalize("NFC");
+    expect(nfd).not.toBe(nfc);
+    const tag = await prisma.tag.create({
+      data: { name: "옛한글", slug: nfd },
+    });
+    await prisma.feedTag.create({ data: { feedId: f.id, tagId: tag.id } });
+    // Next가 요청 경로를 NFC로 정규화해 NFC로 들어와도 NFD 저장분을 찾는다.
+    expect(await m.getTagBySlug(nfc)).not.toBeNull();
+    expect(await m.getTagBySlug(nfd)).not.toBeNull();
   });
 
   test("getPublicTagSlugs: 전체공개 글 있는 태그만(회원공개·비공개 제외)", async () => {
