@@ -54,3 +54,6 @@ next-env.d.ts
 
 # pack:config 산출물(환경설정 압축)
 byjang-config-*.tar.gz
+
+# Claude Code local state
+.claude/
