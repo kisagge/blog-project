@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getViewerRole } from "@/lib/dal";
+import { getViewerRole, getMemberSession } from "@/lib/dal";
 import { getMemberProfile } from "@/lib/users";
 import { listMemberPosts } from "@/lib/member-posts";
 import { getCommentsByUser } from "@/lib/comments";
+import { getFollowCounts, isFollowing } from "@/lib/follows";
 import { kstDate, isoInstant } from "@/lib/kst";
 import MemberGate from "@/app/member-gate";
 import Avatar from "@/app/avatar";
+import FollowButton from "@/app/u/follow-button";
 
 export const dynamic = "force-dynamic";
 
@@ -46,9 +48,14 @@ export default async function MemberProfilePage({
   const profile = await getMemberProfile(id);
   if (!profile) notFound(); // 없음 또는 비회원(예약 admin)
 
-  const [posts, comments] = await Promise.all([
+  const session = await getMemberSession();
+  const viewerId = session?.userId;
+  const isOwn = viewerId === id;
+  const [posts, comments, counts, viewerFollows] = await Promise.all([
     listMemberPosts(id),
     getCommentsByUser(id, 20),
+    getFollowCounts(id),
+    viewerId && !isOwn ? isFollowing(viewerId, id) : Promise.resolve(false),
   ]);
 
   return (
@@ -65,6 +72,15 @@ export default async function MemberProfilePage({
               {kstDate(profile.createdAt)}
             </time>
           </p>
+          <p className="mt-1 text-sm text-zinc-500">
+            팔로워 {counts.followers.toLocaleString()} · 팔로잉{" "}
+            {counts.following.toLocaleString()}
+          </p>
+          {!isOwn && viewerId && (
+            <div className="mt-3">
+              <FollowButton targetId={id} initialFollowing={viewerFollows} />
+            </div>
+          )}
           {profile.bio && (
             <p className="mt-3 text-sm whitespace-pre-line text-zinc-600 dark:text-zinc-400">
               {profile.bio}

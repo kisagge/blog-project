@@ -10,6 +10,7 @@ export type NotificationPrefs = {
   onReply: boolean;
   onComment: boolean;
   onMention: boolean;
+  onFollow: boolean;
 };
 
 export async function getNotificationPrefs(
@@ -21,12 +22,14 @@ export async function getNotificationPrefs(
       notifyOnReply: true,
       notifyOnComment: true,
       notifyOnMention: true,
+      notifyOnFollow: true,
     },
   });
   return {
     onReply: u?.notifyOnReply ?? true,
     onComment: u?.notifyOnComment ?? true,
     onMention: u?.notifyOnMention ?? true,
+    onFollow: u?.notifyOnFollow ?? true,
   };
 }
 
@@ -40,6 +43,7 @@ export async function setNotificationPrefs(
       notifyOnReply: prefs.onReply,
       notifyOnComment: prefs.onComment,
       notifyOnMention: prefs.onMention,
+      notifyOnFollow: prefs.onFollow,
     },
   });
 }
@@ -116,6 +120,24 @@ export async function notifyCommentReply(args: {
   const url = `/feed/${args.slug}?c=${args.commentId}`;
   await createNotification(parent.userId, body, url);
   await sendToUser(parent.userId, { title: "새 답글", body, url });
+}
+
+// 팔로우 → 팔로우당한 회원에게 알림 + 푸시. 수신자가 팔로우 알림을 끄면 미생성.
+// url은 팔로워 프로필로 딥링크. (followUser가 신규 생성 시에만 호출.)
+export async function notifyFollow(args: {
+  followingId: string;
+  fromUserId: string;
+  fromNickname: string;
+}) {
+  const target = await prisma.user.findUnique({
+    where: { id: args.followingId },
+    select: { notifyOnFollow: true },
+  });
+  if (!target || !target.notifyOnFollow) return;
+  const body = `${args.fromNickname}님이 회원님을 팔로우했습니다.`;
+  const url = `/u/${args.fromUserId}`;
+  await createNotification(args.followingId, body, url);
+  await sendToUser(args.followingId, { title: "새 팔로워", body, url });
 }
 
 // 최상위 댓글 → 글 주인에게 알림. 회원 글이면 작성자(authorId), 관리자 글이면 예약 관리자.
