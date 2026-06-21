@@ -101,10 +101,12 @@ beforeAll(async () => {
     },
   });
 
-  // 태그: 공개 글 pub-3 = 고양이, 비공개 draft-1 = 비밀태그(공개 태그 필터에 안 나와야 함)
+  // 태그: 공개 글 pub-3 = 고양이, 비공개 draft-1 = 비밀태그(공개 태그 필터에 안 나와야 함),
+  // 회원 글 umem-1 = 회원태그(작성자 무관 태그 라우트 검증용)
   const { setFeedTags } = await import("@/lib/tags");
   await setFeedTags("pub-3", ["고양이"]);
   await setFeedTags("draft-1", ["비밀태그"]);
+  await setFeedTags("umem-1", ["회원태그"]);
 
   ({
     searchFeeds,
@@ -494,6 +496,17 @@ describe("searchFeeds", () => {
     expect(
       (await getFeedsByTag("비밀태그", "admin")).map((f) => f.slug),
     ).toEqual(["draft-1"]);
+  });
+
+  test("getFeedsByTag: 회원 글 태그도 가시 뷰어에 노출(작성자 무관) — 인덱스 404 회귀 방지", async () => {
+    // umem-1: 회원 글(members). anon 제외, member·admin 노출.
+    expect(await getFeedsByTag("회원태그", "anon")).toHaveLength(0);
+    expect(
+      (await getFeedsByTag("회원태그", "member")).map((f) => f.slug),
+    ).toEqual(["umem-1"]);
+    expect(
+      (await getFeedsByTag("회원태그", "admin")).map((f) => f.slug),
+    ).toEqual(["umem-1"]);
   });
 
   test("getFeedsByTag: 없는 태그는 빈 목록", async () => {

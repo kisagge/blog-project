@@ -68,7 +68,7 @@ export default async function TagPage({
             <FeedCardItem
               key={f.slug}
               card={toFeedCard(f)}
-              linkAuthors={false}
+              linkAuthors={role !== "anon"}
             />
           ))}
         </ul>

@@ -73,19 +73,14 @@ export async function getTagBySlug(
   });
 }
 
-// sitemap용: 전체공개 관리자 글이 1개 이상인 태그 슬러그(비로그인 색인 대상).
-// authorId:null(관리자 글)로 한정 — 태그 전용 라우트가 관리자 글만 노출하므로
-// 회원 글 전용 태그가 sitemap에 올라가 404가 되는 것을 방지.
+// sitemap용: 전체공개 글이 1개 이상인 태그 슬러그(비로그인 색인 대상).
+// 회원 글은 항상 members-only라 visibility:"public" 필터가 이미 제외 → 태그 전용
+// 라우트(작성자 무관·가시성 게이트)와 정합.
 export async function getPublicTagSlugs(): Promise<string[]> {
   const grouped = await prisma.feedTag.groupBy({
     by: ["tagId"],
     where: {
-      feed: {
-        authorId: null,
-        status: "published",
-        hiddenAt: null,
-        visibility: "public",
-      },
+      feed: { status: "published", hiddenAt: null, visibility: "public" },
     },
   });
   if (grouped.length === 0) return [];
