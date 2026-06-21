@@ -146,6 +146,9 @@ export default function NavDrawer({
               <DrawerLink href="/me" onClick={close}>
                 내 프로필
               </DrawerLink>
+              <DrawerLink href="/following" onClick={close}>
+                팔로잉
+              </DrawerLink>
               <DrawerLink href="/account/saved" onClick={close}>
                 저장한 글
               </DrawerLink>

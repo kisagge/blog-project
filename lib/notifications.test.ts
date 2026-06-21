@@ -197,16 +197,19 @@ describe("notification prefs", () => {
       onReply: true,
       onComment: true,
       onMention: true,
+      onFollow: true,
     });
     await m.setNotificationPrefs(u.id, {
       onReply: false,
       onComment: true,
       onMention: false,
+      onFollow: false,
     });
     expect(await m.getNotificationPrefs(u.id)).toEqual({
       onReply: false,
       onComment: true,
       onMention: false,
+      onFollow: false,
     });
   });
 
@@ -391,6 +394,7 @@ describe("notification prefs", () => {
       onReply: true,
       onComment: true,
       onMention: true,
+      onFollow: true,
     });
     await m.notifyCommentReply({
       parentId: parent.id,
@@ -437,5 +441,41 @@ describe("notification prefs", () => {
     expect(
       await prisma.notification.count({ where: { userId: owner.id } }),
     ).toBe(0);
+  });
+
+  test("notifyFollow: 팔로우 알림 off면 미생성, on이면 생성", async () => {
+    const target = await prisma.user.create({
+      data: {
+        email: "ft@x.com",
+        nickname: "FT",
+        passwordHash: "-",
+        notifyOnFollow: false,
+      },
+    });
+    sendNotification.mockClear();
+    await m.notifyFollow({
+      followingId: target.id,
+      fromUserId: "someone",
+      fromNickname: "팔로워A",
+    });
+    expect(
+      await prisma.notification.count({ where: { userId: target.id } }),
+    ).toBe(0);
+    expect(sendNotification).not.toHaveBeenCalled();
+    // 켜면 생성
+    await prisma.user.update({
+      where: { id: target.id },
+      data: { notifyOnFollow: true },
+    });
+    await m.notifyFollow({
+      followingId: target.id,
+      fromUserId: "someone",
+      fromNickname: "팔로워A",
+    });
+    const n = await prisma.notification.findFirst({
+      where: { userId: target.id },
+    });
+    expect(n?.body).toContain("팔로워A");
+    expect(n?.url).toBe("/u/someone");
   });
 });

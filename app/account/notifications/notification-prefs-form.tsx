@@ -6,7 +6,12 @@ import { updateNotificationPrefsAction, type NotifPrefsState } from "./actions";
 export default function NotificationPrefsForm({
   prefs,
 }: {
-  prefs: { onReply: boolean; onComment: boolean; onMention: boolean };
+  prefs: {
+    onReply: boolean;
+    onComment: boolean;
+    onMention: boolean;
+    onFollow: boolean;
+  };
 }) {
   const [state, action, pending] = useActionState<NotifPrefsState, FormData>(
     updateNotificationPrefsAction,
@@ -16,10 +21,12 @@ export default function NotificationPrefsForm({
   const [onReply, setOnReply] = useState(prefs.onReply);
   const [onComment, setOnComment] = useState(prefs.onComment);
   const [onMention, setOnMention] = useState(prefs.onMention);
+  const [onFollow, setOnFollow] = useState(prefs.onFollow);
   const dirty =
     onReply !== prefs.onReply ||
     onComment !== prefs.onComment ||
-    onMention !== prefs.onMention;
+    onMention !== prefs.onMention ||
+    onFollow !== prefs.onFollow;
 
   return (
     <form action={action} className="flex w-full max-w-md flex-col gap-5">
@@ -67,6 +74,21 @@ export default function NotificationPrefsForm({
             <span className="font-medium">멘션 알림</span>
             <span className="block text-zinc-500">
               누군가 댓글에서 나를 @멘션하면 알림을 받습니다.
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="onFollow"
+            checked={onFollow}
+            onChange={(e) => setOnFollow(e.target.checked)}
+            className="mt-0.5 h-4 w-4"
+          />
+          <span>
+            <span className="font-medium">팔로우 알림</span>
+            <span className="block text-zinc-500">
+              누군가 나를 팔로우하면 알림을 받습니다.
             </span>
           </span>
         </label>

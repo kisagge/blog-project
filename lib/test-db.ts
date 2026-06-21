@@ -69,9 +69,21 @@ const SCHEMA = [
     "notifyOnReply" BOOLEAN NOT NULL DEFAULT true,
     "notifyOnComment" BOOLEAN NOT NULL DEFAULT true,
     "notifyOnMention" BOOLEAN NOT NULL DEFAULT true,
+    "notifyOnFollow" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
   )`,
+  `CREATE TABLE "Follow" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "followerId" TEXT NOT NULL,
+    "followingId" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Follow_followerId_fkey" FOREIGN KEY ("followerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Follow_followingId_fkey" FOREIGN KEY ("followingId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX "Follow_followerId_followingId_key" ON "Follow"("followerId", "followingId")`,
+  `CREATE INDEX "Follow_followerId_createdAt_idx" ON "Follow"("followerId", "createdAt")`,
+  `CREATE INDEX "Follow_followingId_createdAt_idx" ON "Follow"("followingId", "createdAt")`,
   `CREATE UNIQUE INDEX "User_email_key" ON "User"("email")`,
   `CREATE TABLE "PushSubscription" (
     "id" TEXT NOT NULL PRIMARY KEY,

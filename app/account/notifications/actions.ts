@@ -17,6 +17,7 @@ export async function updateNotificationPrefsAction(
     onReply: formData.get("onReply") === "on",
     onComment: formData.get("onComment") === "on",
     onMention: formData.get("onMention") === "on",
+    onFollow: formData.get("onFollow") === "on",
   });
   revalidatePath("/account/notifications");
   return { done: true };
