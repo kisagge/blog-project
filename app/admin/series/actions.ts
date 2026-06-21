@@ -38,17 +38,19 @@ export async function createSeriesAction(
   await verifySession();
   const parsed = SeriesSchema.safeParse(toInput(formData));
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  let createdId: string | undefined;
   try {
     const s = await createSeries(parsed.data);
-    await logAudit({
-      action: "series.create",
-      targetType: "series",
-      targetId: s.id,
-      summary: `시리즈 생성: ${parsed.data.title}`,
-    });
+    createdId = s.id;
   } catch {
     return { errors: { slug: ["이미 사용 중인 slug입니다."] } };
   }
+  await logAudit({
+    action: "series.create",
+    targetType: "series",
+    targetId: createdId,
+    summary: `시리즈 생성: ${parsed.data.title}`,
+  });
   revalidateSeries();
   redirect("/admin/series");
 }
@@ -63,15 +65,15 @@ export async function updateSeriesAction(
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
   try {
     await updateSeries(id, parsed.data);
-    await logAudit({
-      action: "series.update",
-      targetType: "series",
-      targetId: id,
-      summary: `시리즈 수정: ${parsed.data.title}`,
-    });
   } catch {
     return { errors: { slug: ["이미 사용 중인 slug입니다."] } };
   }
+  await logAudit({
+    action: "series.update",
+    targetType: "series",
+    targetId: id,
+    summary: `시리즈 수정: ${parsed.data.title}`,
+  });
   revalidateSeries();
   redirect("/admin/series");
 }
