@@ -112,7 +112,7 @@ export async function publishNowAction(formData: FormData) {
   await verifySession();
   const id = String(formData.get("id") ?? "");
   const res = await prisma.feed.updateMany({
-    where: { id, authorId: null, status: "draft" },
+    where: { id, authorId: null, status: "draft", scheduledAt: { not: null } },
     data: { status: "published", publishedAt: new Date(), scheduledAt: null },
   });
   if (res.count > 0) {
