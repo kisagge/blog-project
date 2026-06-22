@@ -1,4 +1,4 @@
-import { kstDate, kstDateTime, isoInstant } from "@/lib/kst";
+import { kstDate, kstDateTime, isoInstant, kstWallClockToUtc } from "@/lib/kst";
 
 // 포맷 문자열의 구두점은 ICU 버전 의존이라 단정하지 않고, KST(UTC+9) 경계 동작을 검증.
 describe("kstDate", () => {
@@ -26,6 +26,27 @@ describe("kstDateTime", () => {
     const dt = kstDateTime(iso);
     expect(dt).toContain("2026");
     expect(dt.length).toBeGreaterThan(kstDate(iso).length);
+  });
+});
+
+describe("kstWallClockToUtc", () => {
+  test("KST 벽시계를 UTC로 9시간 당김", () => {
+    // 2026-06-22 09:00 KST = 2026-06-22 00:00 UTC
+    expect(kstWallClockToUtc("2026-06-22T09:00")?.toISOString()).toBe(
+      "2026-06-22T00:00:00.000Z",
+    );
+    // 2026-06-22 08:30 KST = 2026-06-21 23:30 UTC(자정 경계 넘김)
+    expect(kstWallClockToUtc("2026-06-22T08:30")?.toISOString()).toBe(
+      "2026-06-21T23:30:00.000Z",
+    );
+  });
+
+  test("형식 불일치·달력상 불가 값은 null", () => {
+    expect(kstWallClockToUtc("")).toBeNull();
+    expect(kstWallClockToUtc("2026-06-22 09:00")).toBeNull(); // T 없음
+    expect(kstWallClockToUtc("2026-13-01T00:00")).toBeNull(); // 13월
+    expect(kstWallClockToUtc("2026-02-30T00:00")).toBeNull(); // 2월 30일
+    expect(kstWallClockToUtc("2026-06-22T24:00")).toBeNull(); // 24시
   });
 });
 

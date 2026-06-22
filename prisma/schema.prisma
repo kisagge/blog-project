@@ -23,6 +23,7 @@ model Feed {
   authorId  String?              // null=관리자/기존 글, 값=회원 작성자(User.id)
   viewCount Int      @default(0)        // 누적 조회수(방문자·하루 단위 중복 제거 후 집계)
   publishedAt DateTime?          // 게시(공개 전환) 시각 — 하루 게시 제한·표시용
+  scheduledAt DateTime?          // 예약 발행 시각(관리자, 생성 시에만 설정). null=즉시. draft+이값 → cron이 도래 시 published 전환
   hiddenAt  DateTime?            // 신고로 가려진(모더레이션 숨김) 시각. null=정상. 사용자 삭제와 별개·복구 가능
   seriesId  String?              // 속한 시리즈(관리자 글만). null=미배정
   seriesOrder Int    @default(0) // 시리즈 내 순서(asc)
@@ -41,6 +42,8 @@ model Feed {
   @@index([authorId, status, publishedAt])
   // 시리즈 글 순서 조회(getSeriesPosts): seriesId + seriesOrder.
   @@index([seriesId, seriesOrder])
+  // 예약 발행 cron(publishDueFeeds): status=draft + scheduledAt<=now.
+  @@index([status, scheduledAt])
 }
 
 // 글 시리즈(관리자 큐레이션). slug로 유니크. 가시성은 포함 글에서 파생(태그 패턴).

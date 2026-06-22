@@ -18,6 +18,7 @@ const SCHEMA = [
     "authorId" TEXT,
     "viewCount" INTEGER NOT NULL DEFAULT 0,
     "publishedAt" DATETIME,
+    "scheduledAt" DATETIME,
     "hiddenAt" DATETIME,
     "seriesId" TEXT,
     "seriesOrder" INTEGER NOT NULL DEFAULT 0,
@@ -39,6 +40,7 @@ const SCHEMA = [
   `CREATE INDEX "Feed_status_visibility_createdAt_idx" ON "Feed"("status", "visibility", "createdAt")`,
   `CREATE INDEX "Feed_authorId_status_publishedAt_idx" ON "Feed"("authorId", "status", "publishedAt")`,
   `CREATE INDEX "Feed_seriesId_seriesOrder_idx" ON "Feed"("seriesId", "seriesOrder")`,
+  `CREATE INDEX "Feed_status_scheduledAt_idx" ON "Feed"("status", "scheduledAt")`,
   `CREATE TABLE "View" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "entityType" TEXT NOT NULL,

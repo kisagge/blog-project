@@ -8,6 +8,7 @@ import { setAdminNickname } from "@/lib/comment-actor";
 import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
 import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
 import { parseTags, setFeedTags } from "@/lib/tags";
+import { decideSchedule } from "@/lib/scheduled";
 import { assignFeedSeries } from "@/lib/series";
 import { logAudit } from "@/lib/audit";
 
@@ -39,10 +40,19 @@ export async function createFeed(
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors };
   }
+  // 예약 발행은 생성 시에만. 미래면 draft+scheduledAt, 과거/무효면 폼 에러, 빈값이면 즉시.
+  const { tags, seriesId, scheduledAt, ...feedData } = parsed.data;
+  const sched = decideSchedule(scheduledAt);
+  if (sched.kind === "error") {
+    return { errors: { scheduledAt: [sched.message] } };
+  }
   let createdId: string | undefined;
   try {
-    const { tags, seriesId, ...feedData } = parsed.data;
-    const feed = await prisma.feed.create({ data: feedData });
+    const data =
+      sched.kind === "scheduled"
+        ? { ...feedData, status: "draft", scheduledAt: sched.at }
+        : feedData;
+    const feed = await prisma.feed.create({ data });
     createdId = feed.id;
     await setFeedTags(feed.id, parseTags(tags ?? ""));
     await assignFeedSeries(feed.id, seriesId || null);
@@ -56,7 +66,10 @@ export async function createFeed(
     action: "feed.create",
     targetType: "feed",
     targetId: createdId,
-    summary: `글 작성: ${parsed.data.title}`,
+    summary:
+      sched.kind === "scheduled"
+        ? `글 예약 작성: ${parsed.data.title} (${parsed.data.scheduledAt})`
+        : `글 작성: ${parsed.data.title}`,
   });
   revalidateFeed();
   redirect("/admin");
@@ -73,7 +86,8 @@ export async function updateFeed(
     return { errors: parsed.error.flatten().fieldErrors };
   }
   try {
-    const { tags, seriesId, ...feedData } = parsed.data;
+    const { tags, seriesId, scheduledAt, ...feedData } = parsed.data;
+    void scheduledAt; // 예약은 생성 시에만 — 수정에선 무시
     await prisma.feed.update({ where: { id }, data: feedData });
     await setFeedTags(id, parseTags(tags ?? ""));
     await assignFeedSeries(id, seriesId || null);
@@ -91,6 +105,29 @@ export async function updateFeed(
   });
   revalidateFeed();
   redirect("/admin");
+}
+
+// 예약 글을 지금 즉시 발행(관리자 목록의 안전밸브). 관리자 예약 초안만 전환.
+export async function publishNowAction(formData: FormData) {
+  await verifySession();
+  const id = String(formData.get("id") ?? "");
+  const res = await prisma.feed.updateMany({
+    where: { id, authorId: null, status: "draft" },
+    data: { status: "published", publishedAt: new Date(), scheduledAt: null },
+  });
+  if (res.count > 0) {
+    const feed = await prisma.feed.findUnique({
+      where: { id },
+      select: { title: true },
+    });
+    await logAudit({
+      action: "feed.publish",
+      targetType: "feed",
+      targetId: id,
+      summary: `예약 글 즉시 발행: ${feed?.title ?? id.slice(0, 8)}`,
+    });
+    revalidateFeed();
+  }
 }
 
 export async function deleteFeed(formData: FormData) {

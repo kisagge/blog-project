@@ -30,3 +30,24 @@ export function kstDateTime(d: DateInput): string {
 export function isoInstant(d: DateInput): string {
   return new Date(d).toISOString();
 }
+
+// "YYYY-MM-DDTHH:MM"(KST 벽시계) → UTC Date. 예약 발행 입력 해석용(브라우저 TZ 무관 결정적).
+// 형식 불일치·달력상 불가능한 값이면 null.
+export function kstWallClockToUtc(s: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(s.trim());
+  if (!m) return null;
+  const [y, mo, d, h, mi] = m.slice(1).map(Number);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59) return null;
+  const utcMs = Date.UTC(y, mo - 1, d, h, mi) - 9 * 3600 * 1000;
+  // KST로 되돌려 입력과 일치하는지 확인(2월 30일 등 달력상 불가 값 거부).
+  const back = new Date(utcMs + 9 * 3600 * 1000);
+  if (
+    back.getUTCFullYear() !== y ||
+    back.getUTCMonth() !== mo - 1 ||
+    back.getUTCDate() !== d ||
+    back.getUTCHours() !== h ||
+    back.getUTCMinutes() !== mi
+  )
+    return null;
+  return new Date(utcMs);
+}

@@ -289,6 +289,8 @@ export async function getAdminFeedsPage(
         slug: true,
         title: true,
         visibility: true,
+        status: true,
+        scheduledAt: true,
         createdAt: true,
       },
       skip,

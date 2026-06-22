@@ -6,6 +6,7 @@ import { uploadImage } from "@/app/admin/upload-action";
 import { ToastViewport, useToast } from "@/app/toast";
 import { checkImage } from "@/lib/upload";
 import DraftRestoreBanner from "@/app/draft-restore-banner";
+import ScheduleField from "@/app/admin/schedule-field";
 import {
   draftKey,
   loadDraft,
@@ -36,6 +37,7 @@ type Props = {
   };
   seriesOptions?: { id: string; title: string }[];
   submitLabel: string;
+  allowSchedule?: boolean; // 생성 폼에서만 예약 발행 노출(수정은 불가)
 };
 
 export default function FeedForm({
@@ -43,6 +45,7 @@ export default function FeedForm({
   defaultValues,
   seriesOptions = [],
   submitLabel,
+  allowSchedule = false,
 }: Props) {
   const [state, formAction, pending] = useActionState<FeedFormState, FormData>(
     action,
@@ -260,6 +263,11 @@ export default function FeedForm({
               ))}
             </select>
           </label>
+        )}
+        {allowSchedule && (
+          <Field label="예약 발행 (선택)" error={err.scheduledAt}>
+            <ScheduleField />
+          </Field>
         )}
         {state?.message && (
           <p role="alert" className="text-sm text-red-600">

@@ -34,7 +34,7 @@
 | 27  | 코드 신택스 하이라이팅       | 마크다운 코드블록 하이라이트(rehype-highlight, 글 상세 서버 렌더 → 독자 추가 JS 0). globals.css에 3테마 토큰 색                                                                                     | 완료 |
 | 28  | 이미지 최적화/CLS 방지       | 업로드 시 image-size로 치수 측정 → 마크다운 URL `?w&h` → 커스텀 `<img>`에 width/height(시프트 제거)·lazy-load. Core Web Vitals                                                                      | 완료 |
 | 29  | CI 위생 + 의존성 자동화      | `prettier --check`·`pnpm audit(critical)` CI 게이트 + `.github/dependabot.yml`(npm·actions·docker 주간 그룹화, 공급망·포맷 회귀 차단)                                                               | 완료 |
-| 30  | 예약 발행                    | 글에 예약 시각 설정 → GitHub Actions cron(백업 워크플로 패턴)이 도래 시 draft→published 전환                                                                                                        | 보류 |
+| 30  | 예약 발행                    | 관리자 글 생성 시 예약 시각 설정(react-day-picker) → `status:"draft"`+`scheduledAt` → GitHub Actions cron(10분, SSH+시크릿 endpoint)이 도래 시 published 전환. 목록 "지금 게시" 안전밸브. v0.87.0   | 완료 |
 | 31  | 초안 자동저장                | 작성 에디터 localStorage 디바운스 자동저장(새로고침·이탈 시 작업 유실 방지). 누적/용량 안전(키 overwrite·TTL·스윕·quota 재시도)                                                                     | 완료 |
 | 32  | 관리자 피드 검색             | `/admin/feeds`에 검색 입력 — `getAdminFeedsPage`에 제목·슬러그 contains(초안 포함·전체개수 페이지네이션 유지, 서버렌더 GET). 공개 FTS는 status=published 고정이라 미재사용                          | 완료 |
 | 33  | 홈 구조화 데이터             | 홈에 `WebSite`/`Organization` JSON-LD(`buildSiteJsonLd`, `@id` 상호참조 + SearchAction 사이트링크 검색창). 기존 structured-data 확장                                                                | 완료 |
