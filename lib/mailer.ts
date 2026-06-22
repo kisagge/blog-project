@@ -1,5 +1,6 @@
 import "server-only";
 import nodemailer from "nodemailer";
+import { passwordResetEmail } from "@/lib/email-template";
 
 const FROM = process.env.SMTP_FROM ?? "BY Playground <no-reply@byjang.local>";
 
@@ -18,12 +19,11 @@ function transport() {
 }
 
 export async function sendPasswordResetCode(email: string, code: string) {
-  const subject = "[BY Playground] 비밀번호 재설정 코드";
-  const text = `비밀번호 재설정 인증 코드: ${code}\n\n3분 이내에 입력해 주세요.\n본인이 요청하지 않았다면 이 메일을 무시하세요.`;
+  const { subject, text, html } = passwordResetEmail(code);
   const t = transport();
   if (!t) {
     console.log(`[mailer] SMTP 미설정 — ${email} 재설정 코드: ${code}`);
     return;
   }
-  await t.sendMail({ from: FROM, to: email, subject, text });
+  await t.sendMail({ from: FROM, to: email, subject, text, html });
 }

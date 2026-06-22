@@ -41,5 +41,8 @@ describe("mailer", () => {
     expect(arg.to).toBe("a@x.com");
     expect(arg.subject).toContain("비밀번호");
     expect(arg.text).toContain("654321");
+    // HTML 본문도 함께 전송(브랜드 템플릿) — 코드 포함.
+    expect(arg.html).toContain("654321");
+    expect(arg.html).toContain("<!doctype html>");
   });
 });
