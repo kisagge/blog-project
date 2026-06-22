@@ -68,7 +68,17 @@ export default function LikeButton({
     timer.current = setTimeout(() => {
       if (next === committed.current) return; // 짝수 연타 → 호출 없음
       committed.current = next;
-      void toggleLikeAction(feedId, slug);
+      void (async () => {
+        try {
+          await toggleLikeAction(feedId, slug);
+        } catch {
+          // 429 등 실패 → 낙관 롤백. SSE(feedLike/resync)가 카운트 권위 소스라 곧 보정되나
+          // 즉시 어긋남 해소 + liked는 레이스 가드로 최신 의도 보존.
+          committed.current = !next;
+          setLiked((cur) => (cur === next ? !next : cur));
+          setCount((c) => c + (next ? -1 : 1));
+        }
+      })();
     }, 500);
   }
 

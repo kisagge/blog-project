@@ -86,6 +86,24 @@ describe("views", () => {
     expect(d?.viewCount).toBe(1);
   });
 
+  test("원자성: 증가 실패(없는 대상) 시 View도 안 남김(고아 방지)", async () => {
+    // View.create는 성공하나 feed.update(없는 id)가 실패 → 트랜잭션 롤백 → throw 없이 무변경.
+    await views.trackFeedView("nonexistent-feed-id");
+    const orphan = await prisma.view.count({
+      where: { entityType: "feed", entityId: "nonexistent-feed-id" },
+    });
+    expect(orphan).toBe(0);
+  });
+
+  test("원자성: viewCount가 View 행 수와 정확히 일치(드리프트 없음)", async () => {
+    const base = await feedViews();
+    for (let i = 0; i < 3; i++) {
+      cookieStore = new Map(); // 새 방문자
+      await views.trackFeedView(feedId);
+    }
+    expect(await feedViews()).toBe(base + 3);
+  });
+
   test("사이트 방문은 일 순 방문자로 집계 + 같은 방문자 중복 제거", async () => {
     const before = await views.countTodayVisitors();
     await views.trackSiteVisit(); // 새 방문자(beforeEach 리셋)
