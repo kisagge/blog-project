@@ -29,7 +29,6 @@
 | 23  | 인증/DAL·서버액션 테스트     | `lib/dal`·`session`·`reset-token`·`mailer`·`jwt` + signin/signup/forgot-password 서버 액션 테스트(인가 우회·세션 회귀 방지)                                                                         | 완료 |
 | 24  | 민감 액션 레이트리밋         | 로그인 브루트포스·가입·코드요청·신고에 per-action 제한(전역 IP 제한 외, 기존 `rateLimit` 유틸 재사용)                                                                                               | 완료 |
 | 25  | DB 자동 백업                 | `/data/prod.db` 일별 sqlite `.backup` → gzip → /data/backups N일 회전(GitHub Actions cron). 손상·실수·마이그레이션 대비                                                                             | 완료 |
-| 25b | DB 오프사이트 백업           | 25의 로컬 백업을 R2/B2/S3로 업로드(인스턴스 유실 대비 DR). 객체저장소 자격증명 필요                                                                                                                 | 보류 |
 | 26  | 읽기 UX                      | 글 상세 이전/다음 글 내비게이션·읽기 진행바·맨 위로 버튼                                                                                                                                            | 완료 |
 | 27  | 코드 신택스 하이라이팅       | 마크다운 코드블록 하이라이트(rehype-highlight, 글 상세 서버 렌더 → 독자 추가 JS 0). globals.css에 3테마 토큰 색                                                                                     | 완료 |
 | 28  | 이미지 최적화/CLS 방지       | 업로드 시 image-size로 치수 측정 → 마크다운 URL `?w&h` → 커스텀 `<img>`에 width/height(시프트 제거)·lazy-load. Core Web Vitals                                                                      | 완료 |
