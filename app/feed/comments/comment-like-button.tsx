@@ -51,7 +51,17 @@ export default function CommentLikeButton({
       if (next === committed.current) return; // 짝수 연타 → 호출 없음
       committed.current = next;
       // toggle은 현재 내 상태를 뒤집음 → committed와 다를 때 1회 호출이면 desired에 도달.
-      void toggleCommentLikeAction(commentId, feedId, slug);
+      void (async () => {
+        try {
+          await toggleCommentLikeAction(commentId, feedId, slug);
+        } catch {
+          // 429(미들웨어가 액션 전 반환) 등 실패 → 낙관 롤백(리액션·follow 버튼 패턴).
+          committed.current = !next;
+          // 레이스 가드: 인플라이트 중 다시 토글했으면(liked!==next) 최신 의도 보존.
+          setLiked((cur) => (cur === next ? !next : cur));
+          setCount((c) => c + (next ? -1 : 1));
+        }
+      })();
     }, 500);
   }
 

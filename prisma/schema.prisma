@@ -139,6 +139,7 @@ model Notification {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([userId, readAt]) // 미읽음 카운트(벨 배지): count(userId, readAt:null)
 }
 
 // 웹 푸시 구독(회원별, 기기별). endpoint 유니크.

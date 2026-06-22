@@ -39,23 +39,41 @@ async function recordView(
   }
 }
 
-export async function trackFeedView(feedId: string): Promise<void> {
-  if (await recordView("feed", feedId)) {
-    await prisma.feed
-      .update({ where: { id: feedId }, data: { viewCount: { increment: 1 } } })
-      .catch(() => {});
+// View 기록 + viewCount 증가를 한 트랜잭션으로 원자화. unique 충돌(이미 조회)이면 롤백→false,
+// 증가 실패면 둘 다 롤백(증가 없는 고아 View 방지). 절대 throw 안 함(호출부 fire-and-forget).
+async function recordViewAndCount(
+  entityType: "feed" | "df",
+  entityId: string,
+): Promise<void> {
+  const visitor = await visitorId();
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.view.create({
+        data: { entityType, entityId, visitorId: visitor, day: kstDay() },
+      });
+      if (entityType === "feed") {
+        await tx.feed.update({
+          where: { id: entityId },
+          data: { viewCount: { increment: 1 } },
+        });
+      } else {
+        await tx.dfCharacter.update({
+          where: { id: entityId },
+          data: { viewCount: { increment: 1 } },
+        });
+      }
+    });
+  } catch {
+    // 이미 조회(unique) 또는 증가 실패 → 무시(카운트는 항상 View 수와 일치 유지).
   }
 }
 
+export async function trackFeedView(feedId: string): Promise<void> {
+  await recordViewAndCount("feed", feedId);
+}
+
 export async function trackDfView(dfCharacterId: string): Promise<void> {
-  if (await recordView("df", dfCharacterId)) {
-    await prisma.dfCharacter
-      .update({
-        where: { id: dfCharacterId },
-        data: { viewCount: { increment: 1 } },
-      })
-      .catch(() => {});
-  }
+  await recordViewAndCount("df", dfCharacterId);
 }
 
 // 사이트 방문(페이지 무관). 방문자·하루 단위로 1건 → 일 순 방문자 집계.

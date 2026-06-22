@@ -82,4 +82,19 @@ describe("LikeButton 재접속 재동기화 vs 디바운스", () => {
       screen.getByRole("button", { name: /좋아요 5/ }),
     ).toBeInTheDocument();
   });
+
+  test("액션 실패(429 등) 시 낙관 좋아요 롤백", async () => {
+    toggleLikeAction.mockRejectedValueOnce(new Error("429"));
+    renderButton();
+    const btn = screen.getByRole("button", { name: /좋아요/ });
+    fireEvent.click(btn); // 낙관: ♥ on, 0→1
+    expect(btn).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /좋아요 1/ })).toBeTruthy();
+    // 디바운스 발화 → 액션 reject → catch 롤백.
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(btn).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: /좋아요 0/ })).toBeTruthy();
+  });
 });

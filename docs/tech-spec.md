@@ -74,7 +74,7 @@ CI/CD: main push → GitHub Actions
 
 Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-sqlite3` 드라이버 어댑터를 도입. 런타임 쿼리에 Rust 엔진 바이너리가 불필요해져 4.1의 이미지 슬림화와 함께 의존성·크기를 추가로 절감.
 
-- **동시성 튜닝**: SQLite를 **WAL 모드**로 전환(`PRAGMA journal_mode=WAL`, 파일 레벨 영구)해 쓰기(조회수 트래킹·댓글·좋아요)가 읽기를 막지 않게 했고, `busy_timeout`은 어댑터 `timeout`으로 명시(5000ms). 좋아요/댓글 좋아요 토글은 `find→토글→count`를 **`$transaction`으로 원자화**해, 동시 토글이 await 사이에 인터리빙돼 카운트가 어긋난 채 SSE로 브로드캐스트되는 것을 방지.
+- **동시성 튜닝**: SQLite를 **WAL 모드**로 전환(`PRAGMA journal_mode=WAL`, 파일 레벨 영구)해 쓰기(조회수 트래킹·댓글·좋아요)가 읽기를 막지 않게 했고, `busy_timeout`은 어댑터 `timeout`으로 명시(5000ms). 좋아요/댓글 좋아요 토글은 `find→토글→count`를 **`$transaction`으로 원자화**해, 동시 토글이 await 사이에 인터리빙돼 카운트가 어긋난 채 SSE로 브로드캐스트되는 것을 방지. 조회수도 **View 기록 + `viewCount` 증가를 한 `$transaction`**으로 묶어(증가 실패 시 둘 다 롤백) 드리프트·고아 View를 방지. 알림 미읽음 카운트(벨 배지)는 `@@index([userId, readAt])`로 부분 스캔 제거.
 
 ### 4.4 회원 시스템 — 승인 흐름 + 역할 유니온 세션
 
@@ -99,7 +99,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 2뎁스 댓글(답글)과 피드·댓글 좋아요, 개인 북마크를 Server Action으로 구현.
 
-- 답글은 최상위 댓글에만 허용(깊이 검증), 삭제는 자식 유무에 따라 soft/hard 분기. 좋아요는 `(user, 대상)` 유니크로 토글. 작성자는 본인 댓글을 수정 가능(`editedAt` 기록 → "(수정됨)" 표시, SSE로 라이브 반영). 인기순 정렬에서 삭제 댓글은 좋아요 무관 하단(`deletedAt` nulls-first).
+- 답글은 최상위 댓글에만 허용(깊이 검증), 삭제는 자식 유무에 따라 soft/hard 분기. 좋아요는 `(user, 대상)` 유니크로 토글. 작성자는 본인 댓글을 수정 가능(`editedAt` 기록 → "(수정됨)" 표시, SSE로 라이브 반영). 인기순 정렬에서 삭제 댓글은 좋아요 무관 하단(`deletedAt` nulls-first). 좋아요·리액션 버튼은 낙관 토글이 **실패(429 등) 시 롤백**(서버 미반영분만 되돌림, SSE가 카운트 권위 소스 — 댓글·피드 좋아요·리액션 공통).
 - **북마크(저장)**: 좋아요와 동형(`Bookmark` `(user, feed)` 유니크 토글)이나 **회원 전용·개인용**이라 공개 카운트·실시간(SSE) 없음 → 낙관 토글 + 디바운스만(admin은 저장 목록이 없어 버튼·액션에서 제외). `/account/saved`에서 저장 시각 최신순으로 모아보며(목록 카드 마크업은 `FeedCardItem`으로 공개 목록과 공유), 저장 후 비공개·숨김된 글은 회원 가시 범위 필터로 목록에서 제외.
 - 관리자 작성 글의 알림 수신을 위해 로그인 불가한 **예약 관리자 User**(싱글톤)를 두어, 세션에 `userId`가 없는 관리자도 도메인 모델에서 작성자/수신자로 표현.
 - **댓글 이모지 리액션**: ♥ 좋아요와 **공존**하는 별도 모델(`CommentReaction` `(comment, user, emoji)` 유니크)로 고정 5종(👍 😂 😮 😢 🎉) 반응을 댓글·대댓글에 단다. 좋아요 토글과 **동형** — `$transaction`으로 토글+카운트 원자화, SSE `reaction` 이벤트로 카운트 라이브 전파(본인 `reacted`는 컴포넌트 낙관 상태가 소유 → 타인 반응이 내 토글을 덮어쓰지 않음). 집계는 `getReactionSummaries`가 `groupBy(commentId,emoji)` 1회로 묶어 노드에 부착(좋아요 `likedIds`와 동형, count>0만). 이모지 상수·라벨은 클라이언트 공용 모듈로 분리(`lib/reactions.ts`, DB 함수는 server-only). 칩은 `aria-pressed`, 추가 picker는 `aria-haspopup`/`aria-expanded`+`menuitemcheckbox`(Esc·바깥클릭 닫기·포커스 복귀). 클릭은 낙관 토글+500ms 디바운스(짝수 연타 no-op)이며, **액션 실패 시(글로벌 IP 429 등) 낙관 상태를 롤백**(인플라이트 중 재토글은 레이스 가드로 최신 의도 보존, follow 버튼과 동일 패턴).
@@ -148,7 +148,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 471 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 477 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -241,5 +241,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 471), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 477), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
