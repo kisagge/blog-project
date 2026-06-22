@@ -82,4 +82,27 @@ describe("CommentReactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "최고 반응 1개" }));
     expect(toggleCommentReactionAction).not.toHaveBeenCalled();
   });
+
+  test("액션 실패(429 등) 시 낙관 토글 롤백", async () => {
+    vi.useFakeTimers();
+    toggleCommentReactionAction.mockRejectedValueOnce(new Error("429"));
+    render(
+      <CommentReactions
+        {...props}
+        initialReactions={[{ emoji: "👍", count: 2, reacted: false }]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "최고 반응 2개" }));
+    // 낙관 적용: 2→3, pressed
+    expect(
+      screen.getByRole("button", { name: "최고 반응 3개" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    // 디바운스 발화 → 액션 reject → catch 롤백(마이크로태스크 flush).
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+    const reverted = screen.getByRole("button", { name: "최고 반응 2개" });
+    expect(reverted).toHaveAttribute("aria-pressed", "false");
+    vi.useRealTimers();
+  });
 });

@@ -111,7 +111,26 @@ export default function CommentReactions({
     timers.current[emoji] = setTimeout(() => {
       if (next === committed.current[emoji]) return; // 짝수 연타 → 호출 없음
       committed.current[emoji] = next;
-      void toggleCommentReactionAction(commentId, feedId, slug, emoji);
+      void (async () => {
+        try {
+          await toggleCommentReactionAction(commentId, feedId, slug, emoji);
+        } catch {
+          // 429(미들웨어가 액션 전 반환) 등 실패 → 낙관 롤백(follow 버튼 패턴).
+          committed.current[emoji] = !next;
+          setState((p) =>
+            // 인플라이트 중 사용자가 다시 토글했으면(reacted!==next) 최신 의도 보존.
+            p[emoji].reacted === next
+              ? {
+                  ...p,
+                  [emoji]: {
+                    reacted: !next,
+                    count: p[emoji].count + (next ? -1 : 1),
+                  },
+                }
+              : p,
+          );
+        }
+      })();
     }, 500);
   }
 
