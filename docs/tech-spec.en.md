@@ -148,7 +148,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 477**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 490**.
 
 ### 4.12 Content reporting & moderation
 
@@ -235,11 +235,20 @@ Body images rendered without dimensions, shifting the layout on load (CLS). Sinc
 - **Measure on upload**: `uploadImage` reads the buffer with `image-size` (header-only parse) and appends `?w=&h=` to the inserted markdown URL (`lib/image-size.ts` is `server-only` — isolated because `lib/upload.ts` is also imported client-side). Corrupt/unsupported → null, so only the query is omitted (upload still succeeds).
 - **Render**: `MarkdownContent`'s custom `img` parses w/h from the src query and sets `width/height`, so the browser reserves space by aspect ratio (zero shift), with `[&_img]:h-auto` keeping it responsive. Every body image gets `loading="lazy" decoding="async"`; query-less external images get lazy only. The query is ignored by nginx and the dev route (file served as-is).
 
+### 4.23 Scheduled publishing
+
+Admins can set a future publish time **at post-creation only**; the post stays hidden until then, when a cron publishes it.
+
+- **Model reuse**: a scheduled post = `status:"draft"` + a new `scheduledAt`. Drafts are already excluded from every public surface (list/search/detail-for-non-author/sitemap/RSS/tags/related/popular/adjacent) by the existing `status:"published"` filter, so **zero public-query changes**. The cron only flips `draft→published`; the `visibility` chosen at creation goes live as-is.
+- **Cron**: `publishDueFeeds` (`updateMany` over `status="draft" ∧ scheduledAt≤now`, clearing `scheduledAt`) is exposed at `/api/cron/publish-scheduled` (header `CRON_SECRET`, **constant-time compare**, 401 if unset). GitHub Actions (`publish-scheduled.yml`, every 10 min) reuses the same SSH as `backup.yml` to **call localhost from the host** (no public automation surface, no new GitHub secret). GitHub cron timing is approximate (±minutes).
+- **Time**: input is **react-day-picker** (date) + a time input → `"YYYY-MM-DDTHH:MM"` (KST wall-clock) submitted via a hidden input, converted with `kstWallClockToUtc` (browser-TZ-independent, rejects calendar overflow). Past/invalid → form error. The **edit screen has no schedule control** (creation-only is enforced: `updateFeed` ignores `scheduledAt`).
+- **Admin ops**: the list shows a "🕒 scheduled: {time}" badge + a **"Publish now"** safety valve. Member drafts (`scheduledAt` null) are unaffected.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 477); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 490); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

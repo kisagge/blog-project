@@ -14,6 +14,7 @@ export const FeedFormSchema = z.object({
   visibility: z.enum(["public", "members", "private"]),
   tags: z.string().trim().optional(), // 콤마 구분 원본(정규화·상한은 parseTags)
   seriesId: z.string().trim().optional(), // "" = 미배정(시리즈 select 값)
+  scheduledAt: z.string().trim().optional(), // KST 벽시계 "YYYY-MM-DDTHH:MM" 또는 ""(생성 시에만, 즉시=빈값)
 });
 
 export type FeedFormValues = z.infer<typeof FeedFormSchema>;
@@ -29,6 +30,7 @@ export function feedFormToObject(formData: FormData) {
     visibility: v === "public" || v === "members" ? v : "private",
     tags: String(formData.get("tags") ?? ""),
     seriesId: String(formData.get("seriesId") ?? ""),
+    scheduledAt: String(formData.get("scheduledAt") ?? ""),
   };
 }
 

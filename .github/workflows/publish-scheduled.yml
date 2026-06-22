@@ -1,0 +1,27 @@
+name: Publish Scheduled
+
+# 10분마다(+수동) 예약 발행 도래분을 게시. backup.yml과 동일한 SSH 시크릿 재사용(새 크레덴셜 없음).
+# 호스트에서 localhost로만 호출(공개 자동화 표면 없음). 시크릿은 호스트 .env의 CRON_SECRET.
+# GitHub cron은 ±수분~십수분 지연될 수 있어 발행은 근사 시각.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 3m
+          script: |
+            set -e
+            cd /srv/byjang
+            SECRET=$(grep -E '^CRON_SECRET=' .env | cut -d= -f2- | tr -d '"')
+            if [ -z "$SECRET" ]; then echo "CRON_SECRET 미설정 — 건너뜀"; exit 0; fi
+            curl -fsS -X POST -H "x-cron-secret: $SECRET" \
+              http://127.0.0.1:3010/api/cron/publish-scheduled

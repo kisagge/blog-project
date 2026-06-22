@@ -3,7 +3,9 @@ import { getAdminFeedsPage } from "@/lib/feeds";
 import { DeleteFeedButton } from "@/app/admin/delete-feed-button";
 import FeedVisibilityControl from "@/app/admin/feed-visibility-control";
 import Pager, { parsePage } from "@/app/admin/pager";
+import { publishNowAction } from "@/app/admin/actions";
 import { type Visibility } from "@/lib/visibility";
+import { kstDateTime } from "@/lib/kst";
 
 export const metadata = { title: "글 목록 · 관리자" };
 
@@ -90,8 +92,24 @@ export default async function AdminFeedsPage({
               <div className="min-w-0">
                 <p className="truncate font-medium">{feed.title}</p>
                 <p className="truncate text-sm text-zinc-500">/{feed.slug}</p>
+                {feed.status === "draft" && feed.scheduledAt && (
+                  <p className="mt-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                    🕒 예약: {kstDateTime(feed.scheduledAt)}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-2 text-sm">
+                {feed.status === "draft" && feed.scheduledAt && (
+                  <form action={publishNowAction}>
+                    <input type="hidden" name="id" value={feed.id} />
+                    <button
+                      type="submit"
+                      className="rounded border border-amber-400 px-2 py-1 text-amber-700 dark:border-amber-400/50 dark:text-amber-300"
+                    >
+                      지금 게시
+                    </button>
+                  </form>
+                )}
                 <FeedVisibilityControl
                   id={feed.id}
                   value={feed.visibility as Visibility}

@@ -11,6 +11,7 @@ export default async function NewFeedPage() {
         action={createFeed}
         seriesOptions={series.map((s) => ({ id: s.id, title: s.title }))}
         submitLabel="작성"
+        allowSchedule
       />
     </section>
   );
