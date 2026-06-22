@@ -5,6 +5,7 @@ import {
   applyDeleted,
   applyEdited,
   applyLikeCount,
+  applyReaction,
   appendLoaded,
 } from "./merge";
 
@@ -21,6 +22,7 @@ function node(id: string, replies: CommentNode[] = []): CommentNode {
     createdAt: "2026-01-01T00:00:00.000Z",
     likeCount: 0,
     liked: false,
+    reactions: [],
     replies,
   };
 }
@@ -132,6 +134,45 @@ describe("applyLikeCount", () => {
   test("없는 id → 변경 없음", () => {
     const items = [node("a")];
     expect(applyLikeCount(items, 1, "ghost", 9).items).toBe(items);
+  });
+});
+
+describe("applyReaction", () => {
+  test("신규 이모지 추가(reacted:false), 세트 순서 유지", () => {
+    const items = [node("a")];
+    const r = applyReaction(items, 1, "a", "😂", 2);
+    expect(r.items[0].reactions).toEqual([
+      { emoji: "😂", count: 2, reacted: false },
+    ]);
+    // 👍는 😂보다 세트에서 앞 → 추가 시 앞에 배치
+    const r2 = applyReaction(r.items, 1, "a", "👍", 1);
+    expect(r2.items[0].reactions.map((x) => x.emoji)).toEqual(["👍", "😂"]);
+  });
+
+  test("count 0이면 해당 이모지 제거, 내 reacted는 보존", () => {
+    const items = [
+      node("a"),
+      // 대댓글에 내가 누른 👍
+    ];
+    items[0].reactions = [{ emoji: "👍", count: 3, reacted: true }];
+    const r = applyReaction(items, 1, "a", "👍", 0);
+    expect(r.items[0].reactions).toEqual([]);
+    // 카운트만 바뀌면 reacted 보존
+    items[0].reactions = [{ emoji: "👍", count: 3, reacted: true }];
+    const r2 = applyReaction(items, 1, "a", "👍", 5);
+    expect(r2.items[0].reactions).toEqual([
+      { emoji: "👍", count: 5, reacted: true },
+    ]);
+  });
+
+  test("대댓글 reactions 갱신, total 불변, 없는 id 무변경", () => {
+    const items = [node("a", [node("a1")])];
+    const r = applyReaction(items, 1, "a1", "🎉", 4);
+    expect(r.items[0].replies[0].reactions).toEqual([
+      { emoji: "🎉", count: 4, reacted: false },
+    ]);
+    expect(r.total).toBe(1);
+    expect(applyReaction(items, 1, "ghost", "👍", 1).items).toBe(items);
   });
 });
 

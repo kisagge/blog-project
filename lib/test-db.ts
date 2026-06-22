@@ -158,6 +158,15 @@ const SCHEMA = [
     CONSTRAINT "CommentLike_commentId_fkey" FOREIGN KEY ("commentId") REFERENCES "Comment" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "CommentLike_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
   )`,
+  `CREATE TABLE "CommentReaction" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "commentId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "emoji" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "CommentReaction_commentId_fkey" FOREIGN KEY ("commentId") REFERENCES "Comment" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "CommentReaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+  )`,
   `CREATE INDEX "Comment_feedId_idx" ON "Comment"("feedId")`,
   `CREATE INDEX "Comment_parentId_idx" ON "Comment"("parentId")`,
   `CREATE INDEX "Comment_userId_createdAt_idx" ON "Comment"("userId", "createdAt")`,
@@ -171,6 +180,8 @@ const SCHEMA = [
   )`,
   `CREATE UNIQUE INDEX "Like_feedId_userId_key" ON "Like"("feedId", "userId")`,
   `CREATE UNIQUE INDEX "CommentLike_commentId_userId_key" ON "CommentLike"("commentId", "userId")`,
+  `CREATE INDEX "CommentReaction_commentId_idx" ON "CommentReaction"("commentId")`,
+  `CREATE UNIQUE INDEX "CommentReaction_commentId_userId_emoji_key" ON "CommentReaction"("commentId", "userId", "emoji")`,
   `CREATE UNIQUE INDEX "Bookmark_feedId_userId_key" ON "Bookmark"("feedId", "userId")`,
   `CREATE INDEX "Bookmark_userId_createdAt_idx" ON "Bookmark"("userId", "createdAt")`,
   `CREATE TABLE "Report" (

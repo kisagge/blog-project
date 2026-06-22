@@ -12,6 +12,7 @@ import {
   applyDeleted,
   applyEdited,
   applyLikeCount,
+  applyReaction,
   appendLoaded,
 } from "./merge";
 import {
@@ -104,6 +105,8 @@ export default function CommentSection({
         return applyEdited(t.items, t.total, ev.id, ev.content);
       if (ev.kind === "likeCount")
         return applyLikeCount(t.items, t.total, ev.id, ev.count);
+      if (ev.kind === "reaction")
+        return applyReaction(t.items, t.total, ev.id, ev.emoji, ev.count);
       return applyDeleted(t.items, t.total, ev.id);
     });
   });
