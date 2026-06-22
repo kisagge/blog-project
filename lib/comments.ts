@@ -1,6 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { CommentSchema } from "@/lib/validation";
+import { getReactionSummaries } from "@/lib/comment-reactions";
+import type { ReactionSummary } from "@/lib/reactions";
 
 type AddInput = {
   feedId: string;
@@ -55,6 +57,7 @@ export type CommentNode = {
   createdAt: string;
   likeCount: number;
   liked: boolean;
+  reactions: ReactionSummary[]; // 이모지 리액션(세트 순서, count>0만)
   replies: CommentNode[];
 };
 
@@ -63,6 +66,7 @@ export type CommentEvent =
   | { kind: "created"; parentId: string | null; node: CommentNode }
   | { kind: "edited"; id: string; content: string }
   | { kind: "likeCount"; id: string; count: number }
+  | { kind: "reaction"; id: string; emoji: string; count: number }
   | { kind: "deleted"; id: string };
 
 // 피드 채널(`feed:{id}`)이 나르는 이벤트 union — 댓글 이벤트 + 글(게시물) 좋아요 수.
@@ -82,6 +86,7 @@ function toNode(
     _count: { commentLikes: number };
   },
   likedIds: Set<string>,
+  reactionsById: Map<string, ReactionSummary[]>,
 ): Omit<CommentNode, "replies"> {
   const deleted = c.deletedAt !== null;
   const hidden = c.hiddenAt !== null;
@@ -97,6 +102,8 @@ function toNode(
     createdAt: c.createdAt.toISOString(),
     likeCount: c._count.commentLikes,
     liked: likedIds.has(c.id),
+    // 삭제·숨김 댓글은 리액션 비노출(본문도 비움).
+    reactions: deleted || hidden ? [] : (reactionsById.get(c.id) ?? []),
   };
 }
 
@@ -165,29 +172,28 @@ export async function getFeedComments(
       })
     : [];
 
-  const likedIds = viewerUserId
-    ? new Set(
-        (
-          await prisma.commentLike.findMany({
-            where: {
-              userId: viewerUserId,
-              commentId: { in: [...topIds, ...replyRows.map((r) => r.id)] },
-            },
+  const allIds = [...topIds, ...replyRows.map((r) => r.id)];
+  const [likedIds, reactionsById] = await Promise.all([
+    viewerUserId
+      ? prisma.commentLike
+          .findMany({
+            where: { userId: viewerUserId, commentId: { in: allIds } },
             select: { commentId: true },
           })
-        ).map((r) => r.commentId),
-      )
-    : new Set<string>();
+          .then((rows) => new Set(rows.map((r) => r.commentId)))
+      : Promise.resolve(new Set<string>()),
+    getReactionSummaries(allIds, viewerUserId),
+  ]);
 
   const items = topRows.map((t) => ({
-    ...toNode(t, likedIds),
+    ...toNode(t, likedIds, reactionsById),
     replies: [] as CommentNode[],
   }));
   const byId = new Map(items.map((n) => [n.id, n]));
   for (const r of replyRows) {
     byId
       .get(r.parentId!)
-      ?.replies.push({ ...toNode(r, likedIds), replies: [] });
+      ?.replies.push({ ...toNode(r, likedIds, reactionsById), replies: [] });
   }
   return { items, total };
 }

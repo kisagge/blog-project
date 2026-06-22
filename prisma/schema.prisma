@@ -105,6 +105,7 @@ model User {
   likes     Like[]
   bookmarks Bookmark[]
   commentLikes CommentLike[]
+  commentReactions CommentReaction[]
   pushSubscriptions PushSubscription[]
   notifications Notification[]
   feeds     Feed[]
@@ -210,6 +211,7 @@ model Comment {
   parent    Comment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("replies")
   commentLikes CommentLike[]
+  commentReactions CommentReaction[]
 
   @@index([feedId])
   @@index([parentId])
@@ -242,6 +244,20 @@ model CommentLike {
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([commentId, userId])
+}
+
+// 댓글 이모지 리액션(좋아요와 동형, emoji 차원 추가). 고정 세트(REACTION_EMOJIS) 1종당 1행.
+model CommentReaction {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String
+  emoji     String              // 고정 세트 중 하나(👍 😂 😮 😢 🎉)
+  createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([commentId, userId, emoji]) // 같은 회원이 같은 댓글에 같은 이모지 1회
+  @@index([commentId])                  // 댓글별 집계
 }
 
 model Like {

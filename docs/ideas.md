@@ -46,4 +46,4 @@
 | 39  | 운영 견고성                  | `/api/health`(DB ping, node fetch healthcheck) + 관리자 거버넌스 감사 로그(`AuditLog`·`logAudit`·`/admin/audit`, 무엇·언제 스냅샷). 운영 안정·추적성                                                | 완료 |
 | 40  | 태그 전용 라우트             | `/feed/tags/[slug]` SSR 라우트 — 태그별 canonical + `CollectionPage`/`ItemList` JSON-LD(`buildTagJsonLd`) + sitemap. 칩 재포인트, `getFeedsByTag` 가시성 게이트. 프로필 댓글 `?c=` 딥링크 동반      | 완료 |
 | 41  | 모션·포커스 a11y 보강        | JS 스무스 스크롤(맨위로·댓글 딥링크) `prefersReducedMotion()` 존중(CSS는 기존) + 버튼·링크·summary 일관 `:focus-visible` 링. AGENTS.md 접근성 원칙 충족                                             | 완료 |
-| 42  | 댓글 이모지 리액션           | 좋아요 외 이모지 리액션(👍😂😮 등) — 댓글/글에 다중 반응. 기존 `CommentLike` 동형 확장                                                                                                              | 보류 |
+| 42  | 댓글 이모지 리액션           | 좋아요 외 이모지 리액션(👍 😂 😮 😢 🎉) — 댓글에 다중 반응. `CommentReaction` 동형 모델·SSE·낙관 UI(♥ 좋아요와 공존). v0.86.0                                                                       | 완료 |

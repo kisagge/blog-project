@@ -1,6 +1,25 @@
 import type { CommentNode } from "@/lib/comments";
+import { REACTION_EMOJIS, type ReactionSummary } from "@/lib/reactions";
 
 type Tree = { items: CommentNode[]; total: number };
+
+// 한 댓글의 reactions 배열에 (emoji, count) 적용. count===0이면 제거, 신규면 추가(reacted:false —
+// SSE는 전역 카운트만 전달하므로 수신 뷰어의 reacted는 보존). 결과는 고정 세트 순서 유지.
+function withReaction(
+  reactions: ReactionSummary[],
+  emoji: string,
+  count: number,
+): ReactionSummary[] {
+  const byEmoji = new Map(reactions.map((r) => [r.emoji, r]));
+  if (count <= 0) byEmoji.delete(emoji);
+  else {
+    const prev = byEmoji.get(emoji);
+    byEmoji.set(emoji, { emoji, count, reacted: prev?.reacted ?? false });
+  }
+  return REACTION_EMOJIS.map((e) => byEmoji.get(e)).filter(
+    (r): r is ReactionSummary => !!r,
+  );
+}
 
 // 트리에 해당 id의 댓글(상위 또는 대댓글)이 이미 있는지.
 function exists(items: CommentNode[], id: string): boolean {
@@ -48,6 +67,37 @@ export function applyLikeCount(
         ...t,
         replies: t.replies.map((r) =>
           r.id === id ? { ...r, likeCount: count } : r,
+        ),
+      };
+    }
+    return t;
+  });
+  return changed ? { items: next, total } : { items, total };
+}
+
+// 리액션 병합. 상위/대댓글의 reactions 배열에서 해당 emoji 카운트를 서버 truth로 갱신
+// (viewer의 reacted는 불변 — 본인 토글은 컴포넌트 낙관 상태가 소유). likeCount 병합과 동형.
+export function applyReaction(
+  items: CommentNode[],
+  total: number,
+  id: string,
+  emoji: string,
+  count: number,
+): Tree {
+  let changed = false;
+  const next = items.map((t) => {
+    if (t.id === id) {
+      changed = true;
+      return { ...t, reactions: withReaction(t.reactions, emoji, count) };
+    }
+    if (t.replies.some((r) => r.id === id)) {
+      changed = true;
+      return {
+        ...t,
+        replies: t.replies.map((r) =>
+          r.id === id
+            ? { ...r, reactions: withReaction(r.reactions, emoji, count) }
+            : r,
         ),
       };
     }

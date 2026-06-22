@@ -5,6 +5,7 @@ import ReportButton from "@/app/report/report-button";
 import CommentBody from "./comment-body";
 import CommentForm from "./comment-form";
 import CommentLikeButton from "./comment-like-button";
+import CommentReactions from "./comment-reactions";
 import { editCommentAction } from "./comment-actions";
 import { kstDateTime, isoInstant } from "@/lib/kst";
 import type { CommentNode } from "@/lib/comments";
@@ -156,6 +157,15 @@ export default function CommentItem({
         <div className="mt-1">
           <CommentBody content={node.content} />
         </div>
+      )}
+      {!gone && !editing && (
+        <CommentReactions
+          commentId={node.id}
+          feedId={feedId}
+          slug={slug}
+          initialReactions={node.reactions}
+          canParticipate={canParticipate}
+        />
       )}
       <div
         className="mt-1 flex items-center gap-3 text-xs text-zinc-500"

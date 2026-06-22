@@ -14,6 +14,8 @@ import {
 } from "@/lib/comments";
 import { toggleLike, getLikeSummary } from "@/lib/likes";
 import { toggleCommentLike } from "@/lib/comment-likes";
+import { toggleCommentReaction } from "@/lib/comment-reactions";
+import { isReactionEmoji } from "@/lib/reactions";
 import {
   notifyCommentReply,
   notifyFeedComment,
@@ -83,6 +85,7 @@ export async function addCommentAction(
     createdAt: new Date().toISOString(),
     likeCount: 0,
     liked: false,
+    reactions: [],
     replies: [],
   };
   // 실시간(SSE): 같은 글을 보는 다른 뷰어에게 새 댓글 전파(본인은 dedup으로 흡수).
@@ -187,4 +190,19 @@ export async function toggleCommentLikeAction(
   revalidate(slug);
   // 실시간: 같은 글을 보는 다른 뷰어에게 새 좋아요 수 전파(본인 liked는 낙관 유지).
   publishComment(feedId, { kind: "likeCount", id: commentId, count });
+}
+
+export async function toggleCommentReactionAction(
+  commentId: string,
+  feedId: string,
+  slug: string,
+  emoji: string,
+) {
+  const actor = await getCommentActor();
+  if (!actor) return;
+  if (!isReactionEmoji(emoji)) return;
+  const { count } = await toggleCommentReaction(commentId, actor.userId, emoji);
+  revalidate(slug);
+  // 실시간: 같은 글을 보는 다른 뷰어에게 해당 이모지 새 카운트 전파(본인 reacted는 낙관 유지).
+  publishComment(feedId, { kind: "reaction", id: commentId, emoji, count });
 }
