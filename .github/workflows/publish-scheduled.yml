@@ -1,11 +1,10 @@
 name: Publish Scheduled
 
-# 10분마다(+수동) 예약 발행 도래분을 게시. backup.yml과 동일한 SSH 시크릿 재사용(새 크레덴셜 없음).
-# 호스트에서 localhost로만 호출(공개 자동화 표면 없음). 시크릿은 호스트 .env의 CRON_SECRET.
-# GitHub cron은 ±수분~십수분 지연될 수 있어 발행은 근사 시각.
+# 정시 발행은 앱 내부 스케줄러(instrumentation.ts, 2분 간격)가 담당한다.
+# 이 워크플로는 수동 백업 — 필요 시 즉시 발행을 트리거(GitHub schedule은 저활동 레포에서
+# 수 시간 지연돼 신뢰 불가하므로 제거). backup.yml과 동일 SSH로 호스트에서 localhost 호출.
+# 호스트 .env에 CRON_SECRET 설정 시에만 동작(미설정이면 401 → 건너뜀).
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 jobs:
