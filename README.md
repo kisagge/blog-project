@@ -48,19 +48,19 @@ pnpm dev                      # http://localhost:3010
 
 ### 환경 변수 (`.env`, 전체 예시는 `.env.example`)
 
-| 변수                                                            | 필수 | 설명                                                 |
-| --------------------------------------------------------------- | :--: | ---------------------------------------------------- |
-| `DATABASE_URL`                                                  |  ✓   | SQLite 경로 (예: `file:./dev.db`)                    |
-| `ADMIN_PASSWORD`                                                |  ✓   | 관리자 로그인 비밀번호(평문)                         |
-| `SESSION_SECRET`                                                |  ✓   | 세션 JWT 서명 키 (`openssl rand -base64 32`)         |
-| `ADMIN_TOTP_SECRET`                                             |      | 관리자 2FA(Google Authenticator) — 설정 시 OTP 요구  |
-| `UPLOAD_DIR`                                                    |      | 업로드 저장 디렉토리 (기본 `data/uploads`)           |
-| `NEOPLE_API_KEY`                                                |      | 던파 OpenAPI 키 (없으면 `/df` 비활성)                |
-| `KAKAO_JS_KEY`                                                  |      | 카카오 JS 키 (없으면 카카오 공유 버튼 비노출)        |
-| `VAPID_PUBLIC_KEY` / `_PRIVATE_KEY` / `_SUBJECT`                |      | 웹 푸시 알림 키 (`npx web-push generate-vapid-keys`) |
-| `SMTP_HOST` / `_PORT` / `_USER` / `_PASS` / `_FROM` / `_SECURE` |      | 비밀번호 재설정 메일 발송(미설정 시 콘솔 로그)       |
-| `TURNSTILE_SITE_KEY` / `_SECRET_KEY`                            |      | Cloudflare Turnstile CAPTCHA(무료, 미설정 시 비활성) |
-| `CRON_SECRET`                                                   |      | 예약 발행 cron 인증(미설정 시 예약 발행 비활성)      |
+| 변수                                                            | 필수 | 설명                                                                             |
+| --------------------------------------------------------------- | :--: | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                  |  ✓   | SQLite 경로 (예: `file:./dev.db`)                                                |
+| `ADMIN_PASSWORD`                                                |  ✓   | 관리자 로그인 비밀번호(평문)                                                     |
+| `SESSION_SECRET`                                                |  ✓   | 세션 JWT 서명 키 (`openssl rand -base64 32`)                                     |
+| `ADMIN_TOTP_SECRET`                                             |      | 관리자 2FA(Google Authenticator) — 설정 시 OTP 요구                              |
+| `UPLOAD_DIR`                                                    |      | 업로드 저장 디렉토리 (기본 `data/uploads`)                                       |
+| `NEOPLE_API_KEY`                                                |      | 던파 OpenAPI 키 (없으면 `/df` 비활성)                                            |
+| `KAKAO_JS_KEY`                                                  |      | 카카오 JS 키 (없으면 카카오 공유 버튼 비노출)                                    |
+| `VAPID_PUBLIC_KEY` / `_PRIVATE_KEY` / `_SUBJECT`                |      | 웹 푸시 알림 키 (`npx web-push generate-vapid-keys`)                             |
+| `SMTP_HOST` / `_PORT` / `_USER` / `_PASS` / `_FROM` / `_SECURE` |      | 비밀번호 재설정 메일 발송(미설정 시 콘솔 로그)                                   |
+| `TURNSTILE_SITE_KEY` / `_SECRET_KEY`                            |      | Cloudflare Turnstile CAPTCHA(무료, 미설정 시 비활성)                             |
+| `CRON_SECRET`                                                   |      | (선택) 예약 발행 수동 백업 엔드포인트 인증 — 정시 발행은 앱 내부 스케줄러가 처리 |
 
 ## 스크립트
 

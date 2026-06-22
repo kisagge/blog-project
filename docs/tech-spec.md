@@ -148,7 +148,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 494 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 496 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -237,10 +237,10 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 
 ### 4.23 예약 발행
 
-관리자가 **글 생성 시에만** 미래 발행 시각을 지정하면 그때까지 숨겼다가 cron이 자동 게시.
+관리자가 **글 생성 시에만** 미래 발행 시각을 지정하면 그때까지 숨겼다가 자동 게시.
 
-- **모델 재사용**: 예약 글 = `status:"draft"` + 새 `scheduledAt`. draft는 이미 모든 공개 표면(목록·검색·상세(작성자 외)·sitemap·RSS·태그·관련·인기·인접)에서 `status:"published"` 필터로 제외되므로 **공개 쿼리 변경 0건**. 도래 시 cron이 `draft→published`로만 뒤집고 `visibility`(작성 시 선택)는 그대로 라이브.
-- **cron**: `publishDueFeeds`(`updateMany`로 `status="draft" ∧ scheduledAt≤now` 일괄 게시·`scheduledAt` 비움)를 `/api/cron/publish-scheduled`(시크릿 헤더 `CRON_SECRET` **상수시간 비교**, 미설정 시 401)로 노출. GitHub Actions(`publish-scheduled.yml`, 10분 주기)가 `backup.yml`과 동일 SSH로 **호스트에서 localhost 호출**(공개 자동화 표면·새 GitHub secret 없음). GitHub cron 특성상 발행은 근사 시각(±수분~십수분).
+- **모델 재사용**: 예약 글 = `status:"draft"` + 새 `scheduledAt`. draft는 이미 모든 공개 표면(목록·검색·상세(작성자 외)·sitemap·RSS·태그·관련·인기·인접)에서 `status:"published"` 필터로 제외되므로 **공개 쿼리 변경 0건**. 도래 시 `draft→published`로만 뒤집고 `visibility`(작성 시 선택)는 그대로 라이브.
+- **발행 트리거(앱 내부 스케줄러)**: 컨테이너(`next start`)가 항상 떠 있으므로 **Next `instrumentation.ts`**가 부팅 시 `startPublishScheduler`를 1회 시작 → **2분 간격**으로 `publishDueFeeds`(`updateMany`로 `status="draft" ∧ scheduledAt≤now` 일괄 게시·`scheduledAt` 비움)를 직접 호출. **외부 cron·시크릿 불필요**(GitHub Actions schedule은 저활동 레포에서 수 시간 지연돼 신뢰 불가 → 제거). 단일 프로세스라 인터벌 1개(globalThis 가드로 중복 방지), `updateMany`라 멱등. **수동 백업**: 같은 로직을 `/api/cron/publish-scheduled`(헤더 `CRON_SECRET` **상수시간 비교**, 미설정 401)로 노출하고 `publish-scheduled.yml`(`workflow_dispatch`)로 즉시 트리거 가능.
 - **시각**: 입력은 **react-day-picker**(날짜) + time 입력 → `"YYYY-MM-DDTHH:MM"`(KST 벽시계)를 hidden input으로 제출, `kstWallClockToUtc`로 UTC 변환(브라우저 TZ 무관·달력 오버플로 거부). 과거/무효는 폼 에러. **수정 화면엔 예약 컨트롤 미노출**(생성 전용 보장: `updateFeed`는 `scheduledAt` 무시).
 - **관리자 운영**: 목록에 "🕒 예약: {시각}" 배지 + **"지금 게시"**(예약 초안 즉시 발행) 안전밸브. 회원 임시저장(`scheduledAt` null)은 영향 없음.
 
@@ -250,5 +250,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 494), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 496), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

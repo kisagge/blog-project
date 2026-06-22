@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 vi.mock("server-only", () => ({}));
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 import { makeFeed, makeUser } from "@/lib/test-factories";
 
@@ -76,5 +76,31 @@ describe("publishDueFeeds (통합)", () => {
 
     const c = await prisma.feed.findUnique({ where: { id: memberDraft.id } });
     expect(c?.status).toBe("draft"); // scheduledAt null이라 무관
+  });
+});
+
+describe("startPublishScheduler (앱 내부 인터벌)", () => {
+  afterEach(() => {
+    s.stopPublishScheduler();
+    vi.useRealTimers();
+  });
+
+  test("부팅 즉시 1회 + interval마다 호출", () => {
+    vi.useFakeTimers();
+    const run = vi.fn(async () => 0);
+    s.startPublishScheduler(1000, run);
+    expect(run).toHaveBeenCalledTimes(1); // 즉시 1회
+    vi.advanceTimersByTime(3000);
+    expect(run).toHaveBeenCalledTimes(4); // +3회
+  });
+
+  test("중복 시작 방지(두 번 호출해도 인터벌 1개)", () => {
+    vi.useFakeTimers();
+    const run = vi.fn(async () => 0);
+    s.startPublishScheduler(1000, run);
+    s.startPublishScheduler(1000, run); // 두 번째는 무시
+    expect(run).toHaveBeenCalledTimes(1); // 즉시 호출도 1회뿐
+    vi.advanceTimersByTime(2000);
+    expect(run).toHaveBeenCalledTimes(3); // 인터벌 1개라 2회만 추가
   });
 });
