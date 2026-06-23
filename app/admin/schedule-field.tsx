@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
+import { formatKstWallClock, kstWallClockToUtc } from "@/lib/kst";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const fmtDate = (d: Date) =>
@@ -17,6 +18,9 @@ export default function ScheduleField() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const value = enabled && date && time ? `${fmtDate(date)}T${time}` : "";
+  // 과거 시각 경고(클라 판정 — server-only인 decideSchedule 대신 lib/kst만 사용).
+  const at = value ? kstWallClockToUtc(value) : null;
+  const isPast = !!at && at.getTime() <= new Date().getTime();
 
   return (
     <div className="flex flex-col gap-2">
@@ -47,13 +51,17 @@ export default function ScheduleField() {
               className="rounded border border-black/15 bg-transparent px-2 py-1 dark:border-white/20"
             />
           </label>
-          {value ? (
-            <p className="text-zinc-500" aria-live="polite">
-              예약: {fmtDate(date!)} {time} (KST)
-            </p>
-          ) : (
+          {!value ? (
             <p role="alert" className="text-amber-600">
               날짜를 선택하세요.
+            </p>
+          ) : isPast ? (
+            <p role="alert" className="text-red-600">
+              ⚠ 과거 시각입니다 — 미래로 선택하세요.
+            </p>
+          ) : (
+            <p className="text-zinc-500" aria-live="polite">
+              📅 {formatKstWallClock(value)} 발행 예정
             </p>
           )}
         </div>

@@ -3,6 +3,13 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import type { CommentNode } from "@/lib/comments";
 import LoginRequiredModal from "../login-required-modal";
 import { addCommentAction, type AddCommentResult } from "./comment-actions";
+import {
+  draftKey,
+  loadDraft,
+  saveDraft,
+  clearDraft,
+  pruneDrafts,
+} from "@/lib/draft-store";
 
 const MAX = 2000;
 
@@ -22,6 +29,8 @@ export default function CommentForm({
   onCreated?: (comment: CommentNode) => void;
 }) {
   const action = addCommentAction.bind(null, { feedId, slug, parentId });
+  // 최상위 댓글 박스만 자동저장(답글은 일시적이라 제외). 글당 키 1개.
+  const draftK = parentId ? null : draftKey("member", `comment:${feedId}`);
   const [content, setContent] = useState("");
   const [state, formAction, pending] = useActionState<
     AddCommentResult | undefined,
@@ -30,12 +39,37 @@ export default function CommentForm({
     const r = await action(s, fd);
     if (r && "comment" in r) {
       setContent("");
+      if (draftK) clearDraft(draftK);
       onCreated?.(r.comment);
     }
     return r;
   }, undefined);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const modal = useRef<HTMLDialogElement>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 마운트: 저장된 초안 조용히 복원(댓글은 짧아 배너 없이 프리필).
+  useEffect(() => {
+    if (!draftK) return;
+    pruneDrafts();
+    const saved = loadDraft<string>(draftK);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved) setContent(saved);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 내용 변경 디바운스 저장(비면 삭제). best-effort.
+  useEffect(() => {
+    if (!draftK) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      if (content.trim()) saveDraft(draftK, content);
+      else clearDraft(draftK);
+    }, 600);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [content, draftK]);
 
   // 입력에 맞춰 높이 자동 확장. 최대 5줄(max-height)까지 늘고 그 이상은 스크롤.
   useEffect(() => {

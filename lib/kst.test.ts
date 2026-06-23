@@ -1,4 +1,10 @@
-import { kstDate, kstDateTime, isoInstant, kstWallClockToUtc } from "@/lib/kst";
+import {
+  kstDate,
+  kstDateTime,
+  isoInstant,
+  kstWallClockToUtc,
+  formatKstWallClock,
+} from "@/lib/kst";
 
 // 포맷 문자열의 구두점은 ICU 버전 의존이라 단정하지 않고, KST(UTC+9) 경계 동작을 검증.
 describe("kstDate", () => {
@@ -47,6 +53,22 @@ describe("kstWallClockToUtc", () => {
     expect(kstWallClockToUtc("2026-13-01T00:00")).toBeNull(); // 13월
     expect(kstWallClockToUtc("2026-02-30T00:00")).toBeNull(); // 2월 30일
     expect(kstWallClockToUtc("2026-06-22T24:00")).toBeNull(); // 24시
+  });
+});
+
+describe("formatKstWallClock", () => {
+  test("사람이 읽는 KST 표시(연·오전/오후·시각 포함)", () => {
+    const s = formatKstWallClock("2026-06-23T07:23");
+    expect(s).toContain("2026");
+    expect(s).toContain("오전");
+    expect(s).toContain("7:23");
+  });
+  test("오후 시각", () => {
+    expect(formatKstWallClock("2026-06-23T15:00")).toContain("오후");
+  });
+  test("무효 입력은 빈 문자열", () => {
+    expect(formatKstWallClock("")).toBe("");
+    expect(formatKstWallClock("nope")).toBe("");
   });
 });
 
