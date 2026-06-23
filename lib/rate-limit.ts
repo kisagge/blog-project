@@ -2,6 +2,12 @@
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
 let lastSweep = 0;
+const MAX_BUCKETS = 50_000; // 메모리 상한(≈수 MB) — 고유 키 폭주(공격) 시 OOM 안전밸브.
+
+// 현재 버킷 수(관측·테스트용).
+export function bucketCount(): number {
+  return buckets.size;
+}
 
 // key당 windowMs 동안 limit회까지 허용. 허용이면 true, 초과면 false.
 // now는 테스트용 주입(기본 Date.now()).
@@ -11,10 +17,12 @@ export function rateLimit(
   windowMs: number,
   now: number = Date.now(),
 ): boolean {
-  // 가끔 만료 버킷 정리(메모리 누수 방지).
-  if (now - lastSweep > 60_000) {
+  // 가끔(또는 상한 초과 시) 만료 버킷 정리(메모리 누수 방지).
+  if (now - lastSweep > 60_000 || buckets.size > MAX_BUCKETS) {
     lastSweep = now;
     for (const [k, b] of buckets) if (b.resetAt <= now) buckets.delete(k);
+    // 만료분 정리 후에도 상한 초과면(병적 폭주=공격) 전체 비움 — OOM 방지 우선.
+    if (buckets.size > MAX_BUCKETS) buckets.clear();
   }
   const b = buckets.get(key);
   if (!b || b.resetAt <= now) {

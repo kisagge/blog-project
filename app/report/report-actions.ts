@@ -5,6 +5,7 @@ import { ReportSchema } from "@/lib/validation";
 import { notifyAdminReport } from "@/lib/notifications";
 import { publishReports } from "@/lib/events";
 import { allowAction, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
+import { swallow } from "@/lib/log";
 
 // 신고 제출. 승인 회원/관리자만(차단·비로그인 거부). 본인·중복·관리자 콘텐츠는 createReport에서 방어.
 export async function submitReportAction(
@@ -33,7 +34,9 @@ export async function submitReportAction(
   // 대상의 첫 신고일 때만 관리자 알림(중복·후속 신고는 무음, 누적은 큐에서 확인).
   // 새 대상이 큐에 들어오면 관리자 라이브 배지도 갱신.
   if (res.firstForTarget) {
-    void notifyAdminReport({ targetType: args.targetType }).catch(() => {});
+    void notifyAdminReport({ targetType: args.targetType }).catch(
+      swallow("notify:admin-report"),
+    );
     publishReports(await countPendingReportTargets());
   }
   return { ok: true };

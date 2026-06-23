@@ -74,9 +74,11 @@ export default function PushToggle({ vapidKey }: { vapidKey?: string }) {
       type="button"
       onClick={subscribed ? disable : enable}
       disabled={busy}
+      aria-pressed={subscribed}
       className="w-full rounded px-3 py-2 text-left text-zinc-600 hover:bg-black/[.04] disabled:opacity-50 dark:text-zinc-300 dark:hover:bg-white/[.06]"
     >
-      {subscribed ? "🔔 알림 끄기" : "🔕 알림 받기"}
+      <span aria-hidden>{subscribed ? "🔔" : "🔕"}</span>{" "}
+      {subscribed ? "알림 끄기" : "알림 받기"}
     </button>
   );
 }

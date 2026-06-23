@@ -1,6 +1,7 @@
 import "server-only";
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import { swallow } from "@/lib/log";
 
 let configured = false;
 function configure(): boolean {
@@ -41,8 +42,9 @@ type Payload = { title: string; body: string; url?: string };
 
 type StoredSub = { endpoint: string; p256dh: string; auth: string };
 
-// 구독 목록에 병렬 전송(개별 실패 격리 + 만료 구독 정리). sendToUser·sendToUsers 공용.
+// 구독 목록에 병렬 전송(개별 실패 격리 + 만료 구독 일괄 정리). sendToUser·sendToUsers 공용.
 async function sendToSubs(subs: StoredSub[], payload: Payload) {
+  const dead: string[] = [];
   await Promise.all(
     subs.map(async (s) => {
       try {
@@ -52,15 +54,16 @@ async function sendToSubs(subs: StoredSub[], payload: Payload) {
         );
       } catch (e) {
         const code = (e as { statusCode?: number })?.statusCode;
-        if (code === 404 || code === 410) {
-          // 만료/무효 구독 정리.
-          await prisma.pushSubscription
-            .deleteMany({ where: { endpoint: s.endpoint } })
-            .catch(() => {});
-        }
+        if (code === 404 || code === 410) dead.push(s.endpoint); // 만료/무효 → 일괄 삭제 대상
       }
     }),
   );
+  // 죽은 구독은 건별이 아니라 한 번에 삭제(쿼리 1개).
+  if (dead.length > 0) {
+    await prisma.pushSubscription
+      .deleteMany({ where: { endpoint: { in: dead } } })
+      .catch(swallow("push:cleanup"));
+  }
 }
 
 export async function sendToUser(userId: string, payload: Payload) {

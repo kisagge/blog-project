@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { rateLimit, allowAction, ACTION_LIMITS } from "@/lib/rate-limit";
+import {
+  rateLimit,
+  allowAction,
+  ACTION_LIMITS,
+  bucketCount,
+} from "@/lib/rate-limit";
 
 describe("rateLimit", () => {
   test("limit까지 허용, 초과는 차단, 윈도우 지나면 리셋", () => {
@@ -34,5 +39,16 @@ describe("allowAction", () => {
     expect(allowAction("signin", id)).toBe(true);
     expect(allowAction("signup", id)).toBe(true); // 다른 scope → 독립
     expect(allowAction("signin", `${id}-other`)).toBe(true); // 다른 id → 독립
+  });
+});
+
+describe("버킷 메모리 상한", () => {
+  // 다른 테스트와 키/now가 겹치지 않게 큰 now 사용. 고유 키를 상한 이상 주입해도
+  // 하드 캡(MAX_BUCKETS)이 버킷 수를 상한 이하로 유지(OOM 안전밸브) — 폭주/공격 가드.
+  test("MAX_BUCKETS 초과 주입 시 버킷 수가 상한 이하로 유지", () => {
+    const now = 9_000_000; // 모두 live(만료 스윕으로는 안 줄어듦) → 하드 캡만으로 제어됨
+    for (let i = 0; i <= 50_001; i++) rateLimit(`flood-${i}`, 5, 60_000, now);
+    rateLimit("flood-final", 5, 60_000, now); // 마지막 진입에서 캡 정리 트리거
+    expect(bucketCount()).toBeLessThanOrEqual(50_000);
   });
 });
