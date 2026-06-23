@@ -53,6 +53,13 @@ export function publishComment(feedId: string, ev: CommentEvent): void {
 export function publishFeedLike(feedId: string, count: number): void {
   publish(`feed:${feedId}`, { kind: "feedLike", count });
 }
+export function publishFeedReaction(
+  feedId: string,
+  emoji: string,
+  count: number,
+): void {
+  publish(`feed:${feedId}`, { kind: "feedReaction", emoji, count });
+}
 
 // ── 미처리 신고 수(관리자 단일 채널) ──
 export function subscribeReports(cb: (count: number) => void): () => void {

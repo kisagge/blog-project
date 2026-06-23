@@ -2,9 +2,11 @@ import { getSession, getViewerRole } from "@/lib/dal";
 import { getCommentActor } from "@/lib/comment-actor";
 import { getFeedComments, type CommentSort } from "@/lib/comments";
 import { getLikeSummary } from "@/lib/likes";
+import { getFeedReactionSummary } from "@/lib/feed-reactions";
 import { getBookmarkStatus } from "@/lib/bookmarks";
 import LikeButton from "./like-button";
 import BookmarkButton from "./bookmark-button";
+import FeedReactions from "./feed-reactions";
 import CommentSection from "./comments/comment-section";
 import { FeedEventsProvider } from "./feed-events-context";
 
@@ -26,9 +28,10 @@ export default async function FeedEngagement({
   const canParticipate = !!actor;
   // 비회원(anon) 뷰어에겐 작성자 닉네임을 평문으로(막다른 프로필 링크 제거).
   const linkAuthors = role !== "anon";
-  const [page, like, bookmarked] = await Promise.all([
+  const [page, like, reactions, bookmarked] = await Promise.all([
     getFeedComments(feedId, { sort, viewerUserId: actor?.userId }),
     getLikeSummary(feedId, actor?.userId),
+    getFeedReactionSummary(feedId, actor?.userId),
     getBookmarkStatus(feedId, actor?.userId),
   ]);
 
@@ -55,6 +58,13 @@ export default async function FeedEngagement({
             />
           )}
         </div>
+        {/* 글 이모지 리액션 — 좋아요/북마크 줄 아래. 글 SSE 연결을 공유. */}
+        <FeedReactions
+          feedId={feedId}
+          slug={slug}
+          initialReactions={reactions}
+          canParticipate={canParticipate}
+        />
         {/* 정렬 변경(URL) 시 새 초기 데이터로 다시 마운트 */}
         <CommentSection
           key={sort}

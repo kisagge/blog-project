@@ -33,6 +33,7 @@ model Feed {
   series    Series?   @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   comments  Comment[]
   likes     Like[]
+  reactions FeedReaction[]
   bookmarks Bookmark[]
   feedTags  FeedTag[]
 
@@ -109,6 +110,7 @@ model User {
   bookmarks Bookmark[]
   commentLikes CommentLike[]
   commentReactions CommentReaction[]
+  feedReactions FeedReaction[]
   pushSubscriptions PushSubscription[]
   notifications Notification[]
   feeds     Feed[]
@@ -273,6 +275,20 @@ model Like {
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([feedId, userId])
+}
+
+// 글 이모지 리액션(좋아요와 동형, emoji 차원 추가). 고정 세트(REACTION_EMOJIS) 1종당 1행.
+model FeedReaction {
+  id        String   @id @default(uuid())
+  feedId    String
+  userId    String
+  emoji     String              // 고정 세트 중 하나(👍 😂 😮 😢 🎉)
+  createdAt DateTime @default(now())
+  feed      Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([feedId, userId, emoji]) // 같은 회원이 같은 글에 같은 이모지 1회
+  @@index([feedId])                  // 글별 집계
 }
 
 // 북마크(개인 저장). 좋아요와 동형이나 공개 카운트·실시간 없는 개인용. createdAt=저장 시각.
