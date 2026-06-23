@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 import { FEED_LIST_SELECT } from "@/lib/feeds";
 import { notifyFollow } from "@/lib/notifications";
+import { swallow } from "@/lib/log";
 
 export type FollowResult = { ok: true } | { error: string };
 
@@ -42,7 +43,7 @@ export async function followUser(
       followingId,
       fromUserId: followerId,
       fromNickname: follower.nickname,
-    }).catch(() => {}); // 알림 실패가 팔로우를 막지 않게.
+    }).catch(swallow("notify:follow")); // 알림 실패가 팔로우를 막지 않게.
   }
   return { ok: true };
 }

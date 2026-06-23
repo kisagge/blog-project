@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { kstWallClockToUtc } from "@/lib/kst";
+import { swallow } from "@/lib/log";
 
 // 예약 발행 도래분 일괄 게시. status="draft" + scheduledAt<=now(=null 제외 → 회원 임시저장 무관)을
 // published로 전환하고 publishedAt 기록·scheduledAt 비움. 발행 건수 반환(절대 throw 안 함 가정 호출부).
@@ -20,8 +21,11 @@ export function startPublishScheduler(
   run: () => Promise<unknown> = publishDueFeeds, // 테스트 주입용
 ): void {
   if (g.__pubSched) return; // 중복 시작 방지(register 재호출·HMR)
-  void run().catch(() => {}); // 부팅 즉시 1회
-  g.__pubSched = setInterval(() => void run().catch(() => {}), intervalMs);
+  void run().catch(swallow("scheduler:publish-due")); // 부팅 즉시 1회
+  g.__pubSched = setInterval(
+    () => void run().catch(swallow("scheduler:publish-due")),
+    intervalMs,
+  );
   g.__pubSched.unref?.(); // 테스트/종료 시 프로세스 잔류 방지
 }
 

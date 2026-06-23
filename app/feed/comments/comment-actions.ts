@@ -21,6 +21,7 @@ import {
   notifyFeedComment,
   notifyCommentMention,
 } from "@/lib/notifications";
+import { swallow } from "@/lib/log";
 import { publishComment, publishFeedLike } from "@/lib/events";
 
 export type AddCommentResult = { error: string } | { comment: CommentNode };
@@ -53,7 +54,7 @@ export async function addCommentAction(
       fromUserId: actor.userId,
       fromNickname: actor.nickname,
       content,
-    }).catch(() => {});
+    }).catch(swallow("notify:comment-reply"));
   } else {
     void notifyFeedComment({
       feedId: args.feedId,
@@ -61,7 +62,7 @@ export async function addCommentAction(
       slug: args.slug,
       fromUserId: actor.userId,
       fromNickname: actor.nickname,
-    }).catch(() => {});
+    }).catch(swallow("notify:feed-comment"));
   }
   // @멘션 알림(답글/최상위 무관) — 본문에 멘션된 승인 회원에게.
   // 저장본과 동일하게 trim한 본문으로 멘션 판정.
@@ -71,7 +72,7 @@ export async function addCommentAction(
     slug: args.slug,
     fromUserId: actor.userId,
     fromNickname: actor.nickname,
-  }).catch(() => {});
+  }).catch(swallow("notify:comment-mention"));
   revalidate(args.slug);
   const node: CommentNode = {
     id: res.id,
