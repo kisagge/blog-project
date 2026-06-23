@@ -15,14 +15,22 @@ import {
 import { toggleLike, getLikeSummary } from "@/lib/likes";
 import { toggleCommentLike } from "@/lib/comment-likes";
 import { toggleCommentReaction } from "@/lib/comment-reactions";
-import { isReactionEmoji } from "@/lib/reactions";
+import {
+  toggleFeedReaction,
+  getFeedReactionSummary,
+} from "@/lib/feed-reactions";
+import { isReactionEmoji, type ReactionSummary } from "@/lib/reactions";
 import {
   notifyCommentReply,
   notifyFeedComment,
   notifyCommentMention,
 } from "@/lib/notifications";
 import { swallow } from "@/lib/log";
-import { publishComment, publishFeedLike } from "@/lib/events";
+import {
+  publishComment,
+  publishFeedLike,
+  publishFeedReaction,
+} from "@/lib/events";
 
 export type AddCommentResult = { error: string } | { comment: CommentNode };
 
@@ -178,6 +186,28 @@ export async function toggleLikeAction(feedId: string, slug: string) {
   revalidate(slug);
   // 실시간: 같은 글을 보는 다른 뷰어에게 새 좋아요 수 전파(본인 liked는 낙관 유지).
   publishFeedLike(feedId, count);
+}
+
+export async function toggleFeedReactionAction(
+  feedId: string,
+  slug: string,
+  emoji: string,
+) {
+  const actor = await getCommentActor();
+  if (!actor) return;
+  if (!isReactionEmoji(emoji)) return;
+  const { count } = await toggleFeedReaction(feedId, actor.userId, emoji);
+  revalidate(slug);
+  // 실시간: 같은 글을 보는 다른 뷰어에게 해당 이모지 새 카운트 전파(본인 reacted는 낙관 유지).
+  publishFeedReaction(feedId, emoji, count);
+}
+
+// SSE 재접속 재동기화용: 글 리액션 요약(이모지별 수+본인 누름)을 서버 truth로 재조회.
+export async function getFeedReactionSummaryAction(
+  feedId: string,
+): Promise<ReactionSummary[]> {
+  const actor = await getCommentActor();
+  return getFeedReactionSummary(feedId, actor?.userId);
 }
 
 export async function toggleCommentLikeAction(

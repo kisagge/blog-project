@@ -97,7 +97,8 @@ export default function CommentSection({
       );
       return;
     }
-    if (ev.kind === "feedLike") return;
+    // 글 좋아요·리액션은 각 버튼 몫이라 댓글 트리에선 무시.
+    if (ev.kind === "feedLike" || ev.kind === "feedReaction") return;
     setTree((t) => {
       if (ev.kind === "created")
         return applyCreated(t.items, t.total, ev.parentId, ev.node);

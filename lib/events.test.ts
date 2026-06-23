@@ -57,7 +57,9 @@ describe("events bus (feed: comments + likes)", () => {
       ? e.node.id
       : e.kind === "feedLike"
         ? `like:${e.count}`
-        : e.id;
+        : e.kind === "feedReaction"
+          ? `reaction:${e.emoji}:${e.count}`
+          : e.id;
 
   test("feed 구독자는 해당 feed 이벤트만 받는다(feed 간 격리)", () => {
     const a: string[] = [];

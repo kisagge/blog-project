@@ -69,9 +69,12 @@ export type CommentEvent =
   | { kind: "reaction"; id: string; emoji: string; count: number }
   | { kind: "deleted"; id: string };
 
-// 피드 채널(`feed:{id}`)이 나르는 이벤트 union — 댓글 이벤트 + 글(게시물) 좋아요 수.
-// 한 SSE 연결을 댓글 섹션과 좋아요 버튼이 공유(feed-events-context.tsx)하며 kind로 분기.
-export type FeedEvent = CommentEvent | { kind: "feedLike"; count: number };
+// 피드 채널(`feed:{id}`)이 나르는 이벤트 union — 댓글 이벤트 + 글(게시물) 좋아요 수 + 글 이모지 리액션.
+// 한 SSE 연결을 댓글 섹션·좋아요·리액션 버튼이 공유(feed-events-context.tsx)하며 kind로 분기.
+export type FeedEvent =
+  | CommentEvent
+  | { kind: "feedLike"; count: number }
+  | { kind: "feedReaction"; emoji: string; count: number };
 
 function toNode(
   c: {

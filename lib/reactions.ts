@@ -1,5 +1,5 @@
-// 댓글 이모지 리액션 공용 상수/타입 — 클라이언트·서버 공용(server-only 아님).
-// DB 접근 함수는 lib/comment-reactions.ts(server-only)에 분리.
+// 글·댓글 이모지 리액션 공용 상수/타입 — 클라이언트·서버 공용(server-only 아님).
+// DB 접근 함수는 lib/comment-reactions.ts·lib/feed-reactions.ts(server-only)에 분리.
 
 // 고정 세트. ♥ 좋아요와 공존하므로 ❤️는 제외(시각적 중복 최소화).
 export const REACTION_EMOJIS = ["👍", "😂", "😮", "😢", "🎉"] as const;
