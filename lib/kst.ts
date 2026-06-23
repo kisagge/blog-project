@@ -51,3 +51,19 @@ export function kstWallClockToUtc(s: string): Date | null {
     return null;
   return new Date(utcMs);
 }
+
+// "YYYY-MM-DDTHH:MM"(KST 벽시계) → 사람이 읽는 KST 표시. 예약 발행 미리보기용. 무효면 "".
+export function formatKstWallClock(wallClock: string): string {
+  const at = kstWallClockToUtc(wallClock);
+  if (!at) return "";
+  return at.toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}

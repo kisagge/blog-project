@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { loadFeeds } from "./actions";
 import type { FeedCard } from "./feed-card";
 import FeedCardItem from "./feed-card-item";
+import FeedCardSkeleton from "./feed-card-skeleton";
 
 type Props = {
   initialItems: FeedCard[];
@@ -159,7 +160,15 @@ export default function FeedList({
       {/* 무한스크롤 트리거 */}
       <div ref={sentinelRef} aria-hidden className="h-px" />
       {loading && (
-        <p className="mt-6 text-center text-sm text-zinc-500">불러오는 중…</p>
+        <>
+          <p role="status" className="sr-only">
+            불러오는 중…
+          </p>
+          <ul className="mt-6 flex flex-col gap-6" aria-hidden>
+            <FeedCardSkeleton />
+            <FeedCardSkeleton />
+          </ul>
+        </>
       )}
       {!hasMore && items.length > 0 && (
         <p className="mt-6 text-center text-sm text-zinc-400">
