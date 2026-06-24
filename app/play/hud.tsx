@@ -8,6 +8,7 @@ export default function Hud({
   phase,
   selected,
   canWait,
+  preview,
   onWait,
   onEndTurn,
 }: {
@@ -15,6 +16,7 @@ export default function Hud({
   phase: Faction;
   selected: Unit | null;
   canWait: boolean;
+  preview?: string;
   onWait: () => void;
   onEndTurn: () => void;
 }) {
@@ -41,6 +43,11 @@ export default function Hud({
             {selected.hp}/{statOf(selected).maxHp} · ATK {statOf(selected).atk}{" "}
             / DEF {statOf(selected).def} · 이동 {statOf(selected).mov} · 사거리{" "}
             {statOf(selected).rng}
+            {preview && (
+              <span className="ml-2 font-medium text-red-600 dark:text-red-400">
+                ⚔ {preview}
+              </span>
+            )}
           </p>
         ) : (
           <p className="text-sm text-zinc-400">유닛을 선택하세요</p>
