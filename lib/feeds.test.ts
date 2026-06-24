@@ -574,6 +574,66 @@ describe("searchFeeds", () => {
   });
 });
 
+describe("searchFeeds 정렬(sort)", () => {
+  const ids = ["sort-a", "sort-b", "sort-c"];
+  beforeAll(async () => {
+    // 고유 태그 "정렬테스트"로 격리. (viewCount, createdAt) = a:(5, 1/10), b:(50, 1/5), c:(20, 1/20).
+    const seed: [string, number, Date][] = [
+      ["sort-a", 5, new Date(2026, 0, 10)],
+      ["sort-b", 50, new Date(2026, 0, 5)],
+      ["sort-c", 20, new Date(2026, 0, 20)],
+    ];
+    for (const [id, viewCount, date] of seed) {
+      await prisma.feed.create({
+        data: {
+          id,
+          slug: id,
+          title: `정렬고유단어 ${id}`,
+          content: "본문",
+          visibility: "public",
+          status: "published",
+          viewCount,
+          createdAt: date,
+          updatedAt: date,
+        },
+      });
+    }
+    const { setFeedTags } = await import("@/lib/tags");
+    for (const id of ids) await setFeedTags(id, ["정렬테스트"]);
+  });
+  afterAll(async () => {
+    await prisma.feedTag.deleteMany({ where: { feedId: { in: ids } } });
+    await prisma.feed.deleteMany({ where: { id: { in: ids } } });
+  });
+
+  test("sort=popular: 조회수 내림차순(빈검색 경로)", async () => {
+    const { items } = await searchFeeds({
+      role: "anon",
+      tag: "정렬테스트",
+      sort: "popular",
+    });
+    expect(items.map((f) => f.slug)).toEqual(["sort-b", "sort-c", "sort-a"]);
+  });
+
+  test("sort=latest: createdAt 내림차순(빈검색 경로)", async () => {
+    const { items } = await searchFeeds({
+      role: "anon",
+      tag: "정렬테스트",
+      sort: "latest",
+    });
+    expect(items.map((f) => f.slug)).toEqual(["sort-c", "sort-a", "sort-b"]);
+  });
+
+  test("sort=popular: FTS 검색 경로도 조회수순", async () => {
+    const { items } = await searchFeeds({
+      role: "anon",
+      q: "정렬고유단어",
+      sort: "popular",
+    });
+    expect(items.map((f) => f.slug)).toEqual(["sort-b", "sort-c", "sort-a"]);
+  });
+});
+
 describe("getPublicTopFeeds", () => {
   test("조회수 내림차순 + 가시성 필터(anon/member) + 숨김·초안 제외", async () => {
     const mk = (id: string, over: Record<string, unknown>) =>

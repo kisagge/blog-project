@@ -79,6 +79,7 @@ export async function searchFeeds({
   role,
   author,
   tag,
+  sort,
 }: {
   q?: string;
   skip?: number;
@@ -86,6 +87,7 @@ export async function searchFeeds({
   role: ViewerRole;
   author?: "admin" | "member"; // 관리자 글(authorId null) vs 회원 글(authorId 있음)
   tag?: string; // 태그 slug 필터
+  sort?: "latest" | "popular"; // 미전달=현행(FTS 관련도순·그 외 최신순), latest=최신순, popular=조회수순
 }) {
   const term = q.trim();
   const baseWhere = {
@@ -110,10 +112,20 @@ export async function searchFeeds({
     if (rankedIds.length === 0) return { items: [], hasMore: false };
     const rows = await prisma.feed.findMany({
       where: { ...baseWhere, id: { in: rankedIds } },
-      select: FEED_LIST_SELECT, // orderBy 불필요 — 아래서 rank 순 재정렬
+      select: FEED_LIST_SELECT, // orderBy 불필요 — 아래서 rank/정렬 적용
     });
-    const order = new Map(rankedIds.map((id, i) => [id, i] as const));
-    rows.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
+    if (sort === "popular") {
+      rows.sort(
+        (a, b) =>
+          b.viewCount - a.viewCount ||
+          b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+    } else if (sort === "latest") {
+      rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    } else {
+      const order = new Map(rankedIds.map((id, i) => [id, i] as const));
+      rows.sort((a, b) => order.get(a.id)! - order.get(b.id)!); // 관련도순(현행)
+    }
     const page = rows.slice(skip, skip + take + 1);
     const hasMore = page.length > take;
     const items = hasMore ? page.slice(0, take) : page;
@@ -132,7 +144,10 @@ export async function searchFeeds({
         ],
       }),
     },
-    orderBy: { createdAt: "desc" },
+    orderBy:
+      sort === "popular"
+        ? [{ viewCount: "desc" as const }, { createdAt: "desc" as const }]
+        : { createdAt: "desc" as const },
     select: FEED_LIST_SELECT,
     skip,
     take: take + 1,

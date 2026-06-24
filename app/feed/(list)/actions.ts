@@ -11,9 +11,17 @@ export async function loadFeeds(
   skip: number,
   author?: "admin" | "member",
   tag?: string,
+  sort?: "latest" | "popular",
 ): Promise<FeedPage> {
   await guardPublicAccess(); // 점검 중 비어드민은 무한스크롤/검색 데이터도 차단(→ /maintenance)
   const role = await getViewerRole();
-  const { items, hasMore } = await searchFeeds({ q, skip, role, author, tag });
+  const { items, hasMore } = await searchFeeds({
+    q,
+    skip,
+    role,
+    author,
+    tag,
+    sort,
+  });
   return { items: items.map(toFeedCard), hasMore };
 }

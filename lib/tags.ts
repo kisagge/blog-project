@@ -53,6 +53,7 @@ export function parseTags(raw: string): string[] {
 // (비공개/숨김 전용 태그는 집계에서 빠져 빈 결과로 가는 링크를 만들지 않음.) 글 수 내림차순.
 export async function getTagsWithCounts(
   role: ViewerRole,
+  opts?: { author?: "admin" | "member"; limit?: number },
 ): Promise<{ name: string; slug: string; count: number }[]> {
   const grouped = await prisma.feedTag.groupBy({
     by: ["tagId"],
@@ -61,6 +62,12 @@ export async function getTagsWithCounts(
         status: "published",
         hiddenAt: null,
         visibility: { in: listableVisibilities(role) },
+        // 커뮤니티(회원 글) 등 작성자 스코프 한정용. 미전달이면 전체.
+        ...(opts?.author === "member"
+          ? { authorId: { not: null } }
+          : opts?.author === "admin"
+            ? { authorId: null }
+            : {}),
       },
     },
     _count: { _all: true },
@@ -71,13 +78,14 @@ export async function getTagsWithCounts(
     select: { id: true, name: true, slug: true },
   });
   const countByTag = new Map(grouped.map((g) => [g.tagId, g._count._all]));
-  return tags
+  const sorted = tags
     .map((t) => ({
       name: t.name,
       slug: t.slug,
       count: countByTag.get(t.id) ?? 0,
     }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ko"));
+  return opts?.limit ? sorted.slice(0, opts.limit) : sorted;
 }
 
 // 슬러그 → 태그(표시명). 없으면 null. 태그 전용 라우트 제목용.

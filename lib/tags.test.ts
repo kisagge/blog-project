@@ -130,6 +130,31 @@ describe("getTagsWithCounts", () => {
     const iMem = member.findIndex((t) => t.slug === "디스회원");
     expect(iPub).toBeLessThan(iMem);
   });
+
+  test("author='member' 스코프 + limit: 회원 글 태그만(커뮤니티), 관리자 태그 제외", async () => {
+    const { makeUser } = await import("@/lib/test-factories");
+    const u = await makeUser(prisma);
+    const memberPost = await makeFeed(prisma, {
+      visibility: "members",
+      status: "published",
+      authorId: u.id,
+    });
+    const adminPost = await makeFeed(prisma, { visibility: "public" }); // authorId null=관리자
+    await m.setFeedTags(memberPost.id, ["커뮤태그"]);
+    await m.setFeedTags(adminPost.id, ["관리자태그"]);
+
+    const community = await m.getTagsWithCounts("member", { author: "member" });
+    const slugs = community.map((t) => t.slug);
+    expect(slugs).toContain("커뮤태그");
+    expect(slugs).not.toContain("관리자태그"); // 관리자 글 태그 제외
+
+    // limit: 상위 N개로 자름.
+    const limited = await m.getTagsWithCounts("member", {
+      author: "member",
+      limit: 1,
+    });
+    expect(limited).toHaveLength(1);
+  });
 });
 
 describe("getTagBySlug / getPublicTagSlugs", () => {
