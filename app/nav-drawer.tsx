@@ -124,6 +124,9 @@ export default function NavDrawer({
           <DrawerLink href="/df" onClick={close}>
             던파
           </DrawerLink>
+          <DrawerLink href="/play" onClick={close}>
+            게임
+          </DrawerLink>
           <DrawerLink href="/feed/popular" onClick={close}>
             인기 글
           </DrawerLink>
