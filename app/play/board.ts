@@ -24,6 +24,14 @@ export const HL = {
   cursor: 0xffffff, // 흰 — 커서
 } as const;
 
+// HP 바: 비율에 따른 전경 색(녹>황>적)과 어두운 배경.
+export const HP_BAR_BG = 0x18181b;
+export function hpBarColor(ratio: number): number {
+  if (ratio > 0.5) return 0x22c55e; // 녹
+  if (ratio > 0.25) return 0xeab308; // 황
+  return 0xef4444; // 적
+}
+
 // 타일 1칸 = 1월드유닛. 보드를 원점 중심으로 정렬(col→x, row→z).
 export const TILE_SIZE = 1;
 

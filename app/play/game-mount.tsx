@@ -1,14 +1,15 @@
 "use client";
-// 게임 호스트: 컨트롤러 상태 + 마우스/키보드 입력 + HUD + aria-live + SR 보드 미러 + 결과.
-// three 캔버스는 ssr:false 지연 로드(코드베이스 dynamic 패턴).
+// 게임 호스트: 컨트롤러 상태 + 마우스/키보드/호버 입력 + 맵 선택 + HUD + a11y + 결과.
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   attackTiles,
   cursorInfo,
   endTurn,
+  firstDawnCoord,
   moveTiles,
   newGame,
+  previewText,
   resultText,
   selectAt,
   selectedUnit,
@@ -17,6 +18,7 @@ import {
   type UiState,
 } from "./controller";
 import Hud from "./hud";
+import { MAPS, mapById } from "@/lib/game/srpg/maps";
 import type { Coord } from "@/lib/game/srpg/types";
 
 const SceneCanvas = dynamic(() => import("./scene-canvas"), {
@@ -28,18 +30,26 @@ const SceneCanvas = dynamic(() => import("./scene-canvas"), {
   ),
 });
 
-const START_CURSOR: Coord = { col: 1, row: 8 }; // 여명단 전사 시작칸(skirmish-01)
+const INITIAL = MAPS[0];
+const INITIAL_UI = newGame(INITIAL.raw);
 
 export default function GameMount() {
-  const [ui, setUi] = useState<UiState>(newGame);
-  const [cursor, setCursor] = useState<Coord>(START_CURSOR);
+  const [mapId, setMapId] = useState(INITIAL.id);
+  const [ui, setUi] = useState<UiState>(INITIAL_UI);
+  const [cursor, setCursor] = useState<Coord>(() =>
+    firstDawnCoord(INITIAL_UI.game),
+  );
   const [announce, setAnnounce] = useState("유닛을 선택해 전투를 시작하세요.");
   const restartRef = useRef<HTMLButtonElement>(null);
 
   const finished = ui.game.result !== "ongoing";
   const sel = selectedUnit(ui);
+  const canAct = !!sel && !sel.acted && ui.game.phase === "dawn";
+  // 커서가 공격 대상이면 예상 피해(없으면 undefined).
+  const preview = canAct
+    ? (previewText(ui.game, sel.id, cursor) ?? undefined)
+    : undefined;
 
-  // 결과가 뜨면 다시하기로 포커스 이동(a11y).
   useEffect(() => {
     if (finished) restartRef.current?.focus();
   }, [finished]);
@@ -52,11 +62,16 @@ export default function GameMount() {
   const pick = (coord: Coord) => apply(selectAt(ui, coord));
   const onWait = () => apply(waitSelected(ui));
   const onEndTurn = () => apply(endTurn(ui));
-  const onRestart = () => {
-    setUi(newGame());
-    setCursor(START_CURSOR);
-    setAnnounce("새 전투를 시작합니다.");
-  };
+
+  function startMap(id: string) {
+    const entry = mapById(id);
+    const g = newGame(entry.raw);
+    setMapId(id);
+    setUi(g);
+    setCursor(firstDawnCoord(g.game));
+    setAnnounce(`${entry.name} — 새 전투를 시작합니다.`);
+  }
+  const onRestart = () => startMap(mapId);
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (finished) return;
@@ -68,7 +83,9 @@ export default function GameMount() {
         row: Math.min(rows - 1, Math.max(0, cursor.row + dr)),
       };
       setCursor(next);
-      setAnnounce(cursorInfo(ui.game, next));
+      const info = cursorInfo(ui.game, next);
+      const pv = canAct ? previewText(ui.game, sel.id, next) : null;
+      setAnnounce(pv ? `${info} — ${pv}` : info);
     };
     switch (e.key) {
       case "ArrowUp":
@@ -96,11 +113,35 @@ export default function GameMount() {
 
   return (
     <div>
+      <div
+        role="group"
+        aria-label="맵 선택"
+        className="mb-3 flex flex-wrap items-center gap-2 text-sm"
+      >
+        <span className="text-zinc-400">맵</span>
+        {MAPS.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => startMap(m.id)}
+            aria-pressed={m.id === mapId}
+            className={`rounded-full border px-3 py-1 ${
+              m.id === mapId
+                ? "border-blue-400 bg-blue-100 font-medium text-blue-800 dark:border-blue-400/50 dark:bg-blue-400/15 dark:text-blue-300"
+                : "border-black/15 text-zinc-600 hover:bg-black/[.04] dark:border-white/20 dark:text-zinc-300 dark:hover:bg-white/[.06]"
+            }`}
+          >
+            {m.name}
+          </button>
+        ))}
+      </div>
+
       <Hud
         round={ui.game.round}
         phase={ui.game.phase}
         selected={sel}
-        canWait={!!sel && !sel.acted && ui.game.phase === "dawn"}
+        canWait={canAct}
+        preview={preview}
         onWait={onWait}
         onEndTurn={onEndTurn}
       />
@@ -119,6 +160,7 @@ export default function GameMount() {
           attackTiles={attackTiles(ui)}
           cursor={cursor}
           onPick={pick}
+          onHover={setCursor}
         />
 
         {finished && (
@@ -140,7 +182,6 @@ export default function GameMount() {
         )}
       </div>
 
-      {/* 실시간 안내(모두에게 보이는 상태줄 + 스크린리더) */}
       <p
         role="status"
         aria-live="polite"
@@ -149,7 +190,6 @@ export default function GameMount() {
         {announce}
       </p>
 
-      {/* 스크린리더 보드 미러: 살아있는 유닛 목록 */}
       <ul className="sr-only">
         {unitSummaries(ui.game).map((s) => (
           <li key={s.id}>
@@ -159,8 +199,8 @@ export default function GameMount() {
       </ul>
 
       <p className="mt-3 text-xs text-zinc-400">
-        조작: 마우스 클릭 또는 방향키+Enter로 유닛 선택 → 파란 칸 이동 → 빨간
-        칸의 적 공격. Esc 선택 해제, E 턴 종료.
+        조작: 마우스 클릭/호버 또는 방향키+Enter로 유닛 선택 → 파란 칸 이동 →
+        빨간 칸의 적 공격(예상 피해 표시). Esc 선택 해제, E 턴 종료.
       </p>
     </div>
   );

@@ -4,12 +4,14 @@ import {
   endTurn,
   moveTiles,
   newGame,
+  previewAttack,
+  previewText,
   selectAt,
   selectedUnit,
   waitSelected,
   type UiState,
 } from "./controller";
-import { reduce } from "@/lib/game/srpg/state";
+import { createGame, reduce } from "@/lib/game/srpg/state";
 import type { RawMap } from "@/lib/game/srpg/map";
 
 // 1행 평지 맵 빌더(정밀 위치 제어).
@@ -100,6 +102,67 @@ describe("waitSelected / endTurn", () => {
     expect(a.ui.game.phase).toBe("dawn");
     expect(a.ui.game.round).toBe(2);
     expect(a.ui.selectedId).toBeNull();
+  });
+});
+
+describe("previewAttack / previewText", () => {
+  test("인접 전사 vs 전사: 피해 4 + 반격 4", () => {
+    const g = createGame(
+      line([
+        { faction: "dawn", cls: "warrior", col: 0, row: 0 },
+        { faction: "ashen", cls: "warrior", col: 1, row: 0 },
+      ]),
+    );
+    const p = previewAttack(g, "dawn-0", { col: 1, row: 0 });
+    expect(p).toEqual({ dmg: 4, lethal: false, counter: 4 });
+    const t = previewText(g, "dawn-0", { col: 1, row: 0 })!;
+    expect(t).toContain("4 피해");
+    expect(t).toContain("반격 4");
+  });
+
+  test("궁수 2칸: 반격 없음", () => {
+    const g = createGame(
+      line([
+        { faction: "dawn", cls: "archer", col: 0, row: 0 },
+        { faction: "ashen", cls: "warrior", col: 2, row: 0 },
+      ]),
+    );
+    const p = previewAttack(g, "dawn-0", { col: 2, row: 0 })!;
+    expect(p.dmg).toBe(3);
+    expect(p.counter).toBe(0);
+    expect(previewText(g, "dawn-0", { col: 2, row: 0 })).not.toContain("반격");
+  });
+
+  test("적 없는 칸/사거리 밖 → null", () => {
+    const g = createGame(
+      line([
+        { faction: "dawn", cls: "warrior", col: 0, row: 0 },
+        { faction: "ashen", cls: "warrior", col: 3, row: 0 },
+      ]),
+    );
+    expect(previewAttack(g, "dawn-0", { col: 1, row: 0 })).toBeNull(); // 빈 칸
+    expect(previewAttack(g, "dawn-0", { col: 3, row: 0 })).toBeNull(); // 사거리 밖
+  });
+
+  test("사전 피해 후 마무리 일격 → lethal", () => {
+    let g = createGame(
+      line(
+        [
+          { faction: "dawn", cls: "warrior", col: 0, row: 0 },
+          { faction: "dawn", cls: "warrior", col: 2, row: 0 },
+          { faction: "ashen", cls: "mage", col: 1, row: 0 },
+        ],
+        3,
+      ),
+    );
+    g = reduce(g, {
+      type: "attack",
+      unitId: "dawn-0",
+      target: { col: 1, row: 0 },
+    }); // mage 16→8
+    const p = previewAttack(g, "dawn-1", { col: 1, row: 0 })!;
+    expect(p.lethal).toBe(true); // physical(9,1,0)=8 ≥ 8
+    expect(p.counter).toBe(0); // 죽으면 반격 없음
   });
 });
 

@@ -7,7 +7,8 @@ import {
   reduce,
 } from "@/lib/game/srpg/state";
 import { runAshenPhase } from "@/lib/game/srpg/ai";
-import { eq, terrainAt, unitAt } from "@/lib/game/srpg/grid";
+import { resolveAttack } from "@/lib/game/srpg/combat";
+import { eq, manhattan, terrainAt, unitAt } from "@/lib/game/srpg/grid";
 import { SKIRMISH_01 } from "@/lib/game/srpg/maps/skirmish-01";
 import type { RawMap } from "@/lib/game/srpg/map";
 import {
@@ -201,4 +202,50 @@ export function cursorInfo(game: GameState, coord: Coord): string {
   const u = unitAt(game, coord);
   const who = u ? `${label(u)} HP ${u.hp}/${statOf(u).maxHp}` : "빈 칸";
   return `${at(coord)} ${terrain}, ${who}`;
+}
+
+// 첫 아군 유닛 좌표(맵별 시작 커서). 없으면 (0,0).
+export function firstDawnCoord(game: GameState): Coord {
+  const u = game.units.find((x) => x.faction === "dawn" && x.hp > 0);
+  return u ? { col: u.col, row: u.row } : { col: 0, row: 0 };
+}
+
+// 공격 전 예상치(실제 전투와 동일하게 resolveAttack로 시뮬레이션 후 diff). 무효면 null.
+export type AttackPreview = { dmg: number; lethal: boolean; counter: number };
+export function previewAttack(
+  game: GameState,
+  attackerId: string,
+  target: Coord,
+): AttackPreview | null {
+  const attacker = game.units.find((u) => u.id === attackerId && u.hp > 0);
+  const defender = unitAt(game, target);
+  if (!attacker || !defender || defender.faction === attacker.faction) {
+    return null;
+  }
+  const dist = manhattan({ col: attacker.col, row: attacker.row }, target);
+  if (dist < 1 || dist > statOf(attacker).rng) return null;
+
+  const next = resolveAttack(game, attackerId, target);
+  const defAfter = next.units.find((u) => u.id === defender.id);
+  const atkAfter = next.units.find((u) => u.id === attacker.id);
+  return {
+    dmg: defender.hp - (defAfter?.hp ?? 0),
+    lethal: !defAfter || defAfter.hp <= 0,
+    counter: attacker.hp - (atkAfter?.hp ?? attacker.hp),
+  };
+}
+
+// 프리뷰 한국어 문장(HUD·aria-live 공용). 무효면 null.
+export function previewText(
+  game: GameState,
+  attackerId: string,
+  target: Coord,
+): string | null {
+  const p = previewAttack(game, attackerId, target);
+  if (!p) return null;
+  const u = unitAt(game, target);
+  const who = u ? label(u) : "대상";
+  const lethal = p.lethal ? " (처치)" : "";
+  const counter = p.counter > 0 ? `, 반격 ${p.counter}` : "";
+  return `${who}에게 ${p.dmg} 피해${lethal}${counter}`;
 }
