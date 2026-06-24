@@ -18,7 +18,10 @@ export async function generateMetadata({
   return {
     title: series.title,
     description: series.description ?? `${series.title} 연재`,
-    alternates: { canonical: `/series/${series.slug}` },
+    alternates: {
+      canonical: `/series/${series.slug}`,
+      types: { "application/rss+xml": `/series/${series.slug}/rss.xml` },
+    },
   };
 }
 
@@ -38,7 +41,16 @@ export default async function SeriesPage({
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <header className="mb-8">
-        <p className="text-sm text-zinc-500">시리즈 · {posts.length}편</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-zinc-500">시리즈 · {posts.length}편</p>
+          <a
+            href={`/series/${series.slug}/rss.xml`}
+            aria-label={`${series.title} 시리즈 RSS 구독`}
+            className="rounded-full border border-black/15 px-2.5 py-1 text-xs text-zinc-500 hover:bg-black/[.04] hover:text-zinc-900 dark:border-white/20 dark:hover:bg-white/[.06] dark:hover:text-zinc-100"
+          >
+            RSS
+          </a>
+        </div>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           {series.title}
         </h1>
