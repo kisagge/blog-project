@@ -152,7 +152,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 530 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 578 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -249,11 +249,20 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **시각**: 입력은 **react-day-picker**(날짜) + time 입력 → `"YYYY-MM-DDTHH:MM"`(KST 벽시계)를 hidden input으로 제출, `kstWallClockToUtc`로 UTC 변환(브라우저 TZ 무관·달력 오버플로 거부). 과거/무효는 폼 에러. 작성 폼에 **사람이 읽는 미리보기**(`formatKstWallClock` → "6월 23일 (화) 오전 7:23 발행 예정") + **과거 시각 클라 경고**(`server-only`인 `decideSchedule` 대신 `lib/kst`로 판정). **수정 화면엔 예약 컨트롤 미노출**(생성 전용 보장: `updateFeed`는 `scheduledAt` 무시).
 - **관리자 운영**: 목록에 "🕒 예약: {시각}" 배지 + **"지금 게시"**(예약 초안 즉시 발행) 안전밸브. 회원 임시저장(`scheduledAt` null)은 영향 없음.
 
+### 4.24 Three.js 턴제 SRPG (에테르 택틱스, 회원 전용 `/play`)
+
+블로그에 새 장르로 **턴제 그리드 SRPG**를 단계적으로 구현 중(기획서: `docs/games/srpg-design.md`). 핵심은 **로직/렌더 분리**와 **무거운 3D 의존의 지연 격리**.
+
+- **순수 엔진(`lib/game/srpg/`)**: 타입·격자·다익스트라 이동·사거리/AoE·**결정론 전투(데미지·반격·치유)**·턴/승패·**단일 리듀서**(`reduce(state, action)`)·그리디 AI를 three/DB/`server-only` **의존 0**의 순수 함수로 구현 → jsdom/Vitest로 **단위 테스트 풀커버**. 규칙을 렌더에서 떼어내, 캔버스는 "상태를 그리기만" 한다.
+- **지연 로드·번들 격리**: 캔버스(`app/play/scene-canvas.tsx`)는 코드베이스 첫 **`next/dynamic(() => import(...), { ssr:false })`**로만 로드 → `three`가 전역·SSR 번들에서 빠지고 비동기 청크로 분할(저활동 라우트라 대부분 방문자는 내려받지 않음, 512MB 서버는 3D 미렌더). `three`는 raw로만 사용(r3f/drei 미도입 — 린 의존).
+- **접근 제어·보안**: `/play`는 `getViewerRole()`가 `anon`이면 `MemberGate`(회원 전용). 플레이스홀더 스프라이트는 **코드 생성 `CanvasTexture`**(진영 색+모양으로 색맹 안전, 클래스 글리프)라 외부 에셋·**CSP 변경 불필요**(번들 three=`self`, 텍스처=`data/blob`). 캔버스에 `aria-label` + `sr-only` 보드 요약(상호작용·전체 a11y 보드 미러는 다음 단계).
+- **현황**: S1(순수 엔진+테스트)·S2(정적 캔버스 미리보기) 완료. 다음은 입력→액션 디스패치(선택·이동·공격·적 페이즈)와 키보드 전조작·실시간 안내.
+
 ## 5. 성과 요약
 
 - 런타임 이미지 **2.05GB → 876MB (−57%)**, 배포 첫 pull **10분 32초 → 37초**
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 530), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 578), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

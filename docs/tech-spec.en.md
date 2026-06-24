@@ -152,7 +152,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 530**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 578**.
 
 ### 4.12 Content reporting & moderation
 
@@ -249,11 +249,20 @@ Admins can set a future publish time **at post-creation only**; the post stays h
 - **Time**: input is **react-day-picker** (date) + a time input → `"YYYY-MM-DDTHH:MM"` (KST wall-clock) submitted via a hidden input, converted with `kstWallClockToUtc` (browser-TZ-independent, rejects calendar overflow). Past/invalid → form error. The form shows a **human-readable preview** (`formatKstWallClock`) plus a **client-side past-time warning** (judged via `lib/kst`, not the `server-only` `decideSchedule`). The **edit screen has no schedule control** (creation-only is enforced: `updateFeed` ignores `scheduledAt`).
 - **Admin ops**: the list shows a "🕒 scheduled: {time}" badge + a **"Publish now"** safety valve. Member drafts (`scheduledAt` null) are unaffected.
 
+### 4.24 Three.js turn-based SRPG (Aether Tactics, member-only `/play`)
+
+A new genre being built incrementally — a turn-based grid SRPG (design doc: `docs/games/srpg-design.md`). The core ideas are **logic/render separation** and **lazy isolation of the heavy 3D dependency**.
+
+- **Pure engine (`lib/game/srpg/`)**: types, grid, Dijkstra movement, range/AoE, **deterministic combat (damage, counter, heal)**, turn/result, a **single reducer** (`reduce(state, action)`), and a greedy AI — all pure functions with **zero three/DB/`server-only`** imports, so they're **fully unit-tested** under jsdom/Vitest. Rules live outside rendering; the canvas only "draws the state."
+- **Lazy load + bundle isolation**: the canvas (`app/play/scene-canvas.tsx`) loads only via the repo's first **`next/dynamic(() => import(...), { ssr:false })`**, keeping `three` out of the global/SSR bundle in an async chunk (most visitors never download it; the 512MB server renders no 3D). `three` is used raw (no r3f/drei — lean deps).
+- **Access & security**: `/play` shows `MemberGate` when `getViewerRole()` is `anon` (member-only). Placeholder sprites are **code-generated `CanvasTexture`s** (color-blind-safe faction color+shape, class glyph), so no external assets and **no CSP change** (bundled three = `self`, textures = `data/blob`). The canvas has an `aria-label` + an `sr-only` board summary (interaction and a full a11y board mirror come next).
+- **Status**: S1 (pure engine + tests) and S2 (static canvas preview) done; next is input→action dispatch (select/move/attack/enemy phase) with full keyboard control and live announcements.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 530); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 578); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history
