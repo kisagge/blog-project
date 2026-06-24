@@ -16,6 +16,14 @@ export function tileVisual(terrain: Terrain): TileVisual {
   return TILE_VISUAL[terrain];
 }
 
+// 하이라이트·링 색(이동/공격/선택/커서). 색맹 안전을 위해 렌더에서 모양/테두리도 병행.
+export const HL = {
+  move: 0x3b82f6, // 파랑 — 이동 가능
+  attack: 0xef4444, // 빨강 — 공격 가능
+  select: 0xfbbf24, // 노랑 — 선택된 유닛
+  cursor: 0xffffff, // 흰 — 커서
+} as const;
+
 // 타일 1칸 = 1월드유닛. 보드를 원점 중심으로 정렬(col→x, row→z).
 export const TILE_SIZE = 1;
 
