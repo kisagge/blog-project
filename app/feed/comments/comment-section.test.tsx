@@ -73,6 +73,23 @@ describe("CommentSection 초기 렌더", () => {
   });
 });
 
+describe("CommentSection 정렬 세그먼트 토글(접근성)", () => {
+  test("role=group + 활성 정렬에 aria-current, href는 ?sort= 갱신", () => {
+    renderSection([node("a")]); // sort="newest"로 렌더
+    const group = screen.getByRole("group", { name: "댓글 정렬" });
+    expect(group).toBeInTheDocument();
+
+    const popular = screen.getByRole("link", { name: "인기순" });
+    const newest = screen.getByRole("link", { name: "최신순" });
+    // 활성(최신순)만 선택 상태 노출
+    expect(newest).toHaveAttribute("aria-current", "true");
+    expect(popular).not.toHaveAttribute("aria-current");
+    // 정렬 전환 링크는 ?sort= 쿼리만 바꾼다
+    expect(popular).toHaveAttribute("href", "/feed/hello?sort=popular");
+    expect(newest).toHaveAttribute("href", "/feed/hello?sort=newest");
+  });
+});
+
 describe("CommentSection 실시간(SSE) 병합", () => {
   test("edited 이벤트 → 본문 갱신", () => {
     renderSection([node("a")]);
