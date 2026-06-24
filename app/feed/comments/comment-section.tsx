@@ -162,10 +162,14 @@ export default function CommentSection({
     <>
       <div className="mt-8 mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold tracking-tight">댓글 {total}</h2>
-        <nav className="flex gap-3 text-sm">
+        <div
+          role="group"
+          aria-label="댓글 정렬"
+          className="inline-flex rounded-full border border-black/15 p-0.5 text-sm dark:border-white/20"
+        >
           <SortLink slug={slug} value="popular" current={sort} label="인기순" />
           <SortLink slug={slug} value="newest" current={sort} label="최신순" />
-        </nav>
+        </div>
       </div>
 
       <div className="mb-6">
@@ -261,11 +265,12 @@ function SortLink({
     <Link
       href={`/feed/${slug}?sort=${value}`}
       scroll={false}
-      className={
+      aria-current={active ? "true" : undefined}
+      className={`rounded-full px-3 py-1 ${
         active
-          ? "font-semibold"
+          ? "bg-zinc-900 font-medium text-white dark:bg-white dark:text-zinc-900"
           : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-      }
+      }`}
     >
       {label}
     </Link>
