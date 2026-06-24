@@ -24,6 +24,11 @@ export async function generateMetadata({
     title: `#${tag.name}`,
     description: `‘${tag.name}’ 태그 글 모아보기`,
     alternates: { canonical: `/feed/tags/${encodeURIComponent(tag.slug)}` },
+    // og:image는 colocate된 opengraph-image.tsx가 동적 생성(태그명+공개 글 수).
+    openGraph: {
+      title: `#${tag.name}`,
+      description: `‘${tag.name}’ 태그 글 모아보기`,
+    },
   };
 }
 

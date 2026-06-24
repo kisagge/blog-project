@@ -174,6 +174,21 @@ export async function getFeedsByTag(slug: string, role: ViewerRole) {
   });
 }
 
+// 태그의 가시 글 수(getFeedsByTag와 동일 게이팅, 행 미조회). 태그 OG 이미지용.
+export async function countFeedsByTag(
+  slug: string,
+  role: ViewerRole,
+): Promise<number> {
+  return prisma.feed.count({
+    where: {
+      status: "published",
+      hiddenAt: null,
+      visibility: { in: listableVisibilities(role) },
+      feedTags: { some: { tag: { slug: { in: tagSlugVariants(slug) } } } },
+    },
+  });
+}
+
 export type AdjacentFeed = { slug: string; title: string };
 
 // 글 상세 이전/다음 내비: 현재 글 기준 시간순 인접 1건씩(이전=더 오래된, 다음=더 최신).

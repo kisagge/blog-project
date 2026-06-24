@@ -11,6 +11,7 @@ let getRelatedFeeds: Feeds["getRelatedFeeds"];
 let getPublicTopFeeds: Feeds["getPublicTopFeeds"];
 let getAdjacentFeeds: Feeds["getAdjacentFeeds"];
 let getFeedsByTag: Feeds["getFeedsByTag"];
+let countFeedsByTag: Feeds["countFeedsByTag"];
 let cleanup: () => Promise<void>;
 let prisma: Awaited<ReturnType<typeof setupTestDb>>["prisma"];
 
@@ -116,6 +117,7 @@ beforeAll(async () => {
     getPublicTopFeeds,
     getAdjacentFeeds,
     getFeedsByTag,
+    countFeedsByTag,
   } = await import("@/lib/feeds"));
 });
 
@@ -511,6 +513,23 @@ describe("searchFeeds", () => {
 
   test("getFeedsByTag: 없는 태그는 빈 목록", async () => {
     expect(await getFeedsByTag("존재안함", "admin")).toHaveLength(0);
+  });
+
+  test("countFeedsByTag: 가시성 게이팅(getFeedsByTag와 동일)", async () => {
+    expect(await countFeedsByTag("고양이", "anon")).toBe(1); // 공개 pub-3
+    expect(await countFeedsByTag("비밀태그", "anon")).toBe(0); // 비공개 전용
+    expect(await countFeedsByTag("비밀태그", "member")).toBe(0);
+    expect(await countFeedsByTag("비밀태그", "admin")).toBe(1); // draft-1
+    expect(await countFeedsByTag("회원태그", "anon")).toBe(0); // members
+    expect(await countFeedsByTag("회원태그", "member")).toBe(1); // umem-1
+    expect(await countFeedsByTag("존재안함", "admin")).toBe(0);
+  });
+
+  test("countFeedsByTag: URL 인코딩 한글 슬러그도 디코딩해 카운트", async () => {
+    // %EA%B3%A0%EC%96%91%EC%9D%B4 = 고양이 (Next가 미디코딩으로 넘기는 형태)
+    expect(await countFeedsByTag("%EA%B3%A0%EC%96%91%EC%9D%B4", "anon")).toBe(
+      1,
+    );
   });
 
   test("getFeedsByTag: NFD로 저장된 한글 태그를 NFC 요청으로 찾음(태그 404 회귀 방지)", async () => {
