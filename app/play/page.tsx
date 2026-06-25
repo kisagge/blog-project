@@ -1,4 +1,4 @@
-import { getMemberSession } from "@/lib/dal";
+import { getMemberSession, getSession } from "@/lib/dal";
 import MemberGate from "@/app/member-gate";
 import Game from "./game";
 
@@ -11,8 +11,10 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PlayPage() {
-  const session = await getMemberSession();
-  if (!session) {
+  // 승인 회원 + 관리자 모두 플레이 가능(관리자 세션은 getMemberSession이 null).
+  const session = await getSession();
+  const allowed = session?.role === "admin" || (await getMemberSession());
+  if (!allowed) {
     return (
       <MemberGate
         title="회원 전용 게임입니다"
