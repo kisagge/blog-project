@@ -55,10 +55,11 @@ describe("NavDrawer", () => {
     expect(screen.queryByRole("link", { name: "로그인" })).toBeNull();
   });
 
-  test("admin: 관리자 링크 + 로그아웃, 회원 전용 메뉴 미노출", () => {
+  test("admin: 관리자 링크 + 게임 + 로그아웃, 회원 전용 메뉴 미노출", () => {
     const { container } = render(<NavDrawer session={{ role: "admin" }} />);
     fireEvent.click(toggle());
     expect(screen.getByRole("link", { name: "관리자" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "게임" })).toBeInTheDocument();
     const panel = within(container.querySelector('[role="dialog"]')!);
     expect(panel.getByRole("button", { name: "로그아웃" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "글쓰기" })).toBeNull();
