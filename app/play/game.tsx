@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { newRun, reduce } from "@/lib/game/rogue/run";
 import type { Action, RunState } from "@/lib/game/rogue/types";
+import { submitScoreAction } from "./actions";
 import { actionsFor, hudView, type ActionButton } from "./view";
+
+type SubmitState = "idle" | "saving" | "saved" | "skipped" | "error";
 
 // 양의 정수 시드 생성(이벤트 핸들러 내에서만 호출 — SSR 하이드레이션 무관).
 function randomSeed(): number {
@@ -12,10 +16,13 @@ function randomSeed(): number {
 
 const MAX_LOG = 40;
 
-export default function Game() {
+export default function Game({ canRecord }: { canRecord: boolean }) {
+  const router = useRouter();
   const [seed, setSeed] = useState<number | null>(null);
   const [state, setState] = useState<RunState | null>(null);
   const [seedInput, setSeedInput] = useState("");
+  const [submit, setSubmit] = useState<SubmitState>("idle");
+  const submittedRef = useRef(false);
 
   const dispatch = useCallback(
     (a: Action) => setState((s) => (s ? reduce(s, a) : s)),
@@ -23,6 +30,8 @@ export default function Game() {
   );
 
   const restart = useCallback((s: number) => {
+    submittedRef.current = false;
+    setSubmit("idle");
     setSeed(s);
     setState(newRun(s));
   }, []);
@@ -74,6 +83,36 @@ export default function Game() {
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [log]);
+
+  // 런 종료(사망) 시 점수 1회 제출 → 리더보드 갱신.
+  const phase = state?.phase;
+  useEffect(() => {
+    if (phase !== "dead" || submittedRef.current) return;
+    submittedRef.current = true;
+    if (!canRecord || !state || seed === null) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect */
+      setSubmit("skipped");
+      return;
+    }
+    setSubmit("saving");
+    submitScoreAction({
+      seed,
+      depth: state.depth,
+      kills: state.kills,
+      gold: state.player.gold,
+    })
+      .then((r) => {
+        if ("ok" in r) {
+          setSubmit("saved");
+          router.refresh();
+        } else if ("skipped" in r) {
+          setSubmit("skipped");
+        } else {
+          setSubmit("error");
+        }
+      })
+      .catch(() => setSubmit("error"));
+  }, [phase, canRecord, seed, state, router]);
 
   if (!state) {
     return <p className="text-sm text-zinc-500">던전을 준비하는 중…</p>;
@@ -159,6 +198,15 @@ export default function Game() {
           <p className="mt-1 text-sm text-zinc-500">
             {hud.depth}층까지 도달 · {hud.kills}처치 · 최종 점수{" "}
             <span className="text-foreground font-semibold">{hud.score}</span>
+          </p>
+          <p className="mt-2 text-xs text-zinc-500" aria-live="polite">
+            {submit === "saving" && "기록 저장 중…"}
+            {submit === "saved" && "리더보드에 기록되었습니다."}
+            {submit === "skipped" &&
+              (canRecord
+                ? "기록되지 않았습니다."
+                : "관리자 플레이는 리더보드에 기록되지 않습니다.")}
+            {submit === "error" && "기록 저장에 실패했습니다."}
           </p>
           <button
             type="button"
