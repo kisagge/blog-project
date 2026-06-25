@@ -1,9 +1,9 @@
 // 단일 진입 리듀서: (state, action) => state. 모든 규칙을 한 곳에서 강제(시드 결정론·불변).
 import { attackRoll } from "./combat";
 import { isBossStep, floorIntro } from "./dungeon";
-import { drawEvent } from "./events";
+import { drawEvent, drawRest, drawTrap } from "./events";
 import { makeEnemy } from "./enemy";
-import { randomItem, shopStock } from "./items";
+import { POTION, randomItem, shopStock } from "./items";
 import {
   acquire,
   addGold,
@@ -136,11 +136,47 @@ function advance(state: RunState): RunState {
       };
     }
     case "rest": {
+      const r = drawRest(seed);
+      seed = r.seed;
+      if (r.value === "campfire") {
+        const amt = state.player.maxHp - state.player.hp;
+        log.push(`모닥불을 피웠다 — HP ${amt} 전부 회복.`);
+        return {
+          ...state,
+          seed,
+          step,
+          player: heal(state.player, state.player.maxHp),
+          log,
+        };
+      }
+      if (r.value === "herb") {
+        const a = acquire(state.player, POTION);
+        log.push("약초 무더기 — 체력 물약을 챙겼다.");
+        return { ...state, seed, step, player: a.player, log };
+      }
       const amt = Math.round(state.player.maxHp * 0.3);
       log.push(`휴식 — HP ${amt} 회복.`);
       return { ...state, seed, step, player: heal(state.player, amt), log };
     }
     case "trap": {
+      const t = drawTrap(seed);
+      seed = t.seed;
+      if (t.value === "gold") {
+        const g = randInt(seed, state.depth * 2, state.depth * 5);
+        const lost = Math.min(state.player.gold, g.value);
+        log.push(
+          lost > 0
+            ? `골드 함정! ${lost} 골드를 잃었다.`
+            : "골드 함정! 다행히 잃을 골드가 없었다.",
+        );
+        return {
+          ...state,
+          seed: g.seed,
+          step,
+          player: addGold(state.player, -lost),
+          log,
+        };
+      }
       const d = randInt(seed, state.depth * 2, state.depth * 4);
       const player = damage(state.player, d.value);
       const dead = player.hp <= 0;

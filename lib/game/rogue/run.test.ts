@@ -148,6 +148,44 @@ describe("reduce: 진행·상점·가드", () => {
   });
 });
 
+describe("콘텐츠 불변식(휴식·함정 다양화)", () => {
+  test("진행 중 HP는 [0,maxHp]·골드 ≥ 0·유효 phase 유지", () => {
+    const phases = ["explore", "combat", "shop", "cleared", "dead"];
+    for (let seed = 0; seed < 40; seed++) {
+      let s = newRun(seed);
+      for (let i = 0; i < 60 && s.phase !== "dead"; i++) {
+        const a: Action =
+          s.phase === "explore"
+            ? { type: "advance" }
+            : s.phase === "combat"
+              ? { type: "attack" }
+              : s.phase === "cleared"
+                ? { type: "descend" }
+                : { type: "leaveShop" };
+        s = reduce(s, a);
+        expect(s.player.hp).toBeGreaterThanOrEqual(0);
+        expect(s.player.hp).toBeLessThanOrEqual(s.player.maxHp);
+        expect(s.player.gold).toBeGreaterThanOrEqual(0);
+        expect(phases).toContain(s.phase);
+      }
+    }
+  });
+
+  test("약초(herb) 휴식은 물약을 1개 추가한다", () => {
+    let found = false;
+    for (let seed = 0; seed < 300 && !found; seed++) {
+      const s = newRun(seed);
+      const before = s.player.potions.length;
+      const n = reduce(s, { type: "advance" });
+      if (n.log.some((l) => l.includes("약초"))) {
+        expect(n.player.potions.length).toBe(before + 1);
+        found = true;
+      }
+    }
+    expect(found).toBe(true);
+  });
+});
+
 describe("결정론", () => {
   const autoplay = (seed: number): RunState => {
     let s = newRun(seed);
