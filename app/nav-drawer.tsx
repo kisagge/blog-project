@@ -162,7 +162,12 @@ export default function NavDrawer({
               <LogoutButton />
             </>
           ) : session?.role === "admin" ? (
-            <LogoutButton />
+            <>
+              <DrawerLink href="/play" onClick={close}>
+                게임
+              </DrawerLink>
+              <LogoutButton />
+            </>
           ) : (
             <>
               <DrawerLink href="/signin" onClick={close}>
