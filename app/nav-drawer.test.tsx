@@ -48,7 +48,7 @@ describe("NavDrawer", () => {
       <NavDrawer session={{ role: "member", nickname: "철수" }} />,
     );
     fireEvent.click(toggle());
-    for (const name of ["글쓰기", "내 프로필", "저장한 글", "내 정보"])
+    for (const name of ["글쓰기", "내 프로필", "저장한 글", "게임", "내 정보"])
       expect(screen.getByRole("link", { name })).toBeInTheDocument();
     const panel = within(container.querySelector('[role="dialog"]')!);
     expect(panel.getByRole("button", { name: "로그아웃" })).toBeInTheDocument();
