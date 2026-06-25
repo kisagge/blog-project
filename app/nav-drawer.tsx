@@ -152,6 +152,9 @@ export default function NavDrawer({
               <DrawerLink href="/account/saved" onClick={close}>
                 저장한 글
               </DrawerLink>
+              <DrawerLink href="/play" onClick={close}>
+                게임
+              </DrawerLink>
               <DrawerLink href="/account" onClick={close}>
                 내 정보
               </DrawerLink>

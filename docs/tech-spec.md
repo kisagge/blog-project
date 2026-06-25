@@ -152,7 +152,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 564 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 570 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -251,7 +251,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 
 ### 4.24 사이트 내 게임 (`/play`)
 
-블로그에 새 장르로 게임을 단계적으로 구현하며 일관되게 **로직/렌더 분리**(게임 규칙은 순수 함수 → 단위 테스트, 렌더는 그 상태를 그리기만)를 적용한다. 첫 시도였던 **three.js 턴제 SRPG**(에테르 택틱스)는 S1~S4까지 구현했으나 콘텐츠 의존이 큰 장르라 취미 규모에 안 맞아 중단·아카이브(`docs/games/archive/srpg-design.md`), `three` 의존과 `app/play/`·`lib/game/srpg/` 코드는 제거(git 이력 보존). 현재는 더 가벼운 **로그라이크 텍스트 RPG**(`docs/games/text-rpg-design.md`)로 피벗 — 순수 엔진 + 절차생성 + 시드 결정론으로 콘텐츠를 자동 확보하고 회원 리더보드(Prisma)를 둔다. **S1(순수 엔진) 완료**: `lib/game/rogue/`에 시드 PRNG(mulberry32)·플레이어/성장·적/깊이 스케일·전투·아이템·이벤트·던전·**단일 리듀서**(`run.ts`)·점수를 three/DOM/DB 의존 0의 순수 함수로 구현 → jsdom/Vitest 단위 테스트(34건, 같은 시드+같은 액션열 = 동일 상태 결정론 포함). 다음은 S2(`/play` 텍스트 UI).
+블로그에 새 장르로 게임을 단계적으로 구현하며 일관되게 **로직/렌더 분리**(게임 규칙은 순수 함수 → 단위 테스트, 렌더는 그 상태를 그리기만)를 적용한다. 첫 시도였던 **three.js 턴제 SRPG**(에테르 택틱스)는 S1~S4까지 구현했으나 콘텐츠 의존이 큰 장르라 취미 규모에 안 맞아 중단·아카이브(`docs/games/archive/srpg-design.md`), `three` 의존과 `app/play/`·`lib/game/srpg/` 코드는 제거(git 이력 보존). 현재는 더 가벼운 **로그라이크 텍스트 RPG**(`docs/games/text-rpg-design.md`)로 피벗 — 순수 엔진 + 절차생성 + 시드 결정론으로 콘텐츠를 자동 확보하고 회원 리더보드(Prisma)를 둔다. **S1(순수 엔진) 완료**: `lib/game/rogue/`에 시드 PRNG(mulberry32)·플레이어/성장·적/깊이 스케일·전투·아이템·이벤트·던전·**단일 리듀서**(`run.ts`)·점수를 three/DOM/DB 의존 0의 순수 함수로 구현 → jsdom/Vitest 단위 테스트(34건, 같은 시드+같은 액션열 = 동일 상태 결정론 포함). **S2(텍스트 UI) 완료**: `/play`(회원 전용 — `getMemberSession` 없으면 `MemberGate`)에서 엔진을 얇은 React로 렌더. 순수 뷰모델(`app/play/view.ts` — `hudView`/`actionsFor`, 단위 테스트)이 상태→HUD 요약·상황별 액션 버튼을 계산하고, 클라이언트 셸은 `useState`+`reduce`로 한 런을 보유. **접근성**: 모험 로그는 `role="log"`+`aria-live="polite"`, 사망은 `role="alert"`, HP는 `role="progressbar"`+텍스트, 액션은 시맨틱 `<button>`에 **숫자 단축키·Enter(기본 행동)** 키보드 전조작. 시드는 서버 랜덤(비순수·하이드레이션 불일치)을 피해 **클라이언트 마운트 후 1회** 생성하고, 시드 입력으로 같은 던전 재도전(결정론). 다음은 S3(콘텐츠/밸런스).
 
 ## 5. 성과 요약
 
@@ -259,5 +259,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 564), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 570), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
