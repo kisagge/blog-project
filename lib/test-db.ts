@@ -238,18 +238,6 @@ const SCHEMA = [
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt")`,
-  `CREATE TABLE "RogueScore" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "userId" TEXT NOT NULL,
-    "seed" TEXT NOT NULL,
-    "depth" INTEGER NOT NULL,
-    "score" INTEGER NOT NULL,
-    "kills" INTEGER NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "RogueScore_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-  )`,
-  `CREATE INDEX "RogueScore_score_idx" ON "RogueScore"("score")`,
-  `CREATE INDEX "RogueScore_userId_idx" ON "RogueScore"("userId")`,
   // 전문 검색(FTS5) — prisma/migrations/*_add_feed_fts/migration.sql과 동기화 필수.
   // external content + trigram. 트리거가 Feed 변경을 색인하므로 백필 INSERT는 불필요(빈 테이블).
   `CREATE VIRTUAL TABLE "feed_fts" USING fts5(

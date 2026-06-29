@@ -117,7 +117,6 @@ model User {
   reports   Report[]
   following  Follow[] @relation("follower")  // 내가 팔로우하는 관계
   followers  Follow[] @relation("following") // 나를 팔로우하는 관계
-  rogueScores RogueScore[]
 }
 
 // 회원 간 팔로우(자기참조 다대다 조인). 팔로우 대상은 승인 회원만(앱 레이어 검증).
@@ -315,19 +314,4 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
-}
-
-// 로그라이크 게임(/play) 점수 기록 — 회원별 런 결과. 리더보드(최고 점수/깊이) 집계.
-model RogueScore {
-  id        String   @id @default(uuid())
-  userId    String
-  seed      String   // 재현용 시드(문자열 보관)
-  depth     Int      // 도달 깊이(층)
-  score     Int      // 서버 산정 점수(depth·kills·gold 가중)
-  kills     Int      // 처치 수
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([score])  // 리더보드 정렬
-  @@index([userId]) // 회원별 조회
 }
