@@ -14,8 +14,7 @@ import {
 import { logAudit } from "@/lib/audit";
 
 export type SeriesFormState =
-  | { errors?: Record<string, string[]>; message?: string }
-  | undefined;
+  { errors?: Record<string, string[]>; message?: string } | undefined;
 
 function revalidateSeries() {
   revalidatePath("/admin/series");

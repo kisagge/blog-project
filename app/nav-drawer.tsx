@@ -6,9 +6,7 @@ import PushToggle from "@/app/push-toggle";
 import { logout } from "@/app/actions/auth";
 
 type NavSession =
-  | { role: "admin" }
-  | { role: "member"; nickname: string }
-  | null;
+  { role: "admin" } | { role: "member"; nickname: string } | null;
 
 export default function NavDrawer({
   session,

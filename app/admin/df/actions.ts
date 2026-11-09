@@ -10,8 +10,7 @@ import {
 } from "@/lib/df-characters";
 
 export type DfSearchState =
-  | { rows?: DfCharacterRow[]; error?: string }
-  | undefined;
+  { rows?: DfCharacterRow[]; error?: string } | undefined;
 
 export async function searchDfCharactersAction(
   _state: DfSearchState,

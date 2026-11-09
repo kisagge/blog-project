@@ -60,8 +60,7 @@ const EXT_BY_TYPE: Record<string, string> = {
 };
 
 export type ImageCheck =
-  | { ok: true; ext: string }
-  | { ok: false; error: string };
+  { ok: true; ext: string } | { ok: false; error: string };
 
 export function checkImage(type: string, size: number): ImageCheck {
   const ext = EXT_BY_TYPE[type];

@@ -2,12 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 
 export type AuditTargetType =
-  | "feed"
-  | "member"
-  | "report"
-  | "series"
-  | "site"
-  | "admin";
+  "feed" | "member" | "report" | "series" | "site" | "admin";
 
 export type AuditEntry = {
   action: string; // "feed.create" 등 점 표기

@@ -36,12 +36,12 @@ CI/CD: main push → GitHub Actions
 
 | 영역       | 기술                            | 버전       | 선택 이유                                                              |
 | ---------- | ------------------------------- | ---------- | ---------------------------------------------------------------------- |
-| 프레임워크 | Next.js (App Router)            | 16.2.9     | Server Actions·RSC로 API 레이어 없이 데이터 변경 처리                  |
-| UI         | React / Tailwind CSS            | 19.2 / v4  | —                                                                      |
-| ORM/DB     | Prisma / SQLite                 | 7.8 / —    | 드라이버 어댑터(better-sqlite3 12.10)로 런타임 쿼리 엔진 바이너리 제거 |
+| 프레임워크 | Next.js (App Router)            | 16.4.5     | Server Actions·RSC로 API 레이어 없이 데이터 변경 처리                  |
+| UI         | React / Tailwind CSS            | 19.3 / v4  | —                                                                      |
+| ORM/DB     | Prisma / SQLite                 | 7.10 / —   | 드라이버 어댑터(better-sqlite3 12.10)로 런타임 쿼리 엔진 바이너리 제거 |
 | 인증       | jose (JWT)                      | 6.2        | 미들웨어에서도 검증 가능한 경량 서명                                   |
 | 콘텐츠     | react-markdown + remark-gfm     | 10.1 / 4.0 | 본문 마크다운 렌더                                                     |
-| 검증       | zod                             | 4.4        | 폼·업로드 입력 검증                                                    |
+| 검증       | zod                             | 4.6        | 폼·업로드 입력 검증                                                    |
 | 알림/메일  | web-push / nodemailer           | —          | VAPID 웹 푸시 · SMTP(SES) 트랜잭션 메일                                |
 | 정렬 UI    | @dnd-kit                        | —          | 던파 캐릭터 드래그 정렬                                                |
 | 테스트     | Vitest                          | 4.1        | 순수 로직 + 임시 SQLite 통합 테스트                                    |
