@@ -3,3 +3,8 @@ onlyBuiltDependencies:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+# minimatch <11 DoS(GHSA-g3hv-75wg-m249, dev 전용 경로). 최신 typescript-eslint도 ^10을 요구해 범위 내 해결 불가 →
+# 해당 경로만 11로 강제. estree는 minimatch(path, pattern, { dot }) 호출만 사용(11에서 불변).
+# typescript-eslint가 minimatch 11+를 요구하게 되면 제거.
+overrides:
+  "@typescript-eslint/typescript-estree>minimatch": ^11.0.5
