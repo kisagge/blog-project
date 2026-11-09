@@ -36,12 +36,12 @@ CI/CD: push to main → GitHub Actions
 
 | Area         | Tech                            | Version    | Rationale                                                                     |
 | ------------ | ------------------------------- | ---------- | ----------------------------------------------------------------------------- |
-| Framework    | Next.js (App Router)            | 16.2.9     | Server Actions/RSC handle mutations without a separate API layer              |
-| UI           | React / Tailwind CSS            | 19.2 / v4  | —                                                                             |
-| ORM/DB       | Prisma / SQLite                 | 7.8 / —    | Driver adapter (better-sqlite3 12.10) removes the runtime query-engine binary |
+| Framework    | Next.js (App Router)            | 16.4.5     | Server Actions/RSC handle mutations without a separate API layer              |
+| UI           | React / Tailwind CSS            | 19.3 / v4  | —                                                                             |
+| ORM/DB       | Prisma / SQLite                 | 7.10 / —   | Driver adapter (better-sqlite3 12.10) removes the runtime query-engine binary |
 | Auth         | jose (JWT)                      | 6.2        | Lightweight signing that verifies even in middleware                          |
 | Content      | react-markdown + remark-gfm     | 10.1 / 4.0 | Markdown rendering for post bodies                                            |
-| Validation   | zod                             | 4.4        | Form and upload input validation                                              |
+| Validation   | zod                             | 4.6        | Form and upload input validation                                              |
 | Notif/Mail   | web-push / nodemailer           | —          | VAPID web push · SMTP (SES) transactional email                               |
 | Sortable UI  | @dnd-kit                        | —          | Drag-to-reorder for DFO characters                                            |
 | Testing      | Vitest                          | 4.1        | Pure-logic + temp-SQLite integration tests                                    |
