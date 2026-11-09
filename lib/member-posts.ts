@@ -10,8 +10,7 @@ export const DAILY_PUBLISH_LIMIT = 5; // 회원당 하루 게시 개수
 
 // 성공 시 value를 항상 반환(슬롯 id·slug 등) — value 선택인 공용 Result와 의미가 달라 로컬 유지.
 type Result<T = undefined> =
-  | { ok: true; value: T }
-  | { ok: false; error: string };
+  { ok: true; value: T } | { ok: false; error: string };
 
 // 제목 기반 slug + 짧은 난수(충돌·악용 방지). 한글 제목은 ascii가 비어 "post-..."가 된다.
 function genSlug(title: string): string {

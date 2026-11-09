@@ -22,8 +22,7 @@ async function memberLabel(id: string): Promise<string> {
 }
 
 export type FeedFormState =
-  | { errors?: Record<string, string[]>; message?: string }
-  | undefined;
+  { errors?: Record<string, string[]>; message?: string } | undefined;
 
 function revalidateFeed() {
   revalidatePath("/feed", "layout"); // 목록 + 모든 상세

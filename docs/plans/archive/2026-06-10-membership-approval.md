@@ -216,8 +216,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
 type Result<T = undefined> =
-  | { ok: true; value?: T }
-  | { ok: false; error: string };
+  { ok: true; value?: T } | { ok: false; error: string };
 
 export async function createPendingUser(input: {
   email: string;
