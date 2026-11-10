@@ -65,7 +65,7 @@ CI/CD: main push → GitHub Actions
 - **디스크 고갈**: 누적된 미사용 이미지로 `/`가 차서 레이어 압축 해제가 정지 → `pull` 전 정리 단계 추가 + 단계별 계측 로깅.
 - **메모리 부족(OOM)**: 512MB 인스턴스에서 배포 중 OOM으로 컨테이너 사망(→ 504) → 스왑 2GB 추가로 해소, 인스턴스 증설 권고.
 - **배포 워크플로**: `test → build/push(GHCR) → SSH 배포(+ `prisma migrate deploy`)`. 수동 트리거(workflow_dispatch) 지원, 타임아웃으로 실패 가시화.
-- **CI 위생 게이트**: test 잡이 `tsc → eslint → prettier --check → vitest → pnpm audit(--prod --audit-level critical)`를 통과해야 빌드·배포로 진행. 포맷·**critical 런타임 취약점** 회귀를 머지 전 차단(현 prod 취약점은 전부 `prisma>@prisma/dev>hono` 전이의존이라 critical 게이트는 green 유지, high/moderate는 Dependabot이 처리).
+- **CI 위생 게이트**: test 잡이 `tsc → eslint → prettier --check → vitest → pnpm audit(--prod --audit-level moderate)`를 통과해야 빌드·배포로 진행. 포맷·**moderate 이상 런타임 취약점** 회귀를 머지 전 차단(취약점 0건 달성 후 critical → moderate로 강화. dev 의존성은 배포 산출물에 없어 게이트 제외, Dependabot이 처리).
 - **의존성 자동화**: `.github/dependabot.yml`이 npm·GitHub Actions·Docker 베이스이미지를 주간 점검, minor/patch는 그룹 PR 1개로 묶고 major는 개별 PR로 분리(공급망·핀 회귀 차단, PR 노이즈 최소화).
 - **헬스체크 + 행 감지**: `/api/health`가 `SELECT 1` DB 핑까지 확인(상태 문자열만 반환, 내부정보 미노출)하고 `compose.yaml` `healthcheck`가 30초마다 프로브 — `restart: unless-stopped`가 못 잡는 "응답은 살아있되 DB가 죽은 행" 상태를 감지해 컨테이너를 unhealthy로 표시·재시작 유도. 런타임 이미지에 curl/wget이 없어 **node 글로벌 fetch**로 프로브, `start_period`로 `migrate deploy`+`next start` 기동 시간 확보. 헬스는 `proxy.ts` matcher에서 제외해 IP 레이트리밋·`/admin` 가드를 우회(프로브가 항상 응답).
 - **관리자 감사 로그**: 거버넌스 액션(글 CRUD·공개범위, 회원 승인/거절/차단, 신고 숨김/복구/기각, 시리즈 CRUD, 점검모드, 관리자 닉네임)을 `logAudit`로 `AuditLog`에 append. 관리자는 싱글톤이라 "누가"는 자명 → **무엇·언제 + 작성 시점 요약 스냅샷**(대상 삭제돼도 보존)을 `/admin/audit`에서 최신순 열람. `logAudit`은 best-effort(throw 안 함)라 감사 실패가 거버넌스 액션을 막지 않음.
