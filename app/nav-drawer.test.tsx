@@ -71,6 +71,17 @@ describe("NavDrawer", () => {
     expect(screen.queryByRole("link", { name: "글쓰기" })).toBeNull();
   });
 
+  test("소개 링크는 소개 본문이 있을 때(hasAbout)만", () => {
+    const { rerender } = render(<NavDrawer session={null} />);
+    fireEvent.click(toggle());
+    expect(screen.queryByRole("link", { name: "소개" })).toBeNull();
+    rerender(<NavDrawer session={null} hasAbout />);
+    expect(screen.getByRole("link", { name: "소개" })).toHaveAttribute(
+      "href",
+      "/about",
+    );
+  });
+
   test("Escape 키로 닫힘", () => {
     render(<NavDrawer session={null} />);
     fireEvent.click(toggle());

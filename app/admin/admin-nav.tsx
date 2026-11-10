@@ -8,6 +8,7 @@ const TABS = [
   { href: "/admin/stats", label: "통계" },
   { href: "/admin/feeds", label: "글" },
   { href: "/admin/series", label: "시리즈" },
+  { href: "/admin/about", label: "소개" },
   { href: "/admin/members", label: "회원" },
   { href: "/admin/reports", label: "신고" },
   { href: "/admin/df", label: "던파" },

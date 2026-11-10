@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { getSession } from "@/lib/dal";
+import { hasAbout } from "@/lib/site-config";
 import { countUnread, notificationRecipientId } from "@/lib/notifications";
 import NavDrawer from "@/app/nav-drawer";
 import NotificationBell from "@/app/notification-bell";
@@ -53,6 +54,7 @@ export default async function RootLayout({
         : null;
   const notifId = await notificationRecipientId();
   const unread = notifId ? await countUnread(notifId) : 0;
+  const showAbout = await hasAbout();
   return (
     <html
       lang="ko"
@@ -78,6 +80,7 @@ export default async function RootLayout({
             <NavDrawer
               session={navSession}
               vapidKey={process.env.VAPID_PUBLIC_KEY}
+              hasAbout={showAbout}
             />
             <Link href="/" className="text-lg font-semibold tracking-tight">
               BY Playground

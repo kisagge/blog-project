@@ -152,6 +152,26 @@ export function buildTagJsonLd(
   };
 }
 
+// 소개 페이지(/about)용 AboutPage. 사이트 Organization(@id)을 about으로 가리켜 홈 JSON-LD와 연결.
+export function buildAboutJsonLd(about: {
+  description: string;
+  updatedAt: Date | null;
+}): object {
+  const url = absoluteUrl("/about");
+  const page: Record<string, unknown> = {
+    "@type": "AboutPage",
+    "@id": url,
+    url,
+    name: `소개 · ${SITE_NAME}`,
+    description: about.description,
+    isPartOf: { "@id": absoluteUrl("/#website") },
+    about: { "@id": absoluteUrl("/#organization") },
+    inLanguage: "ko-KR",
+  };
+  if (about.updatedAt) page.dateModified = isoInstant(about.updatedAt);
+  return { "@context": "https://schema.org", ...page };
+}
+
 // JSON-LD를 <script> 안에 넣기 위한 직렬화. '<'를 유니코드 이스케이프해
 // 제목/요약에 "</script>"가 있어도 마크업이 깨지거나 주입되지 않게 한다.
 export function jsonLdHtml(data: object): string {

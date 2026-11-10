@@ -148,3 +148,14 @@ export const ResetPasswordSchema = z
     message: "비밀번호가 일치하지 않습니다.",
     path: ["confirm"],
   });
+
+// 소개 페이지(/about) 본문 — 관리자 편집. 빈 값은 "비공개(페이지 숨김)"로 허용.
+export const ABOUT_MAX_LENGTH = 20_000;
+export const AboutSchema = z.object({
+  content: z
+    .string()
+    .max(
+      ABOUT_MAX_LENGTH,
+      `소개는 ${ABOUT_MAX_LENGTH.toLocaleString()}자 이하로 입력하세요.`,
+    ),
+});
