@@ -11,7 +11,7 @@ const base = {
   title: "안녕 세계",
   summary: "요약입니다",
   createdAt: new Date("2026-06-10T00:00:00Z"),
-  updatedAt: new Date("2026-06-18T12:00:00Z"),
+  editedAt: new Date("2026-06-18T12:00:00Z"),
   publishedAt: new Date("2026-06-11T01:00:00Z"),
   authorId: "u1",
   feedTags: [{ tag: { name: "개발" } }, { tag: { name: "회고" } }],
@@ -34,7 +34,7 @@ describe("buildFeedJsonLd", () => {
     expect(post.description).toBe("요약입니다");
     expect(post.url).toBe("https://by-jang-blog.xyz/feed/hello-world");
     expect(post.datePublished).toBe("2026-06-11T01:00:00.000Z");
-    expect(post.dateModified).toBe("2026-06-18T12:00:00.000Z");
+    expect(post.dateModified).toBe("2026-06-18T12:00:00.000Z"); // editedAt
     expect(post.author).toMatchObject({
       "@type": "Person",
       name: "글쓴이",
@@ -46,6 +46,13 @@ describe("buildFeedJsonLd", () => {
     expect(post.publisher).toMatchObject({ "@type": "Organization" });
     expect(post.keywords).toBe("개발, 회고");
     expect(post.inLanguage).toBe("ko-KR");
+  });
+
+  test("수정 이력이 없으면 dateModified = 게시 시각(조회수로 바뀌는 updatedAt 미사용)", () => {
+    const post = graph(
+      buildFeedJsonLd({ ...base, editedAt: null }, "글쓴이"),
+    )[0];
+    expect(post.dateModified).toBe("2026-06-11T01:00:00.000Z");
   });
 
   test("BreadcrumbList: 홈→피드→글 3단계 절대 URL", () => {

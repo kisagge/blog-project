@@ -20,6 +20,7 @@ const SCHEMA = [
     "publishedAt" DATETIME,
     "scheduledAt" DATETIME,
     "hiddenAt" DATETIME,
+    "editedAt" DATETIME,
     "seriesId" TEXT,
     "seriesOrder" INTEGER NOT NULL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

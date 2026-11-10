@@ -1,4 +1,5 @@
 import type { Element, ElementContent, Root, RootContent } from "hast";
+import { defaultUrlTransform } from "react-markdown";
 
 // 노드의 텍스트만 이어붙임(하이라이트 span으로 쪼개진 코드 원문 복원·제목 텍스트 추출용).
 export function hastText(node: Root | RootContent | ElementContent): string {
@@ -51,14 +52,46 @@ function toCallout(quote: Element): boolean {
   return true;
 }
 
-function walk(node: Root | Element) {
+function walk(node: Root | Element, visit: (el: Element) => void) {
   for (const child of node.children) {
     if (child.type !== "element") continue;
-    if (child.tagName === "blockquote") toCallout(child);
-    walk(child);
+    visit(child);
+    walk(child, visit);
   }
 }
 
 export function rehypeCallouts() {
-  return (tree: Root) => walk(tree);
+  return (tree: Root) =>
+    walk(tree, (el) => {
+      if (el.tagName === "blockquote") toCallout(el);
+    });
+}
+
+// 화면 렌더러(react-markdown)와 같은 URL 정책: defaultUrlTransform이 허용하지 않는 스킴
+// (javascript:·data: 등)의 a href·img src는 속성째 제거. react-markdown을 거치지 않는 HTML(RSS 본문)용.
+export function rehypeSafeUrls() {
+  return (tree: Root) =>
+    walk(tree, (el) => {
+      const key =
+        el.tagName === "a" ? "href" : el.tagName === "img" ? "src" : null;
+      const v = key && el.properties[key];
+      if (typeof v === "string" && defaultUrlTransform(v) === "")
+        delete el.properties[key!];
+    });
+}
+
+// 사이트 상대 경로(`/uploads/…`, `/feed/…`)의 img src·a href를 절대 URL로.
+// RSS 본문처럼 사이트 밖(리더)에서 렌더되는 HTML용. 프로토콜 상대(`//`)·외부·앵커는 그대로.
+export function rehypeAbsoluteUrls(origin: string) {
+  const abs = (v: unknown) =>
+    typeof v === "string" && v.startsWith("/") && !v.startsWith("//")
+      ? origin + v
+      : v;
+  return (tree: Root) =>
+    walk(tree, (el) => {
+      if (el.tagName === "img")
+        el.properties.src = abs(el.properties.src) as string;
+      if (el.tagName === "a")
+        el.properties.href = abs(el.properties.href) as string;
+    });
 }

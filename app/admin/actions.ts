@@ -11,6 +11,7 @@ import { parseTags, setFeedTags } from "@/lib/tags";
 import { decideSchedule } from "@/lib/scheduled";
 import { assignFeedSeries } from "@/lib/series";
 import { logAudit } from "@/lib/audit";
+import { bodyChanged } from "@/lib/feed-dates";
 
 // 감사 요약용: 회원 닉네임(없으면 id 일부).
 async function memberLabel(id: string): Promise<string> {
@@ -87,7 +88,16 @@ export async function updateFeed(
   try {
     const { tags, seriesId, scheduledAt, ...feedData } = parsed.data;
     void scheduledAt; // 예약은 생성 시에만 — 수정에선 무시
-    await prisma.feed.update({ where: { id }, data: feedData });
+    // 게시된 글의 제목·요약·본문이 실제로 바뀐 경우에만 수정 시각 기록(공개범위·태그만 바꾼 저장은 제외).
+    const prev = await prisma.feed.findUnique({
+      where: { id },
+      select: { status: true, title: true, content: true, summary: true },
+    });
+    const edited = prev?.status === "published" && bodyChanged(prev, feedData);
+    await prisma.feed.update({
+      where: { id },
+      data: edited ? { ...feedData, editedAt: new Date() } : feedData,
+    });
     await setFeedTags(id, parseTags(tags ?? ""));
     await assignFeedSeries(id, seriesId || null);
   } catch {

@@ -28,7 +28,7 @@ beforeAll(async () => {
     data: {
       slug: "s-pub",
       title: "공개시리즈글",
-      content: "c",
+      content: "**공개본문**",
       visibility: "public",
       status: "published",
       seriesId: s.id,
@@ -39,7 +39,7 @@ beforeAll(async () => {
     data: {
       slug: "s-mem",
       title: "회원시리즈글",
-      content: "c",
+      content: "회원전용본문",
       visibility: "members", // anon RSS에서 제외
       status: "published",
       seriesId: s.id,
@@ -50,7 +50,7 @@ beforeAll(async () => {
     data: {
       slug: "s-hid",
       title: "숨김시리즈글",
-      content: "c",
+      content: "숨김본문",
       visibility: "public",
       status: "published",
       hiddenAt: new Date(), // 신고 숨김 → 제외
@@ -85,6 +85,15 @@ describe("series rss.xml", () => {
     expect(xml).toContain("공개시리즈글");
     expect(xml).not.toContain("회원시리즈글");
     expect(xml).not.toContain("숨김시리즈글");
+  });
+
+  test("공개 글 본문 전문은 content:encoded로, 비공개 대상 본문은 새지 않음", async () => {
+    const xml = await (await call("my-series")).text();
+    expect(xml).toContain(
+      "<content:encoded><![CDATA[<p><strong>공개본문</strong></p>]]>",
+    );
+    expect(xml).not.toContain("회원전용본문");
+    expect(xml).not.toContain("숨김본문");
   });
 
   test("없는 슬러그 → 404", async () => {

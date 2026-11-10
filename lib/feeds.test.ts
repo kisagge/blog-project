@@ -12,6 +12,7 @@ let getPublicTopFeeds: Feeds["getPublicTopFeeds"];
 let getAdjacentFeeds: Feeds["getAdjacentFeeds"];
 let getFeedsByTag: Feeds["getFeedsByTag"];
 let countFeedsByTag: Feeds["countFeedsByTag"];
+let getArchiveFeeds: Feeds["getArchiveFeeds"];
 let cleanup: () => Promise<void>;
 let prisma: Awaited<ReturnType<typeof setupTestDb>>["prisma"];
 
@@ -118,6 +119,7 @@ beforeAll(async () => {
     getAdjacentFeeds,
     getFeedsByTag,
     countFeedsByTag,
+    getArchiveFeeds,
   } = await import("@/lib/feeds"));
 });
 
@@ -668,6 +670,39 @@ describe("getPublicTopFeeds", () => {
 
     for (const id of ["top-a", "top-b", "top-mem", "top-hidden"])
       await prisma.feed.delete({ where: { id } });
+  });
+});
+
+describe("getArchiveFeeds", () => {
+  test("관리자 게시 글만 최신순 — 초안·회원 작성 글 제외, 회원공개는 역할별", async () => {
+    const anon = (await getArchiveFeeds("anon")).map((f) => f.slug);
+    expect(anon[0]).toBe("pub-12"); // 최신
+    expect(anon).toContain("pub-1");
+    expect(anon).not.toContain("draft-1"); // 비공개 초안
+    expect(anon).not.toContain("mem-1"); // 회원공개는 anon 제외
+    expect(anon).not.toContain("umem-1"); // 회원 작성 글은 /feed 범위 밖
+    expect(anon).not.toContain("udraft-1");
+
+    const member = (await getArchiveFeeds("member")).map((f) => f.slug);
+    expect(member).toContain("mem-1");
+    expect(member).not.toContain("umem-1");
+  });
+
+  test("신고로 숨겨진 글 제외", async () => {
+    await prisma.feed.create({
+      data: {
+        id: "arch-hidden",
+        slug: "arch-hidden",
+        title: "숨김",
+        content: "c",
+        visibility: "public",
+        hiddenAt: new Date(),
+      },
+    });
+    expect((await getArchiveFeeds("anon")).map((f) => f.slug)).not.toContain(
+      "arch-hidden",
+    );
+    await prisma.feed.delete({ where: { id: "arch-hidden" } });
   });
 });
 

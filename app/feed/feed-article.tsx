@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { readingTimeMinutes, extractToc } from "@/lib/content";
 import { kstDate, isoInstant } from "@/lib/kst";
+import { visibleEditedAt } from "@/lib/feed-dates";
 import Toc from "@/app/feed/toc";
 import MarkdownContent from "@/app/markdown-content";
 
@@ -15,6 +16,7 @@ export default function FeedArticle({
   feed: {
     title: string;
     createdAt: Date;
+    editedAt?: Date | null; // 게시 후 본문 수정 시각(날짜가 바뀐 수정만 표시)
     content: string;
     viewCount?: number;
   };
@@ -25,6 +27,7 @@ export default function FeedArticle({
 }) {
   const minutes = readingTimeMinutes(feed.content);
   const toc = extractToc(feed.content);
+  const editedAt = visibleEditedAt(feed.editedAt, feed.createdAt);
   return (
     <article>
       <header className="mb-8 border-b border-black/[.06] pb-6 dark:border-white/[.1]">
@@ -44,6 +47,13 @@ export default function FeedArticle({
           <time dateTime={isoInstant(feed.createdAt)}>
             {kstDate(feed.createdAt)}
           </time>
+          {editedAt && (
+            <span>
+              {" "}
+              · 수정{" "}
+              <time dateTime={isoInstant(editedAt)}>{kstDate(editedAt)}</time>
+            </span>
+          )}
           {typeof feed.viewCount === "number" && (
             <span> · 조회 {feed.viewCount.toLocaleString()}</span>
           )}

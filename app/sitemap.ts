@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { SITE_ORIGIN } from "@/lib/share";
 import { getPublicTagSlugs } from "@/lib/tags";
+import { feedLastModified } from "@/lib/feed-dates";
 
 // DB를 조회하므로 요청 시 생성(빌드 타임 prerender 방지).
 export const dynamic = "force-dynamic";
@@ -11,7 +12,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [feeds, dfs, publicSeries, tagSlugs] = await Promise.all([
     prisma.feed.findMany({
       where: { status: "published", visibility: "public", hiddenAt: null },
-      select: { slug: true, updatedAt: true },
+      // updatedAt은 조회수 증가에도 갱신되므로 본문 기준 시각(feedLastModified)을 쓴다.
+      select: {
+        slug: true,
+        createdAt: true,
+        publishedAt: true,
+        editedAt: true,
+      },
     }),
     prisma.dfCharacter.findMany({
       where: { visibility: "public" },
@@ -39,12 +46,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_ORIGIN}/feed`, lastModified: now },
     { url: `${SITE_ORIGIN}/feed/popular`, lastModified: now },
     { url: `${SITE_ORIGIN}/feed/tags`, lastModified: now },
+    { url: `${SITE_ORIGIN}/archive`, lastModified: now },
     { url: `${SITE_ORIGIN}/series`, lastModified: now },
     { url: `${SITE_ORIGIN}/df`, lastModified: now },
   ];
   const feedPages: MetadataRoute.Sitemap = feeds.map((f) => ({
     url: `${SITE_ORIGIN}/feed/${f.slug}`,
-    lastModified: f.updatedAt,
+    lastModified: feedLastModified(f),
   }));
   const dfPages: MetadataRoute.Sitemap = dfs.map((d) => ({
     url: `${SITE_ORIGIN}/df/${d.serverId}/${d.characterId}`,

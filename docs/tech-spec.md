@@ -152,7 +152,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 551 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 590 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -256,11 +256,18 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **시각**: 입력은 **react-day-picker**(날짜) + time 입력 → `"YYYY-MM-DDTHH:MM"`(KST 벽시계)를 hidden input으로 제출, `kstWallClockToUtc`로 UTC 변환(브라우저 TZ 무관·달력 오버플로 거부). 과거/무효는 폼 에러. 작성 폼에 **사람이 읽는 미리보기**(`formatKstWallClock` → "6월 23일 (화) 오전 7:23 발행 예정") + **과거 시각 클라 경고**(`server-only`인 `decideSchedule` 대신 `lib/kst`로 판정). **수정 화면엔 예약 컨트롤 미노출**(생성 전용 보장: `updateFeed`는 `scheduledAt` 무시).
 - **관리자 운영**: 목록에 "🕒 예약: {시각}" 배지 + **"지금 게시"**(예약 초안 즉시 발행) 안전밸브. 회원 임시저장(`scheduledAt` null)은 영향 없음.
 
+### 4.24 발견성·구독 보강 (수정일·RSS 전문·아카이브·llms.txt)
+
+- **수정일(`Feed.editedAt`)**: `updatedAt`(`@updatedAt`)은 조회수 증가·숨김·시리즈 정렬 등 **모든 update에 갱신**돼, 기존 JSON-LD `dateModified`·sitemap `lastmod`가 사실상 "마지막 조회 시각"을 내보내고 있었다. 게시 글의 제목·요약·본문이 **실제로 바뀐 저장에서만** 기록하는 `editedAt`을 추가(관리자 `updateFeed`·회원 `publishPost` 수정 경로, 비교는 순수 `bodyChanged` — 공개범위·태그만 바꾼 저장·초안/예약 글 편집·임시저장→게시 전환은 제외). 화면엔 표시 날짜와 **KST 날짜가 다른 수정만** "· 수정 {날짜}"(`<time>`)로 노출(당일 오타 정정 생략), 검색엔진용은 `feedLastModified = editedAt ?? publishedAt ?? createdAt`. 기존 행은 NULL로 시작(마이그레이션은 컬럼 추가만).
+- **RSS 전문(`content:encoded`)**: 전체·시리즈 RSS에 본문 HTML을 CDATA로 수록(본문 속 `]]>`는 구간 분할). 변환은 unified(remark-parse·gfm → remark-rehype → rehype-stringify)로 화면 렌더러와 **같은 GFM·콜아웃 규칙**을 쓰되 하이라이트·복사 버튼·앵커는 뺀 순수 HTML. raw HTML은 버리고 링크·이미지 URL엔 화면과 같은 `defaultUrlTransform` 스킴 정책(`javascript:`·`data:` 제거, `rehypeSafeUrls`)을 적용해 XSS 정책 동일, 리더는 사이트 밖에서 렌더하므로 `/uploads/…`·`/feed/…` 상대 경로를 **절대 URL로 재작성**(`rehypeAbsoluteUrls`). 시리즈 RSS는 가시성 필터를 통과한 id로만 본문을 1쿼리 추가 조회.
+- **아카이브(`/archive`)**: `/feed`와 같은 범위(관리자 글)의 게시·미숨김·뷰어 가시 글을 **KST 연→월**로 묶은 전체 목록(`groupByYearMonth` — UTC 12/31 15:00 = KST 새해 경계 테스트). 연 `section`/h2 → 월 h3 → `ul`, 날짜는 `<time>`. 내비 드로어·sitemap에 추가.
+- **`/llms.txt`**: llmstxt.org 형식(H1 사이트명 → 인용 요약 → 주요 페이지·최근 글 링크)으로 AI 검색·에이전트용 안내. RSS·sitemap과 같은 공개 범위(전체공개·게시·미숨김) 최근 50개, 링크 텍스트의 대괄호 이스케이프.
+
 ## 5. 성과 요약
 
 - 런타임 이미지 **2.05GB → 876MB (−57%)**, 배포 첫 pull **10분 32초 → 37초**
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 551), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 590), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
