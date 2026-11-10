@@ -5,11 +5,29 @@ import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeHighlight from "rehype-highlight";
 import CodeCopyButton from "@/app/code-copy-button";
-import { hastText, rehypeCallouts } from "@/lib/markdown-plugins";
+import ZoomableImage from "@/app/zoomable-image";
+import {
+  hastText,
+  rehypeCallouts,
+  rehypeFigures,
+  rehypeMarkLinkedImages,
+} from "@/lib/markdown-plugins";
 
 // 본문 이미지: 업로드 URL의 ?w&h를 width/height로 부여해 로드 전 공간을 예약(CLS 방지) +
 // loading="lazy"로 지연 로드. 쿼리 없는(외부) 이미지는 lazy만 적용.
-function MdImg({ src, alt }: { src?: string | Blob; alt?: string }) {
+// 클릭 확대(ZoomableImage)를 씌우되, 링크 안 이미지(rehypeMarkLinkedImages)는 a 안 button 중첩을
+// 피하려 평범한 img로 둔다(클릭은 링크 이동).
+function MdImg({
+  src,
+  alt,
+  title,
+  node,
+}: {
+  src?: string | Blob;
+  alt?: string;
+  title?: string;
+  node?: Element;
+}) {
   const url = typeof src === "string" ? src : undefined;
   let width: number | undefined;
   let height: number | undefined;
@@ -26,11 +44,23 @@ function MdImg({ src, alt }: { src?: string | Blob; alt?: string }) {
       /* 잘못된 URL — 속성 없이 렌더 */
     }
   }
+  if (url && !node?.properties.dataLinked) {
+    return (
+      <ZoomableImage
+        src={url}
+        alt={alt ?? ""}
+        title={title}
+        width={width}
+        height={height}
+      />
+    );
+  }
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={url}
       alt={alt ?? ""}
+      title={title}
       width={width}
       height={height}
       loading="lazy"
@@ -112,14 +142,21 @@ const remarkRehypeOptions: Options["remarkRehypeOptions"] = {
 // 서버(글 상세)·클라이언트(에디터 미리보기) 양쪽에서 사용 — 복사 버튼만 클라이언트 섬.
 // 코드블록은 rehype-highlight(highlight.js)로 하이라이트(글 상세는 서버 렌더).
 // 토큰 색은 globals.css의 .hljs-* 규칙(3테마 정합). 펜스 코드는 인라인 code 배경을 무력화.
-// `> [!NOTE]` 등 콜아웃은 rehypeCallouts, 인용문·각주·콜아웃 스타일은 globals.css의 .md-content 규칙.
+// `> [!NOTE]` 등 콜아웃은 rehypeCallouts, 캡션 있는 단독 이미지는 rehypeFigures(figure/figcaption),
+// 인용문·각주·콜아웃·캡션 스타일은 globals.css의 .md-content 규칙.
 export default function MarkdownContent({ content }: { content: string }) {
   return (
-    <div className="md-content flex flex-col gap-4 leading-7 [&_.task-list-item]:list-none [&_a]:underline [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 dark:[&_code]:bg-zinc-800 [&_h1]:scroll-mt-24 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:scroll-mt-24 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:scroll-mt-24 [&_h3]:text-lg [&_h3]:font-semibold [&_img]:my-4 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded [&_li]:ml-5 [&_ol]:list-decimal [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1 [&_ul]:list-disc">
+    <div className="md-content flex flex-col gap-4 leading-7 [&_.task-list-item]:list-none [&_a]:underline [&_button>img]:my-0 [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 dark:[&_code]:bg-zinc-800 [&_h1]:scroll-mt-24 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:scroll-mt-24 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:scroll-mt-24 [&_h3]:text-lg [&_h3]:font-semibold [&_img]:my-4 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded [&_li]:ml-5 [&_ol]:list-decimal [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1 [&_ul]:list-disc">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         remarkRehypeOptions={remarkRehypeOptions}
-        rehypePlugins={[rehypeSlug, rehypeHighlight, rehypeCallouts]}
+        rehypePlugins={[
+          rehypeSlug,
+          rehypeHighlight,
+          rehypeCallouts,
+          rehypeFigures,
+          rehypeMarkLinkedImages,
+        ]}
         components={components}
       >
         {content}

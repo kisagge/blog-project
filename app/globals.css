@@ -303,3 +303,20 @@ body {
   --callout: #f87171;
   --callout-text: #fca5a5;
 }
+
+/* 캡션 있는 단독 이미지(rehypeFigures). 캡션은 보조 텍스트 대비(흰 배경 7.0:1·다크 7:1 이상). */
+.md-content figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.md-content figcaption {
+  font-size: 0.875rem;
+  color: #52525b;
+  text-align: center;
+}
+[data-theme="dark"] .md-content figcaption,
+[data-theme="brand"] .md-content figcaption {
+  color: #a1a1aa;
+}

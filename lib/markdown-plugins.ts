@@ -67,6 +67,48 @@ export function rehypeCallouts() {
     });
 }
 
+const isBlank = (c: ElementContent) => c.type === "text" && !c.value.trim();
+
+// 제목(title)이 있는 단독 이미지 문단(`![alt](src "캡션")`)을 figure + figcaption으로.
+// alt(대체 텍스트)와 캡션을 분리해 스크린리더가 같은 문장을 두 번 읽지 않게 하고,
+// 캡션으로 옮긴 title은 img에서 제거(툴팁 중복 방지). p 안엔 figure를 둘 수 없어 p 자체를 바꾼다.
+export function rehypeFigures() {
+  return (tree: Root) =>
+    walk(tree, (el) => {
+      if (el.tagName !== "p") return;
+      const solid = el.children.filter((c) => !isBlank(c));
+      const img = solid[0];
+      if (solid.length !== 1 || img.type !== "element" || img.tagName !== "img")
+        return;
+      const caption = img.properties.title;
+      if (typeof caption !== "string" || !caption.trim()) return;
+      delete img.properties.title;
+      el.tagName = "figure";
+      el.children = [
+        img,
+        {
+          type: "element",
+          tagName: "figcaption",
+          properties: {},
+          children: [{ type: "text", value: caption.trim() }],
+        },
+      ];
+    });
+}
+
+// 링크 안 이미지에 dataLinked 표시 — 화면 렌더러가 확대 버튼을 씌우지 않게(a 안 button 중첩 금지).
+// 서버 컴포넌트에선 React context를 못 쓰므로 hast 단계에서 조상 정보를 남긴다.
+export function rehypeMarkLinkedImages() {
+  const mark = (node: Root | Element, inLink: boolean) => {
+    for (const child of node.children) {
+      if (child.type !== "element") continue;
+      if (inLink && child.tagName === "img") child.properties.dataLinked = true;
+      mark(child, inLink || child.tagName === "a");
+    }
+  };
+  return (tree: Root) => mark(tree, false);
+}
+
 // 화면 렌더러(react-markdown)와 같은 URL 정책: defaultUrlTransform이 허용하지 않는 스킴
 // (javascript:·data: 등)의 a href·img src는 속성째 제거. react-markdown을 거치지 않는 HTML(RSS 본문)용.
 export function rehypeSafeUrls() {
