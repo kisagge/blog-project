@@ -115,6 +115,44 @@ describe("member-posts 게시", () => {
     expect(r.ok).toBe(true);
   });
 
+  test("게시 글 수정: 제목·본문이 바뀔 때만 editedAt 기록(태그만 변경은 제외)", async () => {
+    const author = (await makeUser(prisma)).id;
+    const r = await m.publishPost(author, { title: "원제", content: "원문" });
+    if (!r.ok) throw new Error(r.error);
+    const { id } = (await prisma.feed.findFirst({
+      where: { slug: r.value.slug },
+    }))!;
+
+    await m.publishPost(author, {
+      id,
+      title: "원제",
+      content: "원문",
+      tags: "새태그",
+    });
+    expect((await prisma.feed.findUnique({ where: { id } }))?.editedAt).toBe(
+      null,
+    );
+
+    await m.publishPost(author, { id, title: "원제", content: "고친 본문" });
+    expect(
+      (await prisma.feed.findUnique({ where: { id } }))?.editedAt,
+    ).toBeInstanceOf(Date);
+  });
+
+  test("임시저장 → 게시 전환은 수정이 아니므로 editedAt 없음", async () => {
+    const author = (await makeUser(prisma)).id;
+    const d = await m.saveDraft(author, { title: "초안", content: "c" });
+    if (!d.ok) throw new Error(d.error);
+    await m.publishPost(author, {
+      id: d.value.id,
+      title: "바꾼 제목",
+      content: "c",
+    });
+    expect(
+      (await prisma.feed.findUnique({ where: { id: d.value.id } }))?.editedAt,
+    ).toBeNull();
+  });
+
   test("게시 글 slug는 회원공개·고유", async () => {
     const r = await m.publishPost(otherId, {
       title: "Hello World",

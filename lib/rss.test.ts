@@ -47,3 +47,47 @@ describe("renderRssFeed", () => {
     expect(block2).not.toContain("<description>");
   });
 });
+
+describe("renderRssFeed — 본문 전문(content:encoded)", () => {
+  const xml = renderRssFeed({
+    title: "t",
+    link: "https://x",
+    description: "d",
+    selfUrl: "https://x/rss.xml",
+    items: [
+      {
+        title: "본문 있음",
+        url: "https://x/feed/a",
+        pubDate: new Date("2026-01-02T00:00:00Z"),
+        contentHtml: "<p>본문 <code>a]]>b</code></p>",
+      },
+      {
+        title: "본문 없음",
+        url: "https://x/feed/b",
+        pubDate: new Date("2026-01-01T00:00:00Z"),
+      },
+    ],
+  });
+
+  test("content 네임스페이스 선언 + CDATA로 HTML 그대로 수록", () => {
+    expect(xml).toContain(
+      'xmlns:content="http://purl.org/rss/1.0/modules/content/"',
+    );
+    expect(xml).toContain("<content:encoded><![CDATA[<p>본문 <code>a");
+  });
+
+  test("본문 속 `]]>`는 CDATA를 끊어 이어붙여 XML이 깨지지 않음", () => {
+    expect(xml).toContain("a]]]]><![CDATA[>b");
+    const encoded = xml.match(
+      /<content:encoded>([\s\S]*?)<\/content:encoded>/,
+    )![1];
+    // CDATA 구간을 풀면 원문 복원
+    const restored = encoded.replace(/<!\[CDATA\[|\]\]>/g, "");
+    expect(restored).toBe("<p>본문 <code>a]]>b</code></p>");
+  });
+
+  test("contentHtml 없는 item은 content:encoded 미출력", () => {
+    const block2 = xml.split("<item>")[2];
+    expect(block2).not.toContain("content:encoded");
+  });
+});

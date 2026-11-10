@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { kstStartOfTodayUtc } from "@/lib/kst";
 import { parseTags, setFeedTags } from "@/lib/tags";
+import { bodyChanged } from "@/lib/feed-dates";
 
 // 회원 글 가드.
 export const DRAFT_LIMIT = 3; // 회원당 동시 임시저장 최대 개수
@@ -142,14 +143,21 @@ export async function publishPost(
   if (input.id) {
     const row = await prisma.feed.findFirst({
       where: { id: input.id, authorId: userId },
-      select: { id: true, slug: true, status: true },
+      select: {
+        id: true,
+        slug: true,
+        status: true,
+        title: true,
+        content: true,
+      },
     });
     if (!row) return { ok: false, error: "글을 찾을 수 없습니다." };
     if (row.status === "published") {
-      // 이미 게시된 글 수정.
+      // 이미 게시된 글 수정. 제목·본문이 실제로 바뀐 경우에만 수정 시각 기록(태그만 변경은 제외).
+      const next = { title: input.title, content: input.content };
       await prisma.feed.update({
         where: { id: row.id },
-        data: { title: input.title, content: input.content },
+        data: bodyChanged(row, next) ? { ...next, editedAt: new Date() } : next,
       });
       await setFeedTags(row.id, parseTags(input.tags ?? ""));
       return { ok: true, value: { slug: row.slug } };

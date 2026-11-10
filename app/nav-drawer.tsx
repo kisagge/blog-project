@@ -128,6 +128,9 @@ export default function NavDrawer({
           <DrawerLink href="/feed/tags" onClick={close}>
             태그
           </DrawerLink>
+          <DrawerLink href="/archive" onClick={close}>
+            아카이브
+          </DrawerLink>
           {session?.role === "admin" && (
             <DrawerLink href="/admin" onClick={close}>
               관리자

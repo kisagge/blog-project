@@ -172,6 +172,21 @@ export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
   });
 }
 
+// 아카이브(/archive)용: 블로그 본편(관리자 글 — /feed와 같은 범위)의 게시·미숨김·뷰어 가시 글 전체를 최신순.
+// 연·월 그룹핑은 lib/archive. 개인 블로그 규모라 무페이지네이션, 목록 표시에 필요한 필드만.
+export async function getArchiveFeeds(role: ViewerRole) {
+  return prisma.feed.findMany({
+    where: {
+      status: "published",
+      hiddenAt: null,
+      authorId: null,
+      visibility: { in: listableVisibilities(role) },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { slug: true, title: true, createdAt: true },
+  });
+}
+
 // 태그 전용 라우트용: 해당 태그가 달린 게시·미숨김·뷰어 가시 글(관리자+회원) 최신순.
 // 태그는 전역 사전이고 인덱스(getTagsWithCounts)도 작성자 무관 집계라, 상세도 작성자
 // 무관으로 맞춰 인덱스↔상세 불일치(회원 글 태그 클릭 시 404)를 제거. 개인 블로그 규모상 무페이지네이션.

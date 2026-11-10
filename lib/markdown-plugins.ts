@@ -51,14 +51,33 @@ function toCallout(quote: Element): boolean {
   return true;
 }
 
-function walk(node: Root | Element) {
+function walk(node: Root | Element, visit: (el: Element) => void) {
   for (const child of node.children) {
     if (child.type !== "element") continue;
-    if (child.tagName === "blockquote") toCallout(child);
-    walk(child);
+    visit(child);
+    walk(child, visit);
   }
 }
 
 export function rehypeCallouts() {
-  return (tree: Root) => walk(tree);
+  return (tree: Root) =>
+    walk(tree, (el) => {
+      if (el.tagName === "blockquote") toCallout(el);
+    });
+}
+
+// 사이트 상대 경로(`/uploads/…`, `/feed/…`)의 img src·a href를 절대 URL로.
+// RSS 본문처럼 사이트 밖(리더)에서 렌더되는 HTML용. 프로토콜 상대(`//`)·외부·앵커는 그대로.
+export function rehypeAbsoluteUrls(origin: string) {
+  const abs = (v: unknown) =>
+    typeof v === "string" && v.startsWith("/") && !v.startsWith("//")
+      ? origin + v
+      : v;
+  return (tree: Root) =>
+    walk(tree, (el) => {
+      if (el.tagName === "img")
+        el.properties.src = abs(el.properties.src) as string;
+      if (el.tagName === "a")
+        el.properties.href = abs(el.properties.href) as string;
+    });
 }

@@ -20,7 +20,9 @@
 - **알림**: 인앱 알림 센터(읽음 처리·딥링크 하이라이트) + **웹 푸시**(댓글/답글·신고 접수) + **실시간(SSE)**: 열린 탭의 헤더 벨 배지가 새로고침 없이 즉시 갱신 + **환경설정**(알림 센터의 설정 톱니바퀴에서 알림 종류별 on/off)
 - **PWA**: 설치형 + 오프라인(서비스 워커·manifest·아이콘)
 - **SNS 공유**: X · 카카오톡 · 네이티브 공유 · URL 복사 (og:image 포함)
-- **구독·SEO**: `/rss.xml` 전체 RSS 피드 + **시리즈별 RSS**(`/series/[slug]/rss.xml`), 글·태그별 **동적 OG 이미지**, `sitemap.xml`·`robots`
+- **구독·SEO**: `/rss.xml` 전체 RSS 피드 + **시리즈별 RSS**(`/series/[slug]/rss.xml`) — **본문 전문 포함**(`content:encoded`), 글·태그별 **동적 OG 이미지**, `sitemap.xml`·`robots`, AI 검색용 **`/llms.txt`**
+- **아카이브**(`/archive`): 전체 글을 KST 연·월별로 모아보기
+- **수정일**: 게시 후 본문을 고친 글은 상단에 "수정 {날짜}" 표시(JSON-LD `dateModified`·sitemap에도 반영)
 - **관리자 CMS**: 글·던파 캐릭터 CRUD, 회원 승인/거절·차단, 신고 처리(숨김/기각), 본문 이미지 업로드, 공개 범위 모달, 점검 모드, **예약 발행**(글 생성 시 발행 시각 지정 → cron 자동 게시, 목록에서 "지금 게시"), **통계 대시보드**(`/admin/stats` — 조회·가입 추이·인기글)
 - **어뷰징 방지**: `proxy`에서 IP당 전역 요청 속도 제한(429) + 가입·로그인·비밀번호 재설정에 **Cloudflare Turnstile CAPTCHA**(무료, 키 설정 시 활성)
 - **점검 모드**: 관리자가 공개 사이트를 외부 방문자에게 on/off (비어드민은 `/maintenance`로)
@@ -106,8 +108,9 @@ app/          라우트
   report/*                        콘텐츠 신고(모달·액션)
   notifications                   인앱 알림 센터
   admin/*                         관리자 CMS(글·던파·회원·신고·설정)
-  rss.xml, series/[slug]/rss.xml  구독(전체·시리즈별 RSS)
-  sitemap.ts, robots.ts           SEO
+  rss.xml, series/[slug]/rss.xml  구독(전체·시리즈별 RSS, 본문 전문)
+  archive                         연·월별 전체 글
+  sitemap.ts, robots.ts, llms.txt SEO · AI 검색 안내
   maintenance, uploads/[name]     점검 안내, 업로드 서빙
 lib/          도메인 로직 (feeds, df-characters, users, member-posts, comments,
               likes, reports, tags, content, notifications, push, mailer,

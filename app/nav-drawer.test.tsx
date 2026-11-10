@@ -30,7 +30,14 @@ describe("NavDrawer", () => {
     expect(container.querySelector('[role="dialog"]')).not.toHaveAttribute(
       "inert",
     );
-    for (const name of ["피드", "커뮤니티", "던파", "인기 글", "태그"])
+    for (const name of [
+      "피드",
+      "커뮤니티",
+      "던파",
+      "인기 글",
+      "태그",
+      "아카이브",
+    ])
       expect(screen.getByRole("link", { name })).toBeInTheDocument();
   });
 

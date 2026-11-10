@@ -1,5 +1,6 @@
 import { absoluteUrl, SITE_NAME, SITE_DESCRIPTION } from "@/lib/share";
 import { isoInstant } from "@/lib/kst";
+import { feedLastModified } from "@/lib/feed-dates";
 
 // 글 상세용 schema.org 구조화 데이터(JSON-LD) 빌더. 순수 모듈 — 서버 컴포넌트에서 사용.
 // 전체공개·게시 글에만 주입(호출부 게이팅). 검색 리치 스니펫(작성자·날짜·breadcrumb)용.
@@ -9,8 +10,8 @@ type FeedForJsonLd = {
   title: string;
   summary: string | null;
   createdAt: Date;
-  updatedAt: Date;
   publishedAt: Date | null;
+  editedAt: Date | null; // 본문 수정 시각(updatedAt은 조회수 증가에도 갱신돼 dateModified로 부적합)
   authorId: string | null; // null = 관리자 글(프로필 링크 없음)
   feedTags: { tag: { name: string } }[];
 };
@@ -34,7 +35,7 @@ export function buildFeedJsonLd(
     url,
     mainEntityOfPage: url,
     datePublished: isoInstant(feed.publishedAt ?? feed.createdAt),
-    dateModified: isoInstant(feed.updatedAt),
+    dateModified: isoInstant(feedLastModified(feed)),
     author,
     image: absoluteUrl(`/feed/${feed.slug}/opengraph-image`), // 동적 OG 1200×630
     publisher: {

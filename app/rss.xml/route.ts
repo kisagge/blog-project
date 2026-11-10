@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { SITE_ORIGIN } from "@/lib/share";
 import { renderRssFeed } from "@/lib/rss";
+import { markdownToFeedHtml } from "@/lib/rss-content";
 
-// 전체공개 글 RSS 2.0 피드. 요청 시 생성(빌드 타임 DB 접근 방지).
+// 전체공개 글 RSS 2.0 피드(본문 전문 포함). 요청 시 생성(빌드 타임 DB 접근 방지).
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -11,7 +12,13 @@ export async function GET() {
     where: { status: "published", visibility: "public", hiddenAt: null },
     orderBy: { createdAt: "desc" },
     take: 20,
-    select: { slug: true, title: true, summary: true, createdAt: true },
+    select: {
+      slug: true,
+      title: true,
+      summary: true,
+      content: true,
+      createdAt: true,
+    },
   });
 
   const xml = renderRssFeed({
@@ -19,12 +26,15 @@ export async function GET() {
     link: SITE_ORIGIN,
     description: "생각과 기록을 남기는 개인 공간",
     selfUrl: `${SITE_ORIGIN}/rss.xml`,
-    items: feeds.map((f) => ({
-      title: f.title,
-      url: `${SITE_ORIGIN}/feed/${f.slug}`,
-      pubDate: f.createdAt,
-      description: f.summary ?? undefined,
-    })),
+    items: await Promise.all(
+      feeds.map(async (f) => ({
+        title: f.title,
+        url: `${SITE_ORIGIN}/feed/${f.slug}`,
+        pubDate: f.createdAt,
+        description: f.summary ?? undefined,
+        contentHtml: await markdownToFeedHtml(f.content, SITE_ORIGIN),
+      })),
+    ),
   });
 
   return new Response(xml, {
