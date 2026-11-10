@@ -3,10 +3,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
-import { setPublicEnabled } from "@/lib/site-config";
+import { setAbout, setPublicEnabled } from "@/lib/site-config";
 import { setAdminNickname } from "@/lib/comment-actor";
 import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
-import { FeedFormSchema, feedFormToObject } from "@/lib/validation";
+import {
+  AboutSchema,
+  FeedFormSchema,
+  feedFormToObject,
+} from "@/lib/validation";
 import { parseTags, setFeedTags } from "@/lib/tags";
 import { decideSchedule } from "@/lib/scheduled";
 import { assignFeedSeries } from "@/lib/series";
@@ -252,4 +256,28 @@ export async function setAdminNicknameAction(formData: FormData) {
     summary: `관리자 닉네임 변경: ${nickname.trim() || "(기본값)"}`,
   });
   revalidatePath("/admin/settings");
+}
+
+export type AboutFormState = { ok?: boolean; error?: string };
+
+// 소개 페이지 본문 저장(관리자). 비우면 /about·내비 링크가 숨겨진다. 레이아웃(내비)까지 재검증.
+export async function saveAboutAction(
+  _state: AboutFormState,
+  formData: FormData,
+): Promise<AboutFormState> {
+  await verifySession();
+  const parsed = AboutSchema.safeParse({
+    content: String(formData.get("content") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  await setAbout(parsed.data.content);
+  await logAudit({
+    action: "site.about",
+    targetType: "site",
+    summary: parsed.data.content.trim()
+      ? `소개 페이지 저장(${parsed.data.content.trim().length}자)`
+      : "소개 페이지 비움(비공개)",
+  });
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

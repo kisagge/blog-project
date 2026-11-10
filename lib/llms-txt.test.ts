@@ -31,6 +31,20 @@ describe("renderLlmsTxt", () => {
     );
   });
 
+  test("소개 링크는 hasAbout일 때만(주요 페이지 맨 앞)", () => {
+    expect(txt).not.toContain("/about");
+    const withAbout = renderLlmsTxt({
+      origin: ORIGIN,
+      name: "n",
+      description: "d",
+      posts: [],
+      hasAbout: true,
+    });
+    expect(withAbout).toContain(
+      `## 주요 페이지\n\n- [소개](${ORIGIN}/about): 블로그와 운영자 소개`,
+    );
+  });
+
   test("글이 없으면 최근 글 섹션 생략", () => {
     const empty = renderLlmsTxt({
       origin: ORIGIN,

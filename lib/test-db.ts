@@ -56,6 +56,8 @@ const SCHEMA = [
   `CREATE TABLE "SiteConfig" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
     "publicEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "aboutContent" TEXT NOT NULL DEFAULT '',
+    "aboutUpdatedAt" DATETIME,
     "updatedAt" DATETIME NOT NULL
   )`,
   `CREATE TABLE "User" (

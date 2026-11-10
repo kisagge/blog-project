@@ -85,6 +85,8 @@ model FeedTag {
 model SiteConfig {
   id            Int      @id @default(1)
   publicEnabled Boolean  @default(true)   // false면 비어드민의 공개 사이트 접근 차단(점검 모드)
+  aboutContent  String   @default("")     // 소개(/about) 본문 마크다운. ""면 페이지·링크 비노출
+  aboutUpdatedAt DateTime?                // 소개 본문 마지막 저장 시각(sitemap lastmod·페이지 표시)
   updatedAt     DateTime @updatedAt
 }
 

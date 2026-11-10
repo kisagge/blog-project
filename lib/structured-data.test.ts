@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  buildAboutJsonLd,
   buildFeedJsonLd,
   buildSiteJsonLd,
   buildTagJsonLd,
@@ -186,5 +187,29 @@ describe("jsonLdHtml", () => {
     // 이스케이프를 되돌리면 그대로 파싱 가능(유효 JSON).
     const parsed = JSON.parse(html.replace(/\\u003c/g, "<"));
     expect(parsed["@graph"][0].headline).toBe("</script><b>x");
+  });
+});
+
+describe("buildAboutJsonLd", () => {
+  test("AboutPage: 절대 URL, 사이트·조직 @id 참조, 수정 시각", () => {
+    const json = buildAboutJsonLd({
+      description: "소개 요약",
+      updatedAt: new Date("2026-11-10T00:00:00Z"),
+    }) as Record<string, unknown>;
+    expect(json["@type"]).toBe("AboutPage");
+    expect(json.url).toBe("https://by-jang-blog.xyz/about");
+    expect(json.description).toBe("소개 요약");
+    expect(json.about).toEqual({
+      "@id": "https://by-jang-blog.xyz/#organization",
+    });
+    expect(json.isPartOf).toEqual({
+      "@id": "https://by-jang-blog.xyz/#website",
+    });
+    expect(json.dateModified).toBe("2026-11-10T00:00:00.000Z");
+  });
+
+  test("수정 시각이 없으면 dateModified 생략", () => {
+    const json = buildAboutJsonLd({ description: "d", updatedAt: null });
+    expect(json).not.toHaveProperty("dateModified");
   });
 });

@@ -12,9 +12,13 @@ export function renderLlmsTxt(opts: {
   name: string;
   description: string;
   posts: Post[];
+  hasAbout?: boolean; // 소개 본문이 있을 때만 소개 링크(없으면 404)
 }): string {
   const { origin } = opts;
   const pages: [string, string, string][] = [
+    ...(opts.hasAbout
+      ? [["소개", "/about", "블로그와 운영자 소개"] as [string, string, string]]
+      : []),
     ["피드", "/feed", "블로그 글 목록(최신순, 검색·태그 필터)"],
     ["아카이브", "/archive", "모든 글을 연·월별로"],
     ["시리즈", "/series", "순서가 있는 연재 모음"],

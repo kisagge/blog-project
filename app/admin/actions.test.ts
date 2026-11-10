@@ -68,3 +68,38 @@ describe("updateFeed — editedAt", () => {
     ).toBeNull();
   });
 });
+
+describe("saveAboutAction", () => {
+  const fd = (content: string) => {
+    const f = new FormData();
+    f.set("content", content);
+    return f;
+  };
+
+  test("관리자 세션 확인 후 저장 + 감사 로그 + 레이아웃 재검증", async () => {
+    const { saveAboutAction } = await import("@/app/admin/actions");
+    const { verifySession } = await import("@/lib/dal");
+    const { logAudit } = await import("@/lib/audit");
+    const { revalidatePath } = await import("next/cache");
+
+    await expect(
+      saveAboutAction({}, fd("# 소개\n\n반가워요")),
+    ).resolves.toEqual({ ok: true });
+    expect(verifySession).toHaveBeenCalled();
+    const row = await prisma.siteConfig.findUnique({ where: { id: 1 } });
+    expect(row?.aboutContent).toBe("# 소개\n\n반가워요");
+    expect(logAudit).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "site.about", targetType: "site" }),
+    );
+    expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+  });
+
+  test("길이 초과는 저장하지 않고 에러 반환", async () => {
+    const { saveAboutAction } = await import("@/app/admin/actions");
+    const { ABOUT_MAX_LENGTH } = await import("@/lib/validation");
+    const res = await saveAboutAction({}, fd("x".repeat(ABOUT_MAX_LENGTH + 1)));
+    expect(res.error).toMatch(/이하로 입력/);
+    const row = await prisma.siteConfig.findUnique({ where: { id: 1 } });
+    expect(row?.aboutContent).toBe("# 소개\n\n반가워요"); // 이전 값 유지
+  });
+});

@@ -11,9 +11,11 @@ type NavSession =
 export default function NavDrawer({
   session,
   vapidKey,
+  hasAbout = false,
 }: {
   session: NavSession;
   vapidKey?: string;
+  hasAbout?: boolean; // 소개 본문이 있을 때만 "소개" 링크(빈 페이지로 보내지 않게)
 }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
@@ -131,6 +133,11 @@ export default function NavDrawer({
           <DrawerLink href="/archive" onClick={close}>
             아카이브
           </DrawerLink>
+          {hasAbout && (
+            <DrawerLink href="/about" onClick={close}>
+              소개
+            </DrawerLink>
+          )}
           {session?.role === "admin" && (
             <DrawerLink href="/admin" onClick={close}>
               관리자
