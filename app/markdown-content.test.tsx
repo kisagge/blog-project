@@ -149,4 +149,28 @@ describe("MarkdownContent", () => {
     expect(container.querySelector("a img")).toHaveAttribute("alt", "배지");
     expect(container.querySelector("a button")).toBeNull();
   });
+
+  test("단독 YouTube 링크 → 재생 버튼 파사드(iframe 미로드), 문장 속 링크는 그대로", () => {
+    const { container } = render(
+      <MarkdownContent
+        content={
+          "[소개 영상](https://youtu.be/dQw4w9WgXcQ)\n\n참고: https://youtu.be/dQw4w9WgXcQ 링크"
+        }
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "동영상 재생: 소개 영상" }),
+    ).toBeInTheDocument();
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(container.querySelector("p div, p button")).toBeNull();
+    // 문장 속 링크는 임베드 없이 링크로 남음
+    expect(
+      screen.getAllByRole("link", { name: "https://youtu.be/dQw4w9WgXcQ" }),
+    ).toHaveLength(1);
+  });
+
+  test("콜아웃 div는 임베드 분기와 무관하게 그대로 렌더", () => {
+    render(<MarkdownContent content={"> [!NOTE]\n> 내용"} />);
+    expect(screen.getByRole("note")).toHaveTextContent("참고");
+  });
 });

@@ -109,6 +109,79 @@ export function rehypeMarkLinkedImages() {
   return (tree: Root) => mark(tree, false);
 }
 
+// YouTube 영상 URL → { id, start(초) }. 정확한 호스트·https·11자 id만 인정(위장 호스트·채널 등 거부).
+const YT_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com",
+  "m.youtube.com",
+  "youtu.be",
+  "www.youtube-nocookie.com",
+]);
+const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+
+// "90" · "90s" · "1m30s" · "1h2m3s" → 초. 해석 불가면 undefined.
+function parseStart(v: string | null): number | undefined {
+  if (!v) return undefined;
+  if (/^\d+$/.test(v)) return Number(v) || undefined;
+  const m = v.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  if (!m || !m[0]) return undefined;
+  const sec =
+    Number(m[1] ?? 0) * 3600 + Number(m[2] ?? 0) * 60 + Number(m[3] ?? 0);
+  return sec || undefined;
+}
+
+export function parseYouTube(
+  href: string,
+): { id: string; start?: number } | null {
+  let u: URL;
+  try {
+    u = new URL(href);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:" || !YT_HOSTS.has(u.hostname)) return null;
+  const path = u.pathname.split("/").filter(Boolean);
+  const id =
+    u.hostname === "youtu.be"
+      ? path[0]
+      : path[0] === "watch"
+        ? u.searchParams.get("v")
+        : path[0] === "shorts" || path[0] === "embed"
+          ? path[1]
+          : null;
+  if (!id || !YT_ID.test(id)) return null;
+  const start = parseStart(
+    u.searchParams.get("t") ?? u.searchParams.get("start"),
+  );
+  return { id, start };
+}
+
+// 단독 YouTube 링크 문단을 임베드 표시 div로 바꾼다(화면 렌더러가 data-embed를 보고 플레이어로 렌더).
+// 문장 속 링크는 그대로. 링크 텍스트가 URL 자체(자동 링크)가 아니면 영상 제목으로 쓴다.
+// 원 링크(a)는 자식으로 보존 — 렌더러의 "YouTube에서 보기" 대체 링크에 사용.
+export function rehypeEmbeds() {
+  return (tree: Root) =>
+    walk(tree, (el) => {
+      if (el.tagName !== "p") return;
+      const solid = el.children.filter((c) => !isBlank(c));
+      const a = solid[0];
+      if (solid.length !== 1 || a.type !== "element" || a.tagName !== "a")
+        return;
+      const href = a.properties.href;
+      const yt = typeof href === "string" ? parseYouTube(href) : null;
+      if (!yt) return;
+      const label = hastText(a).trim();
+      el.tagName = "div";
+      el.properties = {
+        dataEmbed: "youtube",
+        dataVideoId: yt.id,
+        ...(yt.start ? { dataStart: yt.start } : {}),
+        ...(label && label !== href ? { dataTitle: label } : {}),
+      };
+      el.children = [a];
+    });
+}
+
 // 화면 렌더러(react-markdown)와 같은 URL 정책: defaultUrlTransform이 허용하지 않는 스킴
 // (javascript:·data: 등)의 a href·img src는 속성째 제거. react-markdown을 거치지 않는 HTML(RSS 본문)용.
 export function rehypeSafeUrls() {

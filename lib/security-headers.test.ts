@@ -17,6 +17,15 @@ describe("contentSecurityPolicy", () => {
     expect(csp).not.toContain("'unsafe-eval'");
   });
 
+  test("frame-src: Turnstile + YouTube 개인정보 보호 도메인만(일반 youtube.com·와일드카드 불허)", () => {
+    const frameSrc = contentSecurityPolicy(false)
+      .split("; ")
+      .find((d) => d.startsWith("frame-src "));
+    expect(frameSrc).toBe(
+      "frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com",
+    );
+  });
+
   test("dev: unsafe-eval 포함, upgrade-insecure-requests 미포함", () => {
     const csp = contentSecurityPolicy(true);
     expect(csp).toContain("'unsafe-eval'");

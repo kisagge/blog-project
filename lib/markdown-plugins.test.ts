@@ -2,7 +2,9 @@ import { describe, expect, test } from "vitest";
 import type { Element, Root } from "hast";
 import {
   hastText,
+  parseYouTube,
   rehypeCallouts,
+  rehypeEmbeds,
   rehypeFigures,
   rehypeMarkLinkedImages,
 } from "@/lib/markdown-plugins";
@@ -167,5 +169,82 @@ describe("rehypeMarkLinkedImages", () => {
     rehypeMarkLinkedImages()(tree);
     expect(linked.properties.dataLinked).toBe(true);
     expect(free.properties.dataLinked).toBeUndefined();
+  });
+});
+
+describe("parseYouTube", () => {
+  test.each([
+    ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "dQw4w9WgXcQ", undefined],
+    ["https://youtube.com/watch?v=dQw4w9WgXcQ&t=90", "dQw4w9WgXcQ", 90],
+    ["https://m.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s", "dQw4w9WgXcQ", 90],
+    ["https://youtu.be/dQw4w9WgXcQ?t=1h2m3s", "dQw4w9WgXcQ", 3723],
+    ["https://www.youtube.com/shorts/dQw4w9WgXcQ", "dQw4w9WgXcQ", undefined],
+    ["https://www.youtube.com/embed/dQw4w9WgXcQ?start=42", "dQw4w9WgXcQ", 42],
+    [
+      "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      "dQw4w9WgXcQ",
+      undefined,
+    ],
+  ])("%s → id %s, start %s", (url, id, start) => {
+    expect(parseYouTube(url)).toEqual({ id, start });
+  });
+
+  test.each([
+    "https://example.com/watch?v=dQw4w9WgXcQ", // 다른 호스트
+    "https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ", // 호스트 위장
+    "https://www.youtube.com/watch?v=short", // 잘못된 id
+    "https://www.youtube.com/channel/UC123", // 영상 아님
+    "http://youtu.be/dQw4w9WgXcQ", // https만
+    "javascript:alert(1)",
+  ])("거부: %s", (url) => {
+    expect(parseYouTube(url)).toBeNull();
+  });
+});
+
+describe("rehypeEmbeds", () => {
+  const link = (href: string, label = href) => el("a", [text(label)], { href });
+
+  test("단독 YouTube 링크 문단 → 임베드 표시 div(원 링크는 자식으로 보존), 링크 텍스트가 제목", () => {
+    const tree: Root = {
+      type: "root",
+      children: [
+        el("p", [link("https://youtu.be/dQw4w9WgXcQ?t=5", "데모 영상")]),
+      ],
+    };
+    rehypeEmbeds()(tree);
+    const div = tree.children[0] as Element;
+    expect(div.tagName).toBe("div");
+    expect(div.properties).toMatchObject({
+      dataEmbed: "youtube",
+      dataVideoId: "dQw4w9WgXcQ",
+      dataStart: 5,
+      dataTitle: "데모 영상",
+    });
+    expect((div.children[0] as Element).tagName).toBe("a");
+  });
+
+  test("맨 URL(자동 링크)은 제목 없음", () => {
+    const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    const tree: Root = { type: "root", children: [el("p", [link(url)])] };
+    rehypeEmbeds()(tree);
+    expect((tree.children[0] as Element).properties.dataTitle).toBeUndefined();
+  });
+
+  test("문장 속 링크·YouTube 아닌 단독 링크는 그대로", () => {
+    const inSentence: Root = {
+      type: "root",
+      children: [
+        el("p", [text("보기: "), link("https://youtu.be/dQw4w9WgXcQ")]),
+      ],
+    };
+    rehypeEmbeds()(inSentence);
+    expect((inSentence.children[0] as Element).tagName).toBe("p");
+
+    const other: Root = {
+      type: "root",
+      children: [el("p", [link("https://example.com")])],
+    };
+    rehypeEmbeds()(other);
+    expect((other.children[0] as Element).tagName).toBe("p");
   });
 });
