@@ -6,6 +6,7 @@ import rehypeStringify from "rehype-stringify";
 import {
   rehypeAbsoluteUrls,
   rehypeCallouts,
+  rehypeFigures,
   rehypeSafeUrls,
 } from "@/lib/markdown-plugins";
 
@@ -22,6 +23,7 @@ export async function markdownToFeedHtml(
     .use(remarkGfm)
     .use(remarkRehype, { footnoteLabel: "각주" })
     .use(rehypeCallouts)
+    .use(rehypeFigures)
     .use(rehypeSafeUrls)
     .use(rehypeAbsoluteUrls, origin)
     .use(rehypeStringify)

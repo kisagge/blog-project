@@ -125,4 +125,28 @@ describe("MarkdownContent", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "각주 섹션 링크" })).toBeNull();
   });
+
+  test("캡션 있는 단독 이미지 → figure/figcaption + 확대 버튼, 캡션은 alt와 분리", () => {
+    const { container } = render(
+      <MarkdownContent
+        content={'![책상 사진](/uploads/d.jpg?w=4&h=3 "작업 공간")'}
+      />,
+    );
+    const fig = container.querySelector("figure")!;
+    expect(fig.querySelector("figcaption")).toHaveTextContent("작업 공간");
+    const btn = within(fig).getByRole("button", {
+      name: "이미지 크게 보기: 책상 사진",
+    });
+    expect(btn.querySelector("img")).not.toHaveAttribute("title");
+    expect(container.querySelector("p figure, p dialog")).toBeNull();
+  });
+
+  test("링크 안 이미지는 확대 버튼 없이 링크로만(a 안 button 중첩 금지)", () => {
+    const { container } = render(
+      <MarkdownContent content={"[![배지](/b.png)](https://example.com)"} />,
+    );
+    expect(screen.queryByRole("button", { name: /크게 보기/ })).toBeNull();
+    expect(container.querySelector("a img")).toHaveAttribute("alt", "배지");
+    expect(container.querySelector("a button")).toBeNull();
+  });
 });

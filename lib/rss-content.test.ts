@@ -55,4 +55,10 @@ describe("markdownToFeedHtml", () => {
     expect(html).toContain('<p class="md-callout-title">팁</p>');
     expect(html).not.toContain("[!TIP]");
   });
+
+  test("캡션 있는 단독 이미지는 figure/figcaption으로", async () => {
+    const html = await markdownToFeedHtml('![a](/x.png "캡션")', ORIGIN);
+    expect(html).toContain("<figure>");
+    expect(html).toContain("<figcaption>캡션</figcaption>");
+  });
 });

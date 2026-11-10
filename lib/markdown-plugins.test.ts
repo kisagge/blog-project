@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import type { Element, Root } from "hast";
-import { hastText, rehypeCallouts } from "@/lib/markdown-plugins";
+import {
+  hastText,
+  rehypeCallouts,
+  rehypeFigures,
+  rehypeMarkLinkedImages,
+} from "@/lib/markdown-plugins";
 
 const text = (value: string) => ({ type: "text" as const, value });
 const el = (
@@ -105,5 +110,62 @@ describe("hastText", () => {
       text(";\n"),
     ]);
     expect(hastText(code)).toBe("const x = 1;\n");
+  });
+});
+
+describe("rehypeFigures", () => {
+  const img = (props: Element["properties"]) => el("img", [], props);
+  const root = (...children: Element[]): Root => ({ type: "root", children });
+
+  test("제목(title)이 있는 단독 이미지 문단 → figure + figcaption, img의 title은 제거", () => {
+    const tree = root(
+      el("p", [img({ src: "/a.png", alt: "고양이", title: "우리 집 고양이" })]),
+    );
+    rehypeFigures()(tree);
+    const fig = tree.children[0] as Element;
+    expect(fig.tagName).toBe("figure");
+    const [image, cap] = fig.children as Element[];
+    expect(image.properties).toEqual({ src: "/a.png", alt: "고양이" });
+    expect(cap.tagName).toBe("figcaption");
+    expect(hastText(cap)).toBe("우리 집 고양이");
+  });
+
+  test("공백 텍스트만 곁에 있어도 단독 이미지로 취급", () => {
+    const tree = root(
+      el("p", [text("\n"), img({ src: "/a.png", title: "캡션" }), text(" ")]),
+    );
+    rehypeFigures()(tree);
+    expect((tree.children[0] as Element).tagName).toBe("figure");
+  });
+
+  test("제목 없는 이미지·문장 속 이미지는 그대로 p(제목은 툴팁으로 유지)", () => {
+    const plain = root(el("p", [img({ src: "/a.png", alt: "x" })]));
+    rehypeFigures()(plain);
+    expect((plain.children[0] as Element).tagName).toBe("p");
+
+    const inline = root(
+      el("p", [text("앞 "), img({ src: "/a.png", title: "툴팁" })]),
+    );
+    rehypeFigures()(inline);
+    const p = inline.children[0] as Element;
+    expect(p.tagName).toBe("p");
+    expect((p.children[1] as Element).properties.title).toBe("툴팁");
+  });
+});
+
+describe("rehypeMarkLinkedImages", () => {
+  test("링크 안 이미지에만 dataLinked 표시(버튼 중첩 방지용)", () => {
+    const linked = el("img", [], { src: "/in.png" });
+    const free = el("img", [], { src: "/out.png" });
+    const tree: Root = {
+      type: "root",
+      children: [
+        el("p", [el("a", [el("span", [linked])], { href: "https://x" })]),
+        el("p", [free]),
+      ],
+    };
+    rehypeMarkLinkedImages()(tree);
+    expect(linked.properties.dataLinked).toBe(true);
+    expect(free.properties.dataLinked).toBeUndefined();
   });
 });
