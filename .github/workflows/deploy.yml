@@ -29,8 +29,8 @@ jobs:
       - run: npx eslint .
       - run: pnpm format:check
       - run: pnpm test
-      # critical 런타임 취약점만 차단(green 유지). high/moderate는 Dependabot PR로 처리.
-      - run: pnpm audit --prod --audit-level critical
+      # 런타임(prod) 의존성의 moderate 이상 취약점 차단. dev 의존성은 배포 산출물에 없어 게이트 제외(Dependabot이 처리).
+      - run: pnpm audit --prod --audit-level moderate
 
   build-and-push:
     needs: test
