@@ -216,3 +216,90 @@ body {
 [data-theme="brand"] .hljs-deletion {
   color: #f9a8d4;
 }
+
+/* 본문 마크다운(MarkdownContent .md-content) — 인용문·각주·콜아웃. 3테마 대비 정합(AA 이상). */
+.md-content blockquote {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-left: 4px solid #d4d4d8;
+  padding-left: 1rem;
+  color: #52525b;
+}
+[data-theme="dark"] .md-content blockquote,
+[data-theme="brand"] .md-content blockquote {
+  border-color: #52525b;
+  color: #a1a1aa;
+}
+
+/* GFM 각주: 본문과 구분되는 하단 영역 + 점프 시 상단 고정 헤더에 가리지 않게. */
+.md-content [data-footnotes] {
+  margin-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  padding-top: 1rem;
+  font-size: 0.875rem;
+}
+.md-content [id^="user-content-fn"] {
+  scroll-margin-top: 6rem;
+}
+
+/* 콜아웃(`> [!NOTE]` 등, rehypeCallouts). 좌측 강조선 + 옅은 배경 + 색 제목.
+   --callout-text는 각 테마 배경·옅은 틴트 위에서 4.5:1 이상. */
+.md-callout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-left: 4px solid var(--callout);
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--callout) 8%, transparent);
+  padding: 0.75rem 1rem;
+}
+.md-callout-title {
+  font-weight: 600;
+  color: var(--callout-text);
+}
+.md-callout[data-callout="note"] {
+  --callout: #2563eb;
+  --callout-text: #1d4ed8;
+}
+.md-callout[data-callout="tip"] {
+  --callout: #16a34a;
+  --callout-text: #166534;
+}
+.md-callout[data-callout="important"] {
+  --callout: #9333ea;
+  --callout-text: #7e22ce;
+}
+.md-callout[data-callout="warning"] {
+  --callout: #d97706;
+  --callout-text: #92400e;
+}
+.md-callout[data-callout="caution"] {
+  --callout: #dc2626;
+  --callout-text: #b91c1c;
+}
+[data-theme="dark"] .md-callout[data-callout="note"],
+[data-theme="brand"] .md-callout[data-callout="note"] {
+  --callout: #60a5fa;
+  --callout-text: #93c5fd;
+}
+[data-theme="dark"] .md-callout[data-callout="tip"],
+[data-theme="brand"] .md-callout[data-callout="tip"] {
+  --callout: #4ade80;
+  --callout-text: #86efac;
+}
+[data-theme="dark"] .md-callout[data-callout="important"],
+[data-theme="brand"] .md-callout[data-callout="important"] {
+  --callout: #c084fc;
+  --callout-text: #d8b4fe;
+}
+[data-theme="dark"] .md-callout[data-callout="warning"],
+[data-theme="brand"] .md-callout[data-callout="warning"] {
+  --callout: #fbbf24;
+  --callout-text: #fcd34d;
+}
+[data-theme="dark"] .md-callout[data-callout="caution"],
+[data-theme="brand"] .md-callout[data-callout="caution"] {
+  --callout: #f87171;
+  --callout-text: #fca5a5;
+}

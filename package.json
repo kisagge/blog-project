@@ -1,6 +1,6 @@
 {
   "name": "byjang_project",
-  "version": "0.101.0",
+  "version": "0.102.0",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {
@@ -45,6 +45,7 @@
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
+    "@types/hast": "^3.0.4",
     "@types/node": "^24.13.4",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
