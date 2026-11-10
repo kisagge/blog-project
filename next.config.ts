@@ -11,6 +11,7 @@ import type { NextConfig } from "next";
 const CF = "https://challenges.cloudflare.com"; // Turnstile 스크립트 + 위젯 iframe
 const KAKAO_SDK = "https://t1.kakaocdn.net"; // 카카오 공유 SDK 스크립트
 const KAKAO_API = "https://*.kakao.com"; // 카카오 SDK XHR
+const YT_EMBED = "https://www.youtube-nocookie.com"; // 본문 YouTube 임베드(개인정보 보호 모드) iframe
 
 export function contentSecurityPolicy(isDev: boolean): string {
   const directives = [
@@ -25,7 +26,7 @@ export function contentSecurityPolicy(isDev: boolean): string {
     `img-src 'self' data: blob: https:`, // 본문 마크다운의 외부 https 이미지 허용
     `font-src 'self'`, // next/font는 빌드 타임 self-host
     `connect-src 'self' ${CF} ${KAKAO_API}`,
-    `frame-src ${CF}`,
+    `frame-src ${CF} ${YT_EMBED}`,
     `worker-src 'self'`,
     `manifest-src 'self'`,
     // 로컬 http 개발 깨짐 방지로 dev에선 제외.

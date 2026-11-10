@@ -6,9 +6,11 @@ import rehypeSlug from "rehype-slug";
 import rehypeHighlight from "rehype-highlight";
 import CodeCopyButton from "@/app/code-copy-button";
 import ZoomableImage from "@/app/zoomable-image";
+import YouTubeEmbed from "@/app/youtube-embed";
 import {
   hastText,
   rehypeCallouts,
+  rehypeEmbeds,
   rehypeFigures,
   rehypeMarkLinkedImages,
 } from "@/lib/markdown-plugins";
@@ -123,7 +125,27 @@ function anchored(Tag: "h2" | "h3") {
   };
 }
 
+// rehypeEmbeds가 표시한 단독 YouTube 링크 → 파사드 플레이어. 그 외 div(콜아웃 등)는 그대로.
+function MdDiv({ node, children, ...rest }: WithNode<"div">) {
+  const p = node?.properties;
+  if (p?.dataEmbed === "youtube" && typeof p.dataVideoId === "string") {
+    const a = node?.children.find(
+      (c): c is Element => c.type === "element" && c.tagName === "a",
+    );
+    return (
+      <YouTubeEmbed
+        id={p.dataVideoId}
+        start={typeof p.dataStart === "number" ? p.dataStart : undefined}
+        title={typeof p.dataTitle === "string" ? p.dataTitle : undefined}
+        href={String(a?.properties.href ?? "")}
+      />
+    );
+  }
+  return <div {...rest}>{children}</div>;
+}
+
 const components: Options["components"] = {
+  div: MdDiv,
   img: MdImg,
   pre: MdPre,
   h2: anchored("h2"),
@@ -143,6 +165,7 @@ const remarkRehypeOptions: Options["remarkRehypeOptions"] = {
 // 코드블록은 rehype-highlight(highlight.js)로 하이라이트(글 상세는 서버 렌더).
 // 토큰 색은 globals.css의 .hljs-* 규칙(3테마 정합). 펜스 코드는 인라인 code 배경을 무력화.
 // `> [!NOTE]` 등 콜아웃은 rehypeCallouts, 캡션 있는 단독 이미지는 rehypeFigures(figure/figcaption),
+// 단독 YouTube 링크는 rehypeEmbeds → 클릭 시 로드하는 플레이어(YouTubeEmbed),
 // 인용문·각주·콜아웃·캡션 스타일은 globals.css의 .md-content 규칙.
 export default function MarkdownContent({ content }: { content: string }) {
   return (
@@ -155,6 +178,7 @@ export default function MarkdownContent({ content }: { content: string }) {
           rehypeHighlight,
           rehypeCallouts,
           rehypeFigures,
+          rehypeEmbeds,
           rehypeMarkLinkedImages,
         ]}
         components={components}
