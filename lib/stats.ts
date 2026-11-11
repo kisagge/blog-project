@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { countUsersByStatus } from "@/lib/users";
+import { COMPLETE_DEPTH } from "@/lib/read-metrics";
 
 export type TrendPoint = { day: string; count: number };
 
@@ -58,6 +59,76 @@ export async function getTopFeeds(take = 10) {
     orderBy: { viewCount: "desc" },
     take,
     select: { slug: true, title: true, viewCount: true },
+  });
+}
+
+export type ReadStat = {
+  slug: string;
+  title: string;
+  views: number; // 기간 내 조회(방문자·일 단위)
+  measured: number; // 그중 읽기 지표가 들어온 조회(비콘 수신)
+  completionRate: number | null; // 완독(깊이 ≥ COMPLETE_DEPTH) / measured, 0~1
+  avgSeconds: number | null; // measured 평균 활성 시간(초)
+};
+
+// 글별 읽기 지표: 최근 days일(KST) 조회수 상위 take개 글의 완독률·평균 읽은 시간.
+// 지표는 조회 행에 덧붙는 값이라 측정 도입 전 조회·비콘이 오지 않은 조회는 분모(measured)에서 빠진다.
+export async function getReadStats(days = 30, take = 10): Promise<ReadStat[]> {
+  const since = recentKstDays(days)[0];
+  const base = { entityType: "feed", day: { gte: since } } as const;
+  const top = await prisma.view.groupBy({
+    by: ["entityId"],
+    where: base,
+    _count: { _all: true },
+    orderBy: { _count: { entityId: "desc" } },
+    take,
+  });
+  if (top.length === 0) return [];
+  const ids = top.map((t) => t.entityId);
+  const [measured, completed, feeds] = await Promise.all([
+    prisma.view.groupBy({
+      by: ["entityId"],
+      where: { ...base, entityId: { in: ids }, activeSeconds: { not: null } },
+      _count: { _all: true },
+      _avg: { activeSeconds: true },
+    }),
+    prisma.view.groupBy({
+      by: ["entityId"],
+      where: {
+        ...base,
+        entityId: { in: ids },
+        activeSeconds: { not: null },
+        scrollDepth: { gte: COMPLETE_DEPTH },
+      },
+      _count: { _all: true },
+    }),
+    prisma.feed.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, slug: true, title: true },
+    }),
+  ]);
+  const m = new Map(measured.map((r) => [r.entityId, r]));
+  const c = new Map(completed.map((r) => [r.entityId, r._count._all]));
+  const f = new Map(feeds.map((r) => [r.id, r]));
+  // 삭제된 글의 조회 기록은 제외(제목·링크 없음).
+  return top.flatMap((t) => {
+    const feed = f.get(t.entityId);
+    if (!feed) return [];
+    const mm = m.get(t.entityId);
+    const n = mm?._count._all ?? 0;
+    return [
+      {
+        slug: feed.slug,
+        title: feed.title,
+        views: t._count._all,
+        measured: n,
+        completionRate: n ? (c.get(t.entityId) ?? 0) / n : null,
+        avgSeconds:
+          n && mm?._avg.activeSeconds != null
+            ? Math.round(mm._avg.activeSeconds)
+            : null,
+      },
+    ];
   });
 }
 

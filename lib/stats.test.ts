@@ -128,3 +128,59 @@ describe("stats", () => {
     expect(s.totalViews).toBeGreaterThanOrEqual(150); // t1+t2(+hidden/draft)
   });
 });
+
+describe("getReadStats", () => {
+  test("조회수 상위 글별 완독률(측정분 기준)·평균 활성 시간, 기간 밖·df·삭제 글 제외", async () => {
+    const today = kstDay();
+    const feed = await prisma.feed.create({
+      data: { slug: "rs-a", title: "읽기A", content: "c" },
+    });
+    const other = await prisma.feed.create({
+      data: { slug: "rs-b", title: "읽기B", content: "c" },
+    });
+    const mk = (
+      entityId: string,
+      visitorId: string,
+      depth: number | null,
+      sec: number | null,
+      day = today,
+    ) =>
+      prisma.view.create({
+        data: {
+          entityType: "feed",
+          entityId,
+          visitorId,
+          day,
+          scrollDepth: depth,
+          activeSeconds: sec,
+        },
+      });
+    await mk(feed.id, "r1", 100, 120); // 완독
+    await mk(feed.id, "r2", 95, 60); // 완독(≥90)
+    await mk(feed.id, "r3", 30, 30); // 중도 이탈
+    await mk(feed.id, "r4", null, null); // 비콘 없음 → 측정 제외
+    await mk(feed.id, "old", 100, 999, "2000-01-01"); // 기간 밖
+    await mk(other.id, "r1", 10, 10);
+    await mk("deleted-feed", "r1", 100, 100); // 삭제된 글
+    await prisma.view.create({
+      data: { entityType: "df", entityId: feed.id, visitorId: "d", day: today },
+    });
+
+    const stats = await m.getReadStats(30, 10);
+    const a = stats.find((s) => s.slug === "rs-a")!;
+    expect(a).toEqual({
+      slug: "rs-a",
+      title: "읽기A",
+      views: 4,
+      measured: 3,
+      completionRate: 2 / 3,
+      avgSeconds: 70,
+    });
+    expect(stats[0].slug).toBe("rs-a"); // 조회수 순
+    expect(stats.map((s) => s.slug)).not.toContain(undefined);
+    expect(stats.find((s) => s.slug === "rs-b")).toMatchObject({
+      completionRate: 0,
+      avgSeconds: 10,
+    });
+  });
+});

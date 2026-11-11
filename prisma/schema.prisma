@@ -184,6 +184,8 @@ model View {
   entityId   String
   visitorId  String
   day        String   // KST "YYYY-MM-DD"
+  scrollDepth   Int?  // 글 읽기 지표(feed만): 본문을 읽어 내려간 최대 깊이 0~100(%). null=측정 전
+  activeSeconds Int?  // 글 읽기 지표(feed만): 탭이 보이고 상호작용 중이던 누적 초(상한 있음). null=측정 전
   createdAt  DateTime @default(now())
 
   @@unique([entityType, entityId, visitorId, day])
