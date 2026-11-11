@@ -2,12 +2,18 @@ import type { ComponentPropsWithoutRef } from "react";
 import type { Element } from "hast";
 import ReactMarkdown, { type Options } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import rehypeSlug from "rehype-slug";
 import rehypeHighlight from "rehype-highlight";
 import CodeCopyButton from "@/app/code-copy-button";
 import ZoomableImage from "@/app/zoomable-image";
 import YouTubeEmbed from "@/app/youtube-embed";
+import MermaidDiagram from "@/app/mermaid-diagram";
 import {
+  REHYPE_KATEX,
+  REMARK_MATH,
   hastText,
   rehypeCallouts,
   rehypeEmbeds,
@@ -87,11 +93,14 @@ function MdPre({ node, children }: WithNode<"pre">) {
         .find((c) => c.startsWith("language-"))
         ?.slice("language-".length)
     : undefined;
+  const text = code ? hastText(code).replace(/\n$/, "") : "";
+  // ```mermaid → 다이어그램(화면 근처에서만 Mermaid 로드).
+  if (lang === "mermaid") return <MermaidDiagram code={text} />;
   return (
     <div className="overflow-hidden rounded bg-zinc-100 text-sm dark:bg-zinc-900">
       <div className="flex items-center justify-between border-b border-black/[.06] px-4 py-1 text-xs text-zinc-600 dark:border-white/[.1] dark:text-zinc-400">
         <span>{lang}</span>
-        <CodeCopyButton code={code ? hastText(code).replace(/\n$/, "") : ""} />
+        <CodeCopyButton code={text} />
       </div>
       <pre tabIndex={0} className="overflow-x-auto p-4">
         {children}
@@ -171,11 +180,14 @@ export default function MarkdownContent({ content }: { content: string }) {
   return (
     <div className="md-content flex flex-col gap-4 leading-7 [&_.task-list-item]:list-none [&_a]:underline [&_button>img]:my-0 [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 dark:[&_code]:bg-zinc-800 [&_h1]:scroll-mt-24 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:scroll-mt-24 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:scroll-mt-24 [&_h3]:text-lg [&_h3]:font-semibold [&_img]:my-4 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded [&_li]:ml-5 [&_ol]:list-decimal [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1 [&_ul]:list-disc">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, [remarkMath, REMARK_MATH]]}
         remarkRehypeOptions={remarkRehypeOptions}
         rehypePlugins={[
           rehypeSlug,
-          rehypeHighlight,
+          // KaTeX(HTML + 스크린리더용 MathML)를 서버에서 렌더 → 글 상세 독자에게 추가 JS 0.
+          [rehypeKatex, { ...REHYPE_KATEX, output: "htmlAndMathml" }],
+          // math·mermaid 코드블록은 하이라이트 대상 아님(수식은 위에서, 다이어그램은 MdPre가 처리).
+          [rehypeHighlight, { plainText: ["math", "mermaid"] }],
           rehypeCallouts,
           rehypeFigures,
           rehypeEmbeds,

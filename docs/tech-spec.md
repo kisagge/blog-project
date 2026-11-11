@@ -152,7 +152,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 662 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 671 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -232,6 +232,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **기본 요소 보정**: 모든 `li`에 `list-disc`가 걸려 번호 목록이 점으로 보이던 결함을 `ul`/`ol`별 스타일로 수정(작업 목록 항목은 마커 없음). 인용문·GFM 각주(라벨 "각주"·되돌아가기 이름 한국어화) 스타일 추가. 콜아웃 제목 색은 3테마 모두 옅은 틴트 배경 위 **6.5:1 이상**으로 산출해 고정.
 - **이미지 확대·캡션**: 본문 이미지를 버튼으로 감싸 클릭 시 네이티브 `<dialog>.showModal()` 라이트박스(포커스 트랩·바깥 inert·Esc·닫힐 때 트리거로 포커스 복귀, 백드롭 클릭 닫기). 이미지는 문단 안에 올 수 있는데 `dialog`는 `p`의 자식이 될 수 없어 **열릴 때만 body로 포털**(마크업 유효성 + 큰 이미지 지연 로드). 링크 안 이미지는 `a` 안 `button` 중첩을 피하려 확대 없이 둔다 — 서버 컴포넌트라 context 대신 hast 단계에서 표시(`rehypeMarkLinkedImages`). 제목이 있는 단독 이미지(`![alt](src "캡션")`)는 `rehypeFigures`가 `figure`/`figcaption`으로 바꾸고 img의 title을 제거(alt와 캡션을 분리해 스크린리더 중복 낭독·툴팁 중복 방지). 같은 변환을 RSS 본문에도 적용.
 - **YouTube 임베드(파사드)**: 단독 줄의 YouTube 링크(`https://youtu.be/…` 또는 `[제목](…)`)를 `rehypeEmbeds`가 임베드로 표시하고 `YouTubeEmbed`가 **썸네일 + 재생 버튼만** 먼저 렌더, 클릭 시에만 `youtube-nocookie` iframe(autoplay·start)을 로드 → 페이지 로드 시 플레이어 JS·추적 요청 0, `aspect-video` 상자로 CLS 0. URL은 `parseYouTube`가 https·정확한 호스트·11자 id만 인정(위장 호스트·채널 등 거부), `t=1m30s`류 시작 시각 해석. 재생 후 포커스를 iframe으로 옮기고, iframe `title`(링크 텍스트 또는 일반 명칭)·"YouTube에서 보기" 대체 링크 제공. 문장 속 링크는 그대로, RSS는 링크로 유지.
+- **수식·다이어그램**: 수식은 remark-math + rehype-katex로 **서버에서 렌더**(HTML + 스크린리더용 MathML) → 글 상세 독자에게 추가 JS 0, RSS엔 CSS 없이 보이는 MathML만. 인라인은 `$$…$$`만 인정하고 한 개짜리 `$`는 꺼 "$5" 같은 금액 표기의 오인을 막음(블록은 `$$` 줄·``math). `trust:false`로 `\href` 등 링크/HTML 생성 명령 차단. rehype-katex·remark-math가 katex ^0.16을 고정해 0.16 계열 저심각 권고가 남아, 공개 API만 쓰는 점·0.17/0.18 breaking이 내부 API·CSS 클래스뿐임을 확인하고 **트리 전체를 katex 0.18로 override**(화면 CSS와 렌더 버전 일치). 다이어그램은 ``mermaid를 `MermaidDiagram`이 **화면 근처에 올 때만 동적 import**(다이어그램 없는 글은 로드 0)해 그리고 테마 토글 시 다시 그림. 회원 글에도 쓰일 수 있어 이중 방어 — `securityLevel:"strict"` + 라벨을 SVG 텍스트로(`htmlLabels:false`) + 완성 SVG를 DOMPurify로 재정화(스크립트·이벤트 핸들러·`foreignObject` 제거). 검증 중 기본 HTML 라벨이 정화로 사라지는 것을 발견해 SVG 텍스트 라벨로 전환. 그리기 전·실패 시엔 원문 코드, 렌더 후엔 "원문 보기" 접이식 제공. mermaid는 공개 2주 이상 지난 12.2.0으로 고정.
 
 ### 4.21 초안 자동저장 (localStorage, 누적/용량 안전)
 
@@ -282,5 +283,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 662), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 671), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

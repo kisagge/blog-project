@@ -1,5 +1,7 @@
 import type { Element, ElementContent, Root, RootContent } from "hast";
 import { defaultUrlTransform } from "react-markdown";
+import type { Options as RemarkMathOptions } from "remark-math";
+import type { Options as RehypeKatexOptions } from "rehype-katex";
 
 // 노드의 텍스트만 이어붙임(하이라이트 span으로 쪼개진 코드 원문 복원·제목 텍스트 추출용).
 export function hastText(node: Root | RootContent | ElementContent): string {
@@ -210,3 +212,14 @@ export function rehypeAbsoluteUrls(origin: string) {
         el.properties.href = abs(el.properties.href) as string;
     });
 }
+
+// 수식(remark-math + rehype-katex) 공용 옵션 — 화면 렌더러·RSS가 같은 규칙을 쓰도록 한곳에.
+// 인라인 수식은 `$$x^2$$`만 인정(한 개짜리 `$`는 끔): "$5와 $10" 같은 금액 표기가 수식으로 오인되지 않게.
+// 블록 수식은 `$$` 단독 줄로 감싸거나 ```math 코드블록.
+export const REMARK_MATH: RemarkMathOptions = { singleDollarTextMath: false };
+// trust:false(기본) — \href·\url·\htmlClass 등 HTML/링크 생성 명령 차단. 문법 오류는 rehype-katex가
+// throw 없이 빨간 원문(katex-error)으로 표시.
+export const REHYPE_KATEX: RehypeKatexOptions = {
+  strict: "ignore",
+  trust: false,
+};

@@ -173,4 +173,59 @@ describe("MarkdownContent", () => {
     render(<MarkdownContent content={"> [!NOTE]\n> 내용"} />);
     expect(screen.getByRole("note")).toHaveTextContent("참고");
   });
+
+  test("수식: 인라인 $$…$$·블록 $$ 줄·```math를 KaTeX(+스크린리더용 MathML)로, 코드 바 없이", () => {
+    const { container } = render(
+      <MarkdownContent
+        content={
+          "넓이는 $$\\pi r^2$$ 입니다.\n\n$$\nE = mc^2\n$$\n\n```math\n\\sum_{i=1}^{n} i\n```"
+        }
+      />,
+    );
+    expect(container.querySelectorAll(".katex").length).toBe(3);
+    expect(container.querySelectorAll(".katex-display").length).toBe(2);
+    expect(container.querySelector("math annotation")).toHaveTextContent(
+      "\\pi r^2",
+    );
+    expect(screen.queryByRole("button", { name: "코드 복사" })).toBeNull();
+  });
+
+  test("한 개짜리 $는 수식이 아님(금액 표기 보호)", () => {
+    const { container } = render(
+      <MarkdownContent content={"가격은 $5이고 할인가는 $3입니다."} />,
+    );
+    expect(container.querySelector(".katex")).toBeNull();
+    expect(container).toHaveTextContent("가격은 $5이고 할인가는 $3입니다.");
+  });
+
+  test("링크·HTML 생성 명령(\\href)은 실행되지 않고, 문법 오류는 빨간 원문으로", () => {
+    const { container } = render(
+      <MarkdownContent
+        content={"$$\\href{javascript:alert(1)}{x}$$ 그리고 $$\\frac{1}{$$"}
+      />,
+    );
+    expect(container.querySelector("a[href^='javascript']")).toBeNull();
+    expect(container.querySelectorAll(".katex-error").length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  test("```mermaid는 코드 바 대신 다이어그램 컴포넌트(초기엔 원문 표시, 하이라이트 없음)", () => {
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const { container } = render(
+      <MarkdownContent content={"```mermaid\ngraph TD; A-->B\n```"} />,
+    );
+    expect(container.querySelector("figure pre code")).toHaveTextContent(
+      "graph TD; A-->B",
+    );
+    expect(screen.queryByRole("button", { name: "코드 복사" })).toBeNull();
+    expect(container.querySelector(".hljs")).toBeNull();
+    vi.unstubAllGlobals();
+  });
 });
