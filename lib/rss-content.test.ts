@@ -61,4 +61,10 @@ describe("markdownToFeedHtml", () => {
     expect(html).toContain("<figure>");
     expect(html).toContain("<figcaption>캡션</figcaption>");
   });
+
+  test("수식은 리더용 MathML로(KaTeX HTML·CSS 의존 없음)", async () => {
+    const html = await markdownToFeedHtml("$$\nx^2\n$$", ORIGIN);
+    expect(html).toContain("<math");
+    expect(html).not.toContain("katex-html");
+  });
 });

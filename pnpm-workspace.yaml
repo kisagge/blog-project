@@ -8,3 +8,7 @@ ignoredBuiltDependencies:
 # typescript-eslint가 minimatch 11+를 요구하게 되면 제거.
 overrides:
   "@typescript-eslint/typescript-estree>minimatch": ^11.0.5
+  # rehype-katex 7.0.1·micromark-extension-math(remark-math)가 katex ^0.16을 고정 → 0.16 계열 저심각 권고
+  # (trust 우회) 해소 + 화면 CSS와 렌더 버전 일치를 위해 트리 전체를 0.18로(mermaid도 0.18 사용).
+  # 두 패키지는 공개 API(renderToString)만 사용, 0.17/0.18 breaking은 내부 API·CSS 클래스. 상위가 0.18+를 받으면 제거.
+  katex: ^0.18.10

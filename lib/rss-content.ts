@@ -1,9 +1,13 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import {
+  REHYPE_KATEX,
+  REMARK_MATH,
   rehypeAbsoluteUrls,
   rehypeCallouts,
   rehypeFigures,
@@ -21,7 +25,10 @@ export async function markdownToFeedHtml(
   const file = await unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(remarkMath, REMARK_MATH)
     .use(remarkRehype, { footnoteLabel: "각주" })
+    // 리더엔 KaTeX CSS가 없으므로 MathML만(브라우저·리더가 네이티브 렌더).
+    .use(rehypeKatex, { ...REHYPE_KATEX, output: "mathml" })
     .use(rehypeCallouts)
     .use(rehypeFigures)
     .use(rehypeSafeUrls)
