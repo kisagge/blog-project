@@ -55,6 +55,16 @@ const SCHEMA = [
   `CREATE INDEX "View_entityType_entityId_idx" ON "View"("entityType", "entityId")`,
   `CREATE INDEX "View_entityType_day_idx" ON "View"("entityType", "day")`,
   `CREATE UNIQUE INDEX "View_entityType_entityId_visitorId_day_key" ON "View"("entityType", "entityId", "visitorId", "day")`,
+  `CREATE TABLE "FeedRevision" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "feedId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "summary" TEXT,
+    "content" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "FeedRevision_feedId_fkey" FOREIGN KEY ("feedId") REFERENCES "Feed" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE INDEX "FeedRevision_feedId_createdAt_idx" ON "FeedRevision"("feedId", "createdAt")`,
   `CREATE TABLE "SiteConfig" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
     "publicEnabled" BOOLEAN NOT NULL DEFAULT true,

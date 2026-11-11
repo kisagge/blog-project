@@ -6,12 +6,16 @@ import { kstDate } from "@/lib/kst";
 
 type Body = { title: string; content: string; summary?: string | null };
 
+// 줄바꿈 정규화: 브라우저는 폼 제출 시 textarea 값을 CRLF로 보내므로, 줄바꿈 방식만 다른 건 같은 내용으로 본다.
+export const normalizeEol = (s: string) => s.replace(/\r\n?/g, "\n");
+
 // 제목·본문(·요약)이 실제로 바뀌었는지. 요약은 next에 없으면(회원 글 폼엔 요약 없음) 비교하지 않고,
-// null과 빈 문자열은 같은 값으로 본다.
+// null과 빈 문자열은 같은 값으로 본다. 줄바꿈 방식(CRLF/LF) 차이는 변경 아님.
 export function bodyChanged(prev: Body, next: Body): boolean {
-  if (prev.title !== next.title || prev.content !== next.content) return true;
+  if (prev.title !== next.title) return true;
+  if (normalizeEol(prev.content) !== normalizeEol(next.content)) return true;
   if (next.summary === undefined) return false;
-  return (prev.summary ?? "") !== (next.summary ?? "");
+  return normalizeEol(prev.summary ?? "") !== normalizeEol(next.summary ?? "");
 }
 
 // 글 상단에 "수정" 날짜를 보일지. 표시 날짜보다 KST 날짜가 뒤인 수정만 노출

@@ -103,3 +103,42 @@ describe("saveAboutAction", () => {
     expect(row?.aboutContent).toBe("# 소개\n\n반가워요"); // 이전 값 유지
   });
 });
+
+describe("수정 이력(리비전)", () => {
+  test("updateFeed: 본문이 바뀐 저장만 직전 버전을 이력으로, 공개범위만 바꾸면 이력 없음", async () => {
+    const { id } = await prisma.feed.create({
+      data: { ...base, slug: "rev-save", status: "published" },
+    });
+    await save(id, { slug: "rev-save", visibility: "members" });
+    expect(await prisma.feedRevision.count({ where: { feedId: id } })).toBe(0);
+
+    await save(id, { slug: "rev-save", content: "새 본문" });
+    const revs = await prisma.feedRevision.findMany({ where: { feedId: id } });
+    expect(revs).toHaveLength(1);
+    expect(revs[0]).toMatchObject({ title: "원제", content: "원문" });
+  });
+
+  test("restoreRevisionAction: 되돌린 뒤 감사 로그 + 이력 화면으로 이동", async () => {
+    const { restoreRevisionAction } = await import("@/app/admin/actions");
+    const { logAudit } = await import("@/lib/audit");
+    const { redirect } = await import("next/navigation");
+    const { id } = await prisma.feed.create({
+      data: { ...base, slug: "rev-restore", status: "published" },
+    });
+    const rev = await prisma.feedRevision.create({
+      data: { feedId: id, title: "옛 제목", content: "옛 본문" },
+    });
+    await expect(restoreRevisionAction(rev.id)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+    expect(redirect).toHaveBeenLastCalledWith(
+      `/admin/${id}/revisions?restored=1`,
+    );
+    expect(logAudit).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "feed.restore", targetId: id }),
+    );
+    expect(
+      (await prisma.feed.findUniqueOrThrow({ where: { id } })).content,
+    ).toBe("옛 본문");
+  });
+});

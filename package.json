@@ -1,6 +1,6 @@
 {
   "name": "byjang_project",
-  "version": "0.108.0",
+  "version": "0.109.0",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {
@@ -22,6 +22,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@prisma/adapter-better-sqlite3": "^7.10.1",
     "@prisma/client": "^7.10.1",
+    "diff": "^9.0.0",
     "dompurify": "^3.4.17",
     "dotenv": "^17.4.2",
     "github-slugger": "^2.0.0",

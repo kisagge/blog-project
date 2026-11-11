@@ -26,7 +26,8 @@ export default async function AdminLayout({
           </button>
         </form>
       </div>
-      {children}
+      {/* 관리자 페이지 본문 랜드마크(페이지들은 자체 main 없이 section만 렌더). */}
+      <main>{children}</main>
     </div>
   );
 }
