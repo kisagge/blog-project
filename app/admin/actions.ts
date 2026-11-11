@@ -16,6 +16,7 @@ import { decideSchedule } from "@/lib/scheduled";
 import { assignFeedSeries } from "@/lib/series";
 import { logAudit } from "@/lib/audit";
 import { bodyChanged } from "@/lib/feed-dates";
+import { restoreRevision, snapshotRevision } from "@/lib/revisions";
 
 // 감사 요약용: 회원 닉네임(없으면 id 일부).
 async function memberLabel(id: string): Promise<string> {
@@ -92,15 +93,21 @@ export async function updateFeed(
   try {
     const { tags, seriesId, scheduledAt, ...feedData } = parsed.data;
     void scheduledAt; // 예약은 생성 시에만 — 수정에선 무시
-    // 게시된 글의 제목·요약·본문이 실제로 바뀐 경우에만 수정 시각 기록(공개범위·태그만 바꾼 저장은 제외).
+    // 제목·요약·본문이 실제로 바뀐 저장이면 바뀌기 직전 버전을 수정 이력으로 스냅샷(같은 트랜잭션 —
+    // slug 중복 등으로 저장이 실패하면 이력도 남지 않음). 게시 글이면 수정 시각도 기록
+    // (공개범위·태그만 바꾼 저장은 둘 다 제외).
     const prev = await prisma.feed.findUnique({
       where: { id },
       select: { status: true, title: true, content: true, summary: true },
     });
-    const edited = prev?.status === "published" && bodyChanged(prev, feedData);
-    await prisma.feed.update({
-      where: { id },
-      data: edited ? { ...feedData, editedAt: new Date() } : feedData,
+    const changed = !!prev && bodyChanged(prev, feedData);
+    const edited = changed && prev?.status === "published";
+    await prisma.$transaction(async (tx) => {
+      if (changed && prev) await snapshotRevision(tx, id, prev);
+      await tx.feed.update({
+        where: { id },
+        data: edited ? { ...feedData, editedAt: new Date() } : feedData,
+      });
     });
     await setFeedTags(id, parseTags(tags ?? ""));
     await assignFeedSeries(id, seriesId || null);
@@ -280,4 +287,21 @@ export async function saveAboutAction(
   });
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+// 수정 이력의 버전으로 되돌리기(관리자). 현재 버전은 이력으로 먼저 남아 되돌리기도 되돌릴 수 있다.
+export async function restoreRevisionAction(revisionId: string) {
+  await verifySession();
+  const res = await restoreRevision(revisionId);
+  if (!res.ok) redirect("/admin/feeds");
+  if (res.changed) {
+    await logAudit({
+      action: "feed.restore",
+      targetType: "feed",
+      targetId: res.feedId,
+      summary: `글 이전 버전으로 되돌림: ${res.title}`,
+    });
+    revalidateFeed();
+  }
+  redirect(`/admin/${res.feedId}/revisions?restored=${res.changed ? 1 : 0}`);
 }

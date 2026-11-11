@@ -20,6 +20,15 @@ describe("bodyChanged", () => {
     expect(bodyChanged(prev, { ...prev, ...patch })).toBe(true);
   });
 
+  test("줄바꿈 방식(CRLF/LF)만 다르면 변경 아님(폼 제출은 CRLF)", () => {
+    expect(
+      bodyChanged(
+        { title: "t", content: "a\nb", summary: "x\ny" },
+        { title: "t", content: "a\r\nb", summary: "x\r\ny" },
+      ),
+    ).toBe(false);
+  });
+
   test("요약은 next에 없으면(회원 글) 비교 안 함, null·빈문자열은 같은 값", () => {
     expect(bodyChanged(prev, { title: "제목", content: "본문" })).toBe(false);
     expect(

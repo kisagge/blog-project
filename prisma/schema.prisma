@@ -37,6 +37,7 @@ model Feed {
   reactions FeedReaction[]
   bookmarks Bookmark[]
   feedTags  FeedTag[]
+  revisions FeedRevision[]
 
   // 목록 쿼리(searchFeeds): status=published + visibility IN + createdAt 정렬.
   @@index([status, visibility, createdAt])
@@ -319,4 +320,19 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// 관리자 글 수정 이력: 제목·요약·본문이 바뀐 저장 직전의 버전 스냅샷(되돌리기·비교용).
+// 글당 최근 N개만 보존(lib/revisions REVISION_LIMIT), 글 삭제 시 함께 삭제.
+model FeedRevision {
+  id        String   @id @default(uuid())
+  feedId    String
+  title     String
+  summary   String?
+  content   String
+  createdAt DateTime @default(now()) // 이 버전이 다음 저장으로 대체된 시각
+  feed      Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+
+  // 글별 최신순 목록·보존 개수 정리(listRevisions·prune).
+  @@index([feedId, createdAt])
 }

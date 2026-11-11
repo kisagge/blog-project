@@ -152,7 +152,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 671**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 691**.
 
 ### 4.12 Content reporting & moderation
 
@@ -277,11 +277,21 @@ View counts alone can't tell "opened and left" from "read to the end", so `/admi
 - **Endpoint protection**: the visitor cookie (`vid`) is SameSite=Lax, so it isn't sent on cross-site POSTs → no one can manipulate another visitor's metrics. zod validates depth 0–100 and ≤ 600 s per beacon; no cookie → ignored with 204.
 - **Aggregation**: for the top posts by views over the last 30 days, completion (depth ≥ 90%) rate and average active time are computed over measured views (beacon received) (`getReadStats`, three Prisma `groupBy`s). Views from before measurement existed, or without a beacon, drop out of the denominator, so the table shows "views / measured" side by side and "—" when unmeasured. The table uses column/row headers (`th scope`).
 
+### 4.26 Post revision history (snapshots, diff, restore)
+
+Saves the pre-save version so an admin post can be recovered if overwritten by mistake.
+
+- **Snapshots**: `updateFeed` stores the **version just before the change** in `FeedRevision`, only for saves where title/summary/body actually changed (`bodyChanged`). It runs in the **same transaction** as the save, so a failed save (e.g. duplicate slug) leaves no revision. Visibility/tag-only saves are excluded. The latest 20 per post are kept (older ones pruned), with CASCADE on post delete.
+- **Diff**: `/admin/[id]/revisions` (newest first) → picking one shows title/summary changes and a **line-level diff** of the body "this version → current" (jsdiff; 3 lines of context around changes, long unchanged runs collapsed). Additions/deletions use `<ins>`/`<del>` plus "추가/삭제" labels for assistive tech and color-independent `+`/`−` markers.
+- **Restore**: after a confirmation dialog, `restoreRevision` **snapshots the current version first** and swaps in the old one in the same transaction → a restore can itself be undone. Published posts get their edit date (`editedAt`) updated; audit log `feed.restore`.
+- **Line-ending normalization (found during verification)**: browsers submit textarea values with **CRLF**, so comparing against bodies saved via other paths (LF) made every line look changed. Both `bodyChanged` and the diff now treat CRLF/LF and a missing trailing newline as identical (avoiding spurious revisions and edit dates).
+- **Admin landmark**: the admin layout had no `main` landmark; page content is now wrapped in `<main>`. Because several revisions can share a title, list link names include time and length so they're distinguishable in a links list.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 671); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 691); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

@@ -4,6 +4,7 @@ import FeedForm from "@/app/admin/feed-form";
 import { updateFeed } from "@/app/admin/actions";
 import { getFeedById } from "@/lib/feeds";
 import { listSeries } from "@/lib/series";
+import { countRevisions } from "@/lib/revisions";
 
 export default async function EditFeedPage({
   params,
@@ -11,7 +12,11 @@ export default async function EditFeedPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [feed, series] = await Promise.all([getFeedById(id), listSeries()]);
+  const [feed, series, revisionCount] = await Promise.all([
+    getFeedById(id),
+    listSeries(),
+    countRevisions(id),
+  ]);
   if (!feed) notFound();
 
   const action = updateFeed.bind(null, feed.id);
@@ -19,12 +24,20 @@ export default async function EditFeedPage({
     <section>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">글 수정</h1>
-        <Link
-          href={`/admin/${feed.id}/preview`}
-          className="rounded border border-black/15 px-3 py-1.5 text-sm dark:border-white/20"
-        >
-          미리보기
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/admin/${feed.id}/revisions`}
+            className="rounded border border-black/15 px-3 py-1.5 text-sm dark:border-white/20"
+          >
+            수정 이력 ({revisionCount})
+          </Link>
+          <Link
+            href={`/admin/${feed.id}/preview`}
+            className="rounded border border-black/15 px-3 py-1.5 text-sm dark:border-white/20"
+          >
+            미리보기
+          </Link>
+        </div>
       </div>
       <FeedForm
         action={action}
