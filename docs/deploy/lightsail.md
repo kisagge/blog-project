@@ -117,6 +117,29 @@ sudo certbot --nginx -d your-domain.com    # Let's Encrypt 발급 + 자동 갱�
 
 > `/uploads` location을 추가했다면 **반드시 `nginx -t && systemctl reload nginx`**. 빠지면 업로드 이미지가 404.
 
+### 6-1. HTTP/2 활성화 (필수)
+
+certbot이 만드는 443 블록은 `listen 443 ssl;`뿐이라 **HTTP/1.1로 서빙**된다. 글 상세는 SSE 연결 2개(알림 `/api/events`·실시간 댓글 `/api/feed-events`)를 유지하므로, HTTP/1.1에선 브라우저의 **호스트당 6연결 한도**에 글 탭 3개 정도면 닿아 다음 탭·요청이 "Loading"에서 멈춘다. HTTP/2는 연결 하나에 요청을 다중화해 이 한도가 사실상 사라진다(앱↔nginx 구간은 `proxy_http_version 1.1` 그대로 — 로컬 연결이라 무관).
+
+```bash
+# sites-enabled 항목은 심볼릭 링크 → grep은 -R(대문자)로, sed는 링크가 아닌 실제 파일에(링크를 덮어쓰지 않게)
+sudo grep -Rn "listen.*443\|http2" /etc/nginx/sites-enabled/
+F=$(readlink -f /etc/nginx/sites-enabled/byjang)
+sudo cp "$F" "$F.bak-$(date +%F)"
+
+# nginx < 1.25.1 (Ubuntu 22.04의 1.18, 24.04의 1.24): listen 지시어에 http2
+sudo sed -i -E 's/(listen\s+(\[::\]:)?443\s+ssl)([ ;])/\1 http2\3/' "$F"
+# nginx ≥ 1.25.1이면 위 대신 443 server 블록에 `http2 on;` 한 줄 추가
+
+grep -n "listen.*443\|http2" "$F"      # → listen 443 ssl http2; # managed by Certbot
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI --http2 https://your-domain.com -o /dev/null -w '%{http_version}\n'   # 2
+```
+
+- certbot 자동 갱신은 `listen` 줄을 다시 쓰지 않으므로 한 번만 하면 된다.
+- 되돌리기: `sudo cp "$F.bak-<날짜>" "$F" && sudo nginx -t && sudo systemctl reload nginx`.
+- SSE는 HTTP/2에서도 추가 설정 없이 동작(아래 버퍼링·하트비트 설명과 동일).
+
 확인: `https://your-domain.com/feed` 200, `https://your-domain.com/admin` 로그인 동작
 (HTTPS 종단이라 세션 쿠키 `secure:true` 정상).
 
@@ -134,3 +157,4 @@ sudo certbot --nginx -d your-domain.com    # Let's Encrypt 발급 + 자동 갱�
 - `docker compose pull` 권한 오류: 이미지가 아직 private → 5-3 public 전환.
 - 로그인 후 바로 로그아웃됨: HTTPS 미적용 상태에서 `secure` 쿠키가 안 붙는 경우 → nginx+certbot로 HTTPS 적용 필요.
 - 컨테이너가 migrate에서 종료: `.env`의 권한/값, `/srv/byjang/data` 쓰기 권한 확인.
+- 글 탭을 여러 개 열면 새 탭이 "Loading"에서 멈춤: HTTP/1.1 서빙으로 SSE 연결이 호스트당 6연결 한도를 채운 상태 → 6-1 HTTP/2 활성화. 확인: `curl -sI https://your-domain.com -o /dev/null -w '%{http_version}\n'`이 `2`.
