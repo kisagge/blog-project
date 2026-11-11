@@ -60,3 +60,28 @@ describe("FeedForm 초안 자동저장(uncontrolled)", () => {
     ).toBe("본문초안");
   });
 });
+
+describe("FeedForm 접근성", () => {
+  test("각 입력이 이름표와 연결(getByLabelText로 찾힘)", () => {
+    render(<FeedForm action={action} submitLabel="저장" />);
+    for (const [label, name] of [
+      ["제목", "title"],
+      ["slug (소문자·숫자·하이픈)", "slug"],
+      ["요약 (선택)", "summary"],
+      ["태그 (쉼표로 구분, 최대 5개)", "tags"],
+      ["본문 (마크다운)", "content"],
+    ])
+      expect(screen.getByLabelText(label)).toHaveAttribute("name", name);
+  });
+
+  test("검증 오류는 aria-invalid + aria-describedby로 해당 입력에 연결", async () => {
+    action.mockResolvedValue({ errors: { title: ["제목을 입력하세요."] } });
+    render(<FeedForm action={action} submitLabel="저장" />);
+    fireEvent.submit(screen.getByLabelText("제목").closest("form")!);
+    const alert = await screen.findByRole("alert");
+    const title = screen.getByLabelText("제목");
+    expect(title).toHaveAttribute("aria-invalid", "true");
+    expect(title).toHaveAttribute("aria-describedby", alert.id);
+    expect(alert).toHaveTextContent("제목을 입력하세요.");
+  });
+});

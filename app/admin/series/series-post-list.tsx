@@ -116,16 +116,16 @@ function Row({
         <button
           type="button"
           aria-label="드래그하여 순서 변경"
-          className="cursor-grab touch-none text-zinc-400 select-none active:cursor-grabbing"
+          className="cursor-grab touch-none text-zinc-500 select-none active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
           ⠿
         </button>
-        <span className="text-xs text-zinc-400 tabular-nums">{index + 1}.</span>
+        <span className="text-xs text-zinc-500 tabular-nums">{index + 1}.</span>
         <span className="truncate">{item.title}</span>
         {item.visibility !== "public" && (
-          <span className="shrink-0 text-xs text-zinc-400">
+          <span className="shrink-0 text-xs text-zinc-500">
             ({item.visibility === "members" ? "회원" : "비공개"})
           </span>
         )}
@@ -133,7 +133,7 @@ function Row({
       <button
         type="button"
         onClick={() => onRemove(item.id)}
-        className="shrink-0 rounded border border-red-300 px-2 py-1 text-red-600"
+        className="shrink-0 rounded border border-red-300 px-2 py-1 text-red-600 dark:text-red-400"
       >
         제거
       </button>

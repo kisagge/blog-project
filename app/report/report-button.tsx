@@ -11,7 +11,7 @@ import {
 export default function ReportButton({
   targetType,
   targetId,
-  triggerClassName = "hover:text-red-600",
+  triggerClassName = "hover:text-red-600 dark:hover:text-red-400",
 }: {
   targetType: ReportTargetType;
   targetId: string;
@@ -27,7 +27,7 @@ export default function ReportButton({
   // 신고 완료 후에는(중복 신고 불가) 버튼을 안내 텍스트로 대체.
   if (done) {
     return (
-      <span role="status" className="text-xs text-zinc-400">
+      <span role="status" className="text-xs text-zinc-500">
         신고 접수됨
       </span>
     );
@@ -103,7 +103,10 @@ export default function ReportButton({
           />
 
           {error && (
-            <p role="alert" className="mt-2 text-sm text-red-600">
+            <p
+              role="alert"
+              className="mt-2 text-sm text-red-600 dark:text-red-400"
+            >
               {error}
             </p>
           )}

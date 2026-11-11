@@ -49,7 +49,7 @@ export default async function EditSeriesPage({
         <input type="hidden" name="id" value={series.id} />
         <button
           type="submit"
-          className="rounded border border-red-300 px-3 py-1.5 text-sm text-red-600"
+          className="rounded border border-red-300 px-3 py-1.5 text-sm text-red-600 dark:text-red-400"
         >
           시리즈 삭제
         </button>

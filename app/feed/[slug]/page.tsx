@@ -182,7 +182,7 @@ export default async function FeedDetailPage({
         </div>
       )}
       {canReportFeed && (
-        <div className="mt-4 text-right text-xs text-zinc-400">
+        <div className="mt-4 text-right text-xs text-zinc-500">
           <ReportButton targetType="feed" targetId={feed.id} />
         </div>
       )}

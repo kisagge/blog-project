@@ -56,7 +56,7 @@ export default function ScheduleField() {
               날짜를 선택하세요.
             </p>
           ) : isPast ? (
-            <p role="alert" className="text-red-600">
+            <p role="alert" className="text-red-600 dark:text-red-400">
               ⚠ 과거 시각입니다 — 미래로 선택하세요.
             </p>
           ) : (

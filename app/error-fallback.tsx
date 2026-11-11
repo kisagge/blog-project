@@ -34,7 +34,7 @@ export default function ErrorFallback({
           홈으로
         </a>
       </div>
-      {digest && <p className="text-xs text-zinc-400">오류 코드: {digest}</p>}
+      {digest && <p className="text-xs text-zinc-500">오류 코드: {digest}</p>}
     </main>
   );
 }

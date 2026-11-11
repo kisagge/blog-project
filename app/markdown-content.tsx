@@ -153,8 +153,21 @@ function MdDiv({ node, children, ...rest }: WithNode<"div">) {
   return <div {...rest}>{children}</div>;
 }
 
+// GFM 작업 목록(`- [x]`)의 체크박스: 읽기 전용 표시라 이름이 없으면 보조기술이 "체크박스"로만 읽는다.
+function MdInput({ node, ...rest }: WithNode<"input">) {
+  void node;
+  if (rest.type !== "checkbox") return <input {...rest} />;
+  return (
+    <input
+      {...rest}
+      aria-label={rest.checked ? "완료한 항목" : "미완료 항목"}
+    />
+  );
+}
+
 const components: Options["components"] = {
   div: MdDiv,
+  input: MdInput,
   img: MdImg,
   pre: MdPre,
   h2: anchored("h2"),

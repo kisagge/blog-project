@@ -26,7 +26,7 @@ export default function ResetForm() {
         error={state?.errors?.confirm}
       />
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}
@@ -59,7 +59,7 @@ function Field({
         className={inputCls}
       />
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error.join(" ")}
         </p>
       )}

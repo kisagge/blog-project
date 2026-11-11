@@ -15,13 +15,16 @@ export default async function AdminHiddenReportsPage() {
 
   return (
     <div>
+      <h1 className="mb-4 text-xl font-semibold tracking-tight">
+        신고 · 가려진 콘텐츠
+      </h1>
       <ReportTabs
         active="hidden"
         queueCount={queueCount}
         hiddenCount={hidden.length}
       />
       {hidden.length === 0 ? (
-        <p className="text-sm text-zinc-400">가려진 콘텐츠가 없습니다.</p>
+        <p className="text-sm text-zinc-500">가려진 콘텐츠가 없습니다.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {hidden.map((h) => (

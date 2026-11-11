@@ -35,7 +35,7 @@ export default function DfManager({ servers }: { servers: DfServer[] }) {
             ))}
           </select>
           <svg
-            className="pointer-events-none absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2 text-zinc-400"
+            className="pointer-events-none absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2 text-zinc-500"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -63,7 +63,7 @@ export default function DfManager({ servers }: { servers: DfServer[] }) {
       </form>
 
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}

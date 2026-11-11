@@ -105,18 +105,18 @@ export default function CommentItem({
         )}
         <time
           dateTime={isoInstant(node.createdAt)}
-          className="text-xs text-zinc-400"
+          className="text-xs text-zinc-500"
         >
           {kstDateTime(node.createdAt)}
         </time>
         {node.edited && !gone && (
-          <span className="text-xs text-zinc-400">(수정됨)</span>
+          <span className="text-xs text-zinc-500">(수정됨)</span>
         )}
       </div>
       {node.deleted ? (
-        <p className="mt-1 text-sm text-zinc-400">삭제된 댓글입니다.</p>
+        <p className="mt-1 text-sm text-zinc-500">삭제된 댓글입니다.</p>
       ) : node.hidden ? (
-        <p className="mt-1 text-sm text-zinc-400">신고로 가려진 댓글입니다.</p>
+        <p className="mt-1 text-sm text-zinc-500">신고로 가려진 댓글입니다.</p>
       ) : editing ? (
         <div className="mt-1 flex flex-col gap-2">
           <textarea
@@ -128,7 +128,7 @@ export default function CommentItem({
             className="w-full resize-none rounded-lg border border-black/15 bg-transparent p-2 text-sm outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
           />
           {editError && (
-            <p role="alert" className="text-xs text-red-600">
+            <p role="alert" className="text-xs text-red-600 dark:text-red-400">
               {editError}
             </p>
           )}
@@ -203,7 +203,7 @@ export default function CommentItem({
           <button
             type="button"
             onClick={() => onRequestDelete(node.id)}
-            className="hover:text-red-600"
+            className="hover:text-red-600 dark:hover:text-red-400"
           >
             삭제
           </button>

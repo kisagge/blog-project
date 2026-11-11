@@ -44,7 +44,7 @@ export default function VerifyForm({ expiresAt }: { expiresAt: string }) {
               인증 코드
             </label>
             <span
-              className={`text-sm tabular-nums ${expired ? "text-red-600" : "text-zinc-500"}`}
+              className={`text-sm tabular-nums ${expired ? "text-red-600 dark:text-red-400" : "text-zinc-500"}`}
             >
               {expired ? "만료됨" : format(remaining)}
             </span>
@@ -60,7 +60,7 @@ export default function VerifyForm({ expiresAt }: { expiresAt: string }) {
           />
         </div>
         {state?.error && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
             {state.error}
           </p>
         )}

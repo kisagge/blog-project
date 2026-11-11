@@ -71,7 +71,7 @@ export default function CommentLikeButton({
         type="button"
         onClick={onClick}
         aria-pressed={liked}
-        className={`inline-flex items-center gap-1 ${liked ? "text-red-600" : "hover:text-zinc-800 dark:hover:text-zinc-200"}`}
+        className={`inline-flex items-center gap-1 ${liked ? "text-red-600 dark:text-red-400" : "hover:text-zinc-800 dark:hover:text-zinc-200"}`}
       >
         <span aria-hidden>{liked ? "♥" : "♡"}</span>
         {count > 0 && count}

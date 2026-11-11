@@ -18,7 +18,7 @@ export function BlockUserButton({
       triggerClassName={
         blocked
           ? "rounded border border-black/15 px-2 py-1 disabled:opacity-50 dark:border-white/20"
-          : "rounded border border-red-300 px-2 py-1 text-red-600 disabled:opacity-50"
+          : "rounded border border-red-300 px-2 py-1 text-red-600 dark:text-red-400 disabled:opacity-50"
       }
       title={blocked ? "차단을 해제할까요?" : "회원을 차단할까요?"}
       desc={

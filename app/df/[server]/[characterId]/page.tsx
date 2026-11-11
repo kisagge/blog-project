@@ -355,7 +355,7 @@ function EquipmentSection({ items }: { items: DfEquipItem[] }) {
             <li key={it.slotId} className="flex items-center gap-3 py-2">
               <ItemThumb itemId={it.itemId} alt={it.itemName} />
               <div className="flex min-w-0 flex-col">
-                <span className="truncate text-xs text-zinc-400">
+                <span className="truncate text-xs text-zinc-500">
                   {it.slotName}
                 </span>
                 <span
@@ -460,7 +460,7 @@ function OathSection({ oath }: { oath: DfOath | null }) {
               key={`${c.slotNo}-${i}`}
               className="flex items-center gap-2 text-sm"
             >
-              <span className="w-5 shrink-0 text-xs text-zinc-400">
+              <span className="w-5 shrink-0 text-xs text-zinc-500">
                 {c.slotNo + 1}
               </span>
               <span className={`truncate ${rarityColor(c.itemRarity)}`}>
@@ -472,13 +472,13 @@ function OathSection({ oath }: { oath: DfOath | null }) {
       )}
       {oath.setInfo && (
         <div className="mt-3 rounded-lg border border-black/[.08] p-3 dark:border-white/[.145]">
-          <span className="text-xs text-zinc-400">활성 세트</span>
+          <span className="text-xs text-zinc-500">활성 세트</span>
           <p
             className={`text-sm font-medium ${rarityColor(oath.setInfo.setRarityName?.split(" ")[0])}`}
           >
             {oath.setInfo.setOptionName ?? oath.setInfo.setName}
             {oath.setInfo.setRarityName && (
-              <span className="ml-1 text-xs text-zinc-400">
+              <span className="ml-1 text-xs text-zinc-500">
                 {oath.setInfo.setRarityName}
               </span>
             )}
@@ -525,7 +525,7 @@ function SkillGroup({
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-xs text-zinc-400">{label}</p>
+      <p className="mb-1.5 text-xs text-zinc-500">{label}</p>
       <ul className="flex flex-wrap gap-1.5">
         {skills.map((s) => (
           <li
@@ -534,7 +534,7 @@ function SkillGroup({
           >
             {s.name}
             {typeof s.level === "number" && (
-              <span className="text-zinc-400"> Lv{s.level}</span>
+              <span className="text-zinc-500"> Lv{s.level}</span>
             )}
           </li>
         ))}
@@ -580,7 +580,7 @@ function BuffSection({ buff }: { buff: DfBuffSwitching | null }) {
           <p className="text-sm font-medium">
             {buff.skillInfo.name}
             {typeof buff.skillInfo.option?.level === "number" && (
-              <span className="text-zinc-400">
+              <span className="text-zinc-500">
                 {" "}
                 Lv{buff.skillInfo.option.level}
               </span>
@@ -595,7 +595,7 @@ function BuffSection({ buff }: { buff: DfBuffSwitching | null }) {
             <li key={it.slotId} className="flex items-center gap-3 py-2">
               <ItemThumb itemId={it.itemId} alt={it.itemName} />
               <div className="flex min-w-0 flex-col">
-                <span className="truncate text-xs text-zinc-400">
+                <span className="truncate text-xs text-zinc-500">
                   {it.slotName}
                 </span>
                 <span
@@ -626,7 +626,7 @@ function AvatarCreatureSection({
         <div className="mb-4 flex items-center gap-3 rounded-lg border border-black/[.08] p-3 dark:border-white/[.145]">
           <ItemThumb itemId={creature.itemId} alt={creature.itemName} />
           <div className="flex min-w-0 flex-col">
-            <span className="text-xs text-zinc-400">크리쳐</span>
+            <span className="text-xs text-zinc-500">크리쳐</span>
             <span
               className={`truncate text-sm font-medium ${rarityColor(creature.itemRarity)}`}
             >
@@ -646,7 +646,7 @@ function AvatarCreatureSection({
             <li key={a.slotId} className="flex items-center gap-3 py-1">
               <ItemThumb itemId={a.itemId} alt={a.itemName} />
               <div className="flex min-w-0 flex-col">
-                <span className="truncate text-xs text-zinc-400">
+                <span className="truncate text-xs text-zinc-500">
                   {a.slotName}
                 </span>
                 <span
@@ -660,7 +660,7 @@ function AvatarCreatureSection({
                   </span>
                 )}
                 {a.emblems && a.emblems.length > 0 && (
-                  <span className="truncate text-xs text-zinc-400">
+                  <span className="truncate text-xs text-zinc-500">
                     엠블렘 {a.emblems.map((e) => e.itemName).join(", ")}
                   </span>
                 )}
@@ -691,7 +691,7 @@ function TimelineSection({ rows }: { rows: DfTimelineRow[] }) {
                 </span>
               )}
             </span>
-            <span className="shrink-0 text-xs text-zinc-400">{r.date}</span>
+            <span className="shrink-0 text-xs text-zinc-500">{r.date}</span>
           </li>
         ))}
       </ul>

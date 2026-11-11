@@ -88,7 +88,7 @@ export default function LikeButton({
         type="button"
         onClick={onClick}
         aria-pressed={liked}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm ${liked ? "border-red-300 text-red-600" : "border-black/15 text-zinc-600 dark:border-white/20 dark:text-zinc-300"}`}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm ${liked ? "border-red-300 text-red-600 dark:text-red-400" : "border-black/15 text-zinc-600 dark:border-white/20 dark:text-zinc-300"}`}
       >
         <span aria-hidden>{liked ? "♥" : "♡"}</span>
         좋아요 {count}

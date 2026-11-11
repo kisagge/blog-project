@@ -36,7 +36,9 @@ export default function SeriesForm({
           className={INPUT_CLASS}
         />
         {err.title && (
-          <span className="text-xs text-red-600">{err.title[0]}</span>
+          <span className="text-xs text-red-600 dark:text-red-400">
+            {err.title[0]}
+          </span>
         )}
       </label>
       <label className="flex flex-col gap-1">
@@ -47,7 +49,9 @@ export default function SeriesForm({
           className={INPUT_CLASS}
         />
         {err.slug && (
-          <span className="text-xs text-red-600">{err.slug[0]}</span>
+          <span className="text-xs text-red-600 dark:text-red-400">
+            {err.slug[0]}
+          </span>
         )}
       </label>
       <label className="flex flex-col gap-1">
@@ -60,7 +64,7 @@ export default function SeriesForm({
         />
       </label>
       {state?.message && (
-        <p role="alert" className="text-red-600">
+        <p role="alert" className="text-red-600 dark:text-red-400">
           {state.message}
         </p>
       )}

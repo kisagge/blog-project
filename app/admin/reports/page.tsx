@@ -16,13 +16,14 @@ export default async function AdminReportsPage() {
 
   return (
     <div>
+      <h1 className="mb-4 text-xl font-semibold tracking-tight">신고</h1>
       <ReportTabs
         active="queue"
         queueCount={queue.length}
         hiddenCount={hiddenCount}
       />
       {queue.length === 0 ? (
-        <p className="text-sm text-zinc-400">처리할 신고가 없습니다.</p>
+        <p className="text-sm text-zinc-500">처리할 신고가 없습니다.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {queue.map((q) => (

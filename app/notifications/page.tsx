@@ -60,7 +60,7 @@ function Item({
         )}
         {body}
       </span>
-      <time dateTime={isoInstant(createdAt)} className="text-xs text-zinc-400">
+      <time dateTime={isoInstant(createdAt)} className="text-xs text-zinc-500">
         {kstDateTime(createdAt)}
       </time>
     </span>

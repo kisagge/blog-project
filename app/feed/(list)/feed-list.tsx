@@ -212,7 +212,7 @@ export default function FeedList({
         </>
       )}
       {!hasMore && items.length > 0 && (
-        <p className="mt-6 text-center text-sm text-zinc-400">
+        <p className="mt-6 text-center text-sm text-zinc-500">
           마지막 글입니다.
         </p>
       )}
