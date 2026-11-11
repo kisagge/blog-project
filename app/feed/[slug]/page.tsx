@@ -19,6 +19,7 @@ import ReadingProgressBar from "@/app/feed/reading-progress-bar";
 import BackToTopButton from "@/app/feed/back-to-top-button";
 import MemberGate from "@/app/member-gate";
 import ViewTracker from "@/app/view-tracker";
+import ReadTracker from "@/app/feed/read-tracker";
 import ShareBar from "@/app/share-bar";
 import ReportButton from "@/app/report/report-button";
 import { absoluteUrl, firstContentImage, toAbsolute } from "@/lib/share";
@@ -157,6 +158,7 @@ export default async function FeedDetailPage({
       <ReadingProgressBar />
       <BackToTopButton />
       <ViewTracker type="feed" id={feed.id} />
+      <ReadTracker feedId={feed.id} />
       <FeedArticle
         feed={feed}
         authorName={authorName}

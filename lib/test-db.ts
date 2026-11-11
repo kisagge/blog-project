@@ -48,6 +48,8 @@ const SCHEMA = [
     "entityId" TEXT NOT NULL,
     "visitorId" TEXT NOT NULL,
     "day" TEXT NOT NULL,
+    "scrollDepth" INTEGER,
+    "activeSeconds" INTEGER,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX "View_entityType_entityId_idx" ON "View"("entityType", "entityId")`,
