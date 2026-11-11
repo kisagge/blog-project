@@ -14,7 +14,7 @@
 ## 2. 아키텍처
 
 ```
-방문자/회원 ─ HTTPS ─> nginx ──┬─ /uploads/*  → 디스크 볼륨에서 직접 서빙(정적)
+방문자/회원 ─ HTTPS(HTTP/2) ─> nginx ──┬─ /uploads/*  → 디스크 볼륨에서 직접 서빙(정적)
                                └─ /*          → Next.js (next start, :3010, loopback)
                                                    │
                                   proxy.ts ─ 전역 IP 속도 제한 + /admin 가드
@@ -116,7 +116,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 - **@멘션 알림**: 댓글 본문의 `@닉네임`으로 멘션된 **승인 회원**에게 인앱+푸시. 닉네임이 **DB 유일 제약 없음 + 공백·구두점 허용**이라 정규식 파싱 대신 **승인 회원을 순회하며 `content`에 `@<닉네임>` 포함 여부로 매칭**(공백 닉네임·한국어 접미 견고; 본인·미멘션·`notifyOnMention` off·비승인 제외). 표시에선 `@토큰`을 색 강조(닉네임 비유일이라 링크는 생략). 멘션 팬아웃은 대상이 여럿이라 **배치**로 처리 — 인앱은 `createMany`+`groupBy`(미읽음 일괄 집계), 푸시는 `pushSubscription … userId in [...]` 한 번 조회 후 병렬 전송이라 **대상 수와 무관하게 상수 쿼리**(N+1 제거).
 - **회원 팔로우 + 활동 피드**: 회원이 다른 **승인 회원**을 팔로우(자기참조 조인 `Follow(followerId, followingId)` — unique + 양방향 인덱스, 자기 자신·관리자·미승인 대상 거부). `/following`은 팔로우한 회원들의 글을 `authorId in [...]` 단일 쿼리로 최신순 모아보며 **`listableVisibilities(role)` 게이트**로 비공개·숨김·초안·비팔로우 글을 차단(한 쿼리라 팔로잉 수와 무관). 프로필엔 팔로워/팔로잉 카운트 + 낙관 토글 `FollowButton`(`aria-pressed`). 팔로우 시 대상에게 인앱+푸시 알림(`notifyFollow`, `notifyOnFollow` 존중 — 기존 알림 패턴 동형, 신규 생성 시에만).
 - **알림 환경설정**: 회원이 종류별(답글·내 글 댓글·**멘션**·**팔로우**)로 수신 on/off(`User.notifyOnReply/notifyOnComment/notifyOnMention/notifyOnFollow`). 이벤트 단위 제어라 off면 **인앱·푸시 모두 미생성**(notify 함수가 수신자 설정을 확인 후 스킵). 기기별 푸시 구독(`PushToggle`)과 직교 — 한쪽은 "어떤 이벤트로", 다른 쪽은 "이 기기로". 진입은 **알림 센터(`/notifications`)에 있을 때 헤더 종이 설정 톱니바퀴로 전환**(미읽음이 0으로 처리된 페이지라 배지가 무의미 → 설정 진입으로 대체, 회원 한정·관리자는 종 유지).
-- **실시간 알림(SSE)**: 헤더 벨 배지를 **서버센트 이벤트**로 실시간 갱신(웹 푸시는 닫힌 탭용, SSE는 열린 탭용 — 상보). 단일 컨테이너라 **인메모리 채널 버스**(`lib/events.ts`, rate-limit Map과 동형)에 `createNotification`/`markAllRead`이 미읽음 수를 publish하고, `/api/events` 라우트가 `ReadableStream`으로 구독자에게 전달. nginx **무수정**(응답 `X-Accel-Buffering: no` + 25초 하트비트로 버퍼링·idle 타임아웃 회피), 연결 종료(`req.signal` abort/cancel) 시 구독·인터벌 정리로 누수 방지. EventSource 자동 재연결 + 연결 시 현재 카운트 재전송으로 resync.
+- **실시간 알림(SSE)**: 헤더 벨 배지를 **서버센트 이벤트**로 실시간 갱신(웹 푸시는 닫힌 탭용, SSE는 열린 탭용 — 상보). 단일 컨테이너라 **인메모리 채널 버스**(`lib/events.ts`, rate-limit Map과 동형)에 `createNotification`/`markAllRead`이 미읽음 수를 publish하고, `/api/events` 라우트가 `ReadableStream`으로 구독자에게 전달. nginx **무수정**(응답 `X-Accel-Buffering: no` + 25초 하트비트로 버퍼링·idle 타임아웃 회피), 연결 종료(`req.signal` abort/cancel) 시 구독·인터벌 정리로 누수 방지. EventSource 자동 재연결 + 연결 시 현재 카운트 재전송으로 resync. 글 상세는 SSE 2개(알림·실시간 댓글)를 유지하므로 HTTP/1.1에선 호스트당 6연결 한도에 여러 탭이 막혀, 운영 nginx를 **HTTP/2**로 서빙(연결 다중화, `docs/deploy/lightsail.md` 6-1).
 - **실시간 댓글(SSE)**: 같은 버스의 `feed:{id}` 채널로 확장. 댓글 작성·삭제 서버 액션이 `CommentEvent`(생성 노드/삭제 id)를 publish하고, `/api/feed-events` 라우트가 **글 상세와 동일한 접근 게이트**(`checkAccess`+초안·숨김 차단, 공개 글은 anon도 구독)로 전달. 클라이언트는 낙관적 삽입과 **동일한 순수 병합 함수**(`merge.ts`의 `applyCreated`/`applyEdited`/`applyDeleted`/`applyLikeCount`)로 트리에 반영하며, **id 기반 dedup**으로 본인 낙관적 삽입·SSE 에코·`loadMore` 재등장 중복을 흡수(원격 이벤트는 스크롤 없음). **댓글·글(게시물) 좋아요 수도 같은 채널로 실시간** 반영(연타는 ~500ms 디바운스로 1요청). 좋아요 버튼은 댓글 트리 밖 형제라, `feed:{id}` 채널의 **단일 EventSource를 클라이언트 provider(`FeedEventsProvider`)로 공유**해 댓글 섹션·좋아요 버튼이 연결 1개를 나눠 쓴다(공개 글 익명 뷰어의 연결 중복 방지). 채널은 `FeedEvent`(댓글 이벤트 ∪ `feedLike`) union을 나르고 각 소비자가 `kind`로 분기. 연결이 끊긴 동안(배포 재시작·네트워크 드롭) 발생한 이벤트는 라이브로 못 받지만, **재접속(EventSource `onopen` 재발생) 시 provider가 `resync` 신호를 팬아웃**해 댓글 섹션은 현재 로드량만큼 페이지를, 좋아요 버튼은 요약을 다시 받아 권위 상태로 교체한다(unread 벨이 connect 시 현재값을 재전송하는 것과 동형의 재동기화).
 
 ### 4.8 전역 요청 속도 제한 (어뷰징 방지)
