@@ -6,7 +6,7 @@
 
 ### Added
 
-- DB 오프사이트 백업 — 매일 백업을 age 공개키로 암호화해 GitHub 아티팩트(90일)로 보관, 복원 절차 문서화
+- DB 오프사이트 백업 — 매일 백업을 age 공개키로 암호화해 GitHub 아티팩트(90일)로 보관, 복원 절차 문서화 ([#219](https://github.com/kisagge/blog-project/pull/219))
 
 ## [0.109.3] - 2026-11-12
 
