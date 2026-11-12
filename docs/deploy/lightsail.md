@@ -148,7 +148,35 @@ curl -sI --http2 https://your-domain.com -o /dev/null -w '%{http_version}\n'   #
 - **로그**: `docker compose logs -f web`
 - **수동 업데이트**: `docker compose pull && docker compose up -d`
 - **롤백**: `compose.yaml`의 `image` 태그를 `ghcr.io/kisagge/blog-project:<원하는 sha>`로 바꾸고 `docker compose up -d`.
-- **DB 백업**: `cp /srv/byjang/data/prod.db /srv/byjang/data/prod.db.$(date +%F)` (볼륨에 영속).
+- **DB 백업**: 매일 04:00 KST `DB Backup` 워크플로가 서버 로컬 백업(`/srv/byjang/data/backups`, 14일 회전)을 만들고, **암호화한 사본을 GitHub 아티팩트로 90일 보관**(오프사이트 — 아래 7-1). 즉석 수동 백업: `cp /srv/byjang/data/prod.db /srv/byjang/data/prod.db.$(date +%F)`.
+
+### 7-1. 오프사이트 백업 (암호화 아티팩트)
+
+저장소가 **공개**라 아티팩트는 로그인한 누구나 받을 수 있다 → [age](https://age-encryption.org) **공개키로 암호화**해 올리고, 복호화용 **개인키는 운영자만** 보관한다(CI엔 공개키만 있음).
+
+**최초 1회 — 키 만들기·등록** (로컬 PC):
+
+```bash
+brew install age                              # macOS (리눅스: apt install age)
+age-keygen -o ~/byjang-backup-key.txt         # 개인키 파일 생성 — 비밀번호 관리자·오프라인 저장소에 따로 보관
+grep '^# public key:' ~/byjang-backup-key.txt # → age1... (공개키)
+gh secret set BACKUP_AGE_RECIPIENT --body 'age1...'   # 공개키만 GitHub Secret으로
+gh workflow run backup.yml                    # 즉시 1회 실행해 확인
+```
+
+> 개인키를 잃으면 모든 오프사이트 사본을 열 수 없다. **개인키를 서버나 저장소에 두지 말 것.** 시크릿이 없으면 워크플로는 경고만 남기고 서버 로컬 백업은 정상 수행한다.
+
+**복원**:
+
+```bash
+gh run list --workflow backup.yml --limit 5   # 원하는 날짜의 실행 ID
+gh run download <run-id> -D restore/          # restore/db-backup-prod-YYYYMMDD-HHMMSS.db.gz/…​.age
+age -d -i ~/byjang-backup-key.txt -o prod.db.gz restore/*/prod-*.db.gz.age
+gunzip prod.db.gz && sqlite3 prod.db 'PRAGMA integrity_check;'   # → ok
+# 서버 교체: docker compose stop web → /srv/byjang/data/prod.db 덮어쓰기(+ -wal/-shm 삭제) → docker compose start web
+```
+
+- 정기 점검: 분기마다 한 번 위 복원 절차로 최신 사본이 열리는지(`integrity_check` = ok) 확인 권장.
 - **마이그레이션**: 새 마이그레이션이 포함된 이미지가 뜨면 컨테이너 entrypoint의 `prisma migrate deploy`가 자동 적용.
 
 ## 트러블슈팅

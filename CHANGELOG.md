@@ -2,6 +2,12 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.110.0] - 2026-11-12
+
+### Added
+
+- DB 오프사이트 백업 — 매일 백업을 age 공개키로 암호화해 GitHub 아티팩트(90일)로 보관, 복원 절차 문서화
+
 ## [0.109.3] - 2026-11-12
 
 ### Fixed
