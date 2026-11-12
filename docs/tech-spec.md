@@ -210,7 +210,8 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 
 - **스크립트**(`scripts/backup-db.sh`): sqlite **온라인 `.backup`**(쓰기 중에도 일관된 스냅샷, WAL 반영) → gzip → `find -mtime`으로 N일(`BACKUP_KEEP_DAYS`, 기본 14) 회전. 런타임 이미지에 `sqlite3` CLI를 추가하고 스크립트를 베이크(앱 의존성 그래프 무변경 — `next.config`의 lib import가 일으킨 502 교훈 반영해 self-contained 셸만).
 - **스케줄**(`.github/workflows/backup.yml`): 매일 04:00 KST + 수동(`workflow_dispatch`). 기존 배포와 **동일 SSH 시크릿**으로 호스트에 접속해 `docker compose exec -T web sh scripts/backup-db.sh` 실행 — 상시 사이드카 없이(512MB 인스턴스 RAM 절약) 정확한 일정.
-- 복원 가능성은 테스트로 가드(백업본 gunzip 후 `PRAGMA integrity_check`=ok·행 보존, 회전 동작). 오프사이트(인스턴스 유실 대비 R2/B2)는 후속 과제.
+- 복원 가능성은 테스트로 가드(백업본 gunzip 후 `PRAGMA integrity_check`=ok·행 보존, 회전 동작).
+- **오프사이트 사본(암호화 아티팩트)**: 같은 워크플로가 최신 백업을 SSH로 runner에 가져와 `gzip -t`로 손상을 검사한 뒤 **age 공개키**(`BACKUP_AGE_RECIPIENT`)로 암호화해 아티팩트로 **90일** 보관(인스턴스 유실 대비). 저장소가 공개라 아티팩트는 누구나 받을 수 있으므로 암호화는 필수이며, CI엔 공개키만 두어 **복호화 키가 GitHub에 존재하지 않음**(개인키는 운영자 보관). runner의 평문·SSH 키는 즉시 삭제. 시크릿 미설정 시 경고만 남기고 로컬 백업은 그대로 성공(점진 도입). 새 외부 계정·자격증명 없이 기존 SSH 시크릿만 재사용. 복원·검증 절차는 `docs/deploy/lightsail.md` 7-1.
 
 ### 4.19 읽기 경험 (이전/다음 글·진행바·맨 위로)
 

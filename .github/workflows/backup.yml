@@ -2,6 +2,9 @@ name: DB Backup
 
 # 매일 04:00 KST(19:00 UTC) + 수동 실행. 실행 중인 web 컨테이너에서 로컬 백업 스크립트 호출.
 # 기존 배포와 동일한 SSH 시크릿 재사용(새 크레덴셜 없음). 백업은 /srv/byjang/data/backups에 적재.
+# 오프사이트: 최신 백업을 runner로 가져와 age 공개키(BACKUP_AGE_RECIPIENT)로 암호화한 뒤
+# 워크플로 아티팩트(90일)로 보관 — 인스턴스 유실 대비. 저장소가 공개라 아티팩트는 누구나 받을 수 있으므로
+# 반드시 암호화하며, CI엔 공개키만 있어 복호화 불가(개인키는 운영자만 보관). 복원: docs/deploy/lightsail.md.
 on:
   schedule:
     - cron: "0 19 * * *"
@@ -22,3 +25,48 @@ jobs:
             cd /srv/byjang
             docker compose exec -T web sh scripts/backup-db.sh
             echo "== 최근 백업 =="; ls -lh data/backups | tail -5
+
+      # ── 오프사이트 사본(암호화 아티팩트) ──
+      - name: 공개키 설정 여부 확인
+        id: offsite
+        env:
+          AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          if [ -z "$AGE_RECIPIENT" ]; then
+            echo "::warning::BACKUP_AGE_RECIPIENT 미설정 — 오프사이트 사본을 건너뜀(서버 로컬 백업은 완료). docs/deploy/lightsail.md 참고."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 최신 백업 가져오기·검증·암호화
+        if: steps.offsite.outputs.enabled == 'true'
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -qq age >/dev/null
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/backup_key && chmod 600 ~/.ssh/backup_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          SSH="ssh -i $HOME/.ssh/backup_key -o BatchMode=yes $SSH_USER@$SSH_HOST"
+          NAME=$($SSH 'ls -t /srv/byjang/data/backups/prod-*.db.gz | head -1 | xargs -n1 basename')
+          case "$NAME" in prod-*.db.gz) ;; *) echo "::error::최신 백업 파일을 찾지 못함: $NAME"; exit 1 ;; esac
+          $SSH "cat /srv/byjang/data/backups/$NAME" > "$NAME"
+          gzip -t "$NAME"  # 손상·잘림 검사(평문 단계에서만 가능)
+          age -r "$AGE_RECIPIENT" -o "$NAME.age" "$NAME"
+          rm -f "$NAME" ~/.ssh/backup_key  # 평문·키는 runner에 남기지 않음
+          echo "NAME=$NAME" >> "$GITHUB_ENV"
+          ls -l "$NAME.age"
+
+      - name: 암호화 사본을 아티팩트로 보관
+        if: steps.offsite.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: db-backup-${{ env.NAME }}
+          path: ${{ env.NAME }}.age
+          retention-days: 90
+          if-no-files-found: error
