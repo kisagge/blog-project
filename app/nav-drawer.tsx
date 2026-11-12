@@ -199,10 +199,13 @@ function DrawerLink({
   onClick: () => void;
   children: React.ReactNode;
 }) {
+  // 닫힌 드로어 안 링크까지 화면 진입으로 프리페치되어 페이지마다 요청 ~20건이 늘던 것을 막는다
+  // (메뉴를 연 뒤에야 쓰이는 링크라 미리 받아 둘 이득이 작음).
   return (
     <Link
       href={href}
       onClick={onClick}
+      prefetch={false}
       className="rounded px-3 py-2 hover:bg-black/[.04] dark:hover:bg-white/[.06]"
     >
       {children}

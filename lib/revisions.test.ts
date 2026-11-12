@@ -48,6 +48,25 @@ describe("snapshotRevision", () => {
     expect(list[0].length).toBe(`본문 ${m.REVISION_LIMIT + 2}`.length);
   });
 
+  test("같은 순간에 연달아 저장해도 순서가 결정적(시각이 엄격히 증가)", async () => {
+    const feed = await mkFeed();
+    for (let i = 0; i < 5; i++)
+      await m.snapshotRevision(prisma, feed.id, {
+        title: `t${i}`,
+        summary: null,
+        content: "c",
+      });
+    const rows = await prisma.feedRevision.findMany({
+      where: { feedId: feed.id },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(rows.map((r) => r.title)).toEqual(["t0", "t1", "t2", "t3", "t4"]);
+    for (let i = 1; i < rows.length; i++)
+      expect(rows[i].createdAt.getTime()).toBeGreaterThan(
+        rows[i - 1].createdAt.getTime(),
+      );
+  });
+
   test("글 삭제 시 이력도 함께 삭제", async () => {
     const feed = await mkFeed();
     await m.snapshotRevision(prisma, feed.id, {
