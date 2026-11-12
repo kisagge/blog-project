@@ -67,7 +67,7 @@ export default async function DfPage() {
                       )}
                     </>
                   ) : (
-                    <span className="text-sm text-zinc-400">
+                    <span className="text-sm text-zinc-500">
                       정보를 불러오지 못했습니다
                     </span>
                   )}

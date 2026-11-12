@@ -228,4 +228,12 @@ describe("MarkdownContent", () => {
     expect(container.querySelector(".hljs")).toBeNull();
     vi.unstubAllGlobals();
   });
+
+  test("작업 목록 체크박스는 완료 여부를 이름으로 가짐", () => {
+    render(<MarkdownContent content={"- [x] 끝난 일\n- [ ] 남은 일"} />);
+    expect(screen.getByRole("checkbox", { name: "완료한 항목" })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "미완료 항목" }),
+    ).not.toBeChecked();
+  });
 });

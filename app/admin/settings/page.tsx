@@ -32,7 +32,7 @@ export default async function AdminSettingsPage() {
             type="submit"
             className={
               publicEnabled
-                ? "rounded border border-red-300 px-3 py-1.5 text-sm text-red-600"
+                ? "rounded border border-red-300 px-3 py-1.5 text-sm text-red-600 dark:text-red-400"
                 : "bg-foreground text-background rounded px-3 py-1.5 text-sm font-medium"
             }
           >
@@ -41,12 +41,16 @@ export default async function AdminSettingsPage() {
         </form>
       </div>
       <div className="mt-6 rounded-lg border border-black/[.08] p-4 dark:border-white/[.145]">
-        <p className="font-medium">관리자 닉네임</p>
-        <p className="mt-0.5 text-sm text-zinc-500">
+        <label htmlFor="admin-nickname" className="font-medium">
+          관리자 닉네임
+        </label>
+        <p id="admin-nickname-hint" className="mt-0.5 text-sm text-zinc-500">
           댓글 작성 시 표시되는 이름입니다.
         </p>
         <form action={setAdminNicknameAction} className="mt-3 flex gap-2">
           <input
+            id="admin-nickname"
+            aria-describedby="admin-nickname-hint"
             name="nickname"
             defaultValue={adminNickname}
             maxLength={20}

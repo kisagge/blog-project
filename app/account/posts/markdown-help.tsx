@@ -38,7 +38,7 @@ export default function MarkdownHelp() {
       </p>
       <table className="mt-2 w-full text-xs">
         <thead>
-          <tr className="text-left text-zinc-400">
+          <tr className="text-left text-zinc-500">
             <th className="py-1 pr-3 font-medium">입력</th>
             <th className="py-1 font-medium">결과</th>
           </tr>

@@ -63,7 +63,7 @@ export default async function StatsPage() {
                 className="flex items-center justify-between gap-3 py-2 text-sm"
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="w-5 shrink-0 text-right text-zinc-400 tabular-nums">
+                  <span className="w-5 shrink-0 text-right text-zinc-500 tabular-nums">
                     {i + 1}
                   </span>
                   <Link

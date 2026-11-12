@@ -44,7 +44,7 @@ export default function LoginForm({
         </>
       )}
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}

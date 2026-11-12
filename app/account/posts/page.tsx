@@ -35,7 +35,7 @@ export default async function MyPostsPage() {
           임시저장 {drafts.length}/{DRAFT_LIMIT}
         </h3>
         {drafts.length === 0 ? (
-          <p className="text-sm text-zinc-400">임시저장한 글이 없습니다.</p>
+          <p className="text-sm text-zinc-500">임시저장한 글이 없습니다.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {drafts.map((d) => (
@@ -62,7 +62,7 @@ export default async function MyPostsPage() {
 
         <h3 className="mt-2 text-sm font-medium text-zinc-500">회원공개</h3>
         {posts.length === 0 ? (
-          <p className="text-sm text-zinc-400">게시한 글이 없습니다.</p>
+          <p className="text-sm text-zinc-500">게시한 글이 없습니다.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {posts.map((p) => (
@@ -102,7 +102,7 @@ function DeleteButton({ id, label }: { id: string; label: string }) {
       <button
         type="submit"
         aria-label={label}
-        className="text-red-600 hover:underline"
+        className="text-red-600 hover:underline dark:text-red-400"
       >
         삭제
       </button>

@@ -42,6 +42,15 @@
   color-scheme: dark;
 }
 
+/* 보조 글씨 대비(WCAG AA 4.5:1): 사이트 전반의 날짜·조회수·안내문이 text-zinc-500을 쓰는데,
+   어두운 배경에선 brand 3.69:1·dark 4.1:1로 미달. text-zinc-500은 글자색 전용으로만 쓰이므로
+   어두운 테마에서 이 토큰을 zinc-400(brand 6.97:1·dark 7.7:1)으로 바꿔 한곳에서 일괄 보정한다.
+   (밝은 테마는 zinc-500이 흰 배경 4.8:1로 통과 — 단독 text-zinc-400은 2.6:1이라 zinc-500으로 교체함.) */
+[data-theme="dark"],
+[data-theme="brand"] {
+  --color-zinc-500: var(--color-zinc-400);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

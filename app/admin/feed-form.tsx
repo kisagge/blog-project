@@ -192,34 +192,55 @@ export default function FeedForm({
         {restorable && (
           <DraftRestoreBanner onRestore={restore} onDismiss={ignoreDraft} />
         )}
-        <Field label="제목" error={err.title}>
-          <input name="title" defaultValue={d.title} className={inputCls} />
+        <Field id="feed-title" label="제목" error={err.title}>
+          <input
+            name="title"
+            defaultValue={d.title}
+            className={inputCls}
+            {...fieldA11y("feed-title", err.title)}
+          />
         </Field>
-        <Field label="slug (소문자·숫자·하이픈)" error={err.slug}>
-          <input name="slug" defaultValue={d.slug} className={inputCls} />
+        <Field
+          id="feed-slug"
+          label="slug (소문자·숫자·하이픈)"
+          error={err.slug}
+        >
+          <input
+            name="slug"
+            defaultValue={d.slug}
+            className={inputCls}
+            {...fieldA11y("feed-slug", err.slug)}
+          />
         </Field>
-        <Field label="요약 (선택)" error={err.summary}>
+        <Field id="feed-summary" label="요약 (선택)" error={err.summary}>
           <input
             name="summary"
             defaultValue={d.summary ?? ""}
             className={inputCls}
+            {...fieldA11y("feed-summary", err.summary)}
           />
         </Field>
-        <Field label="태그 (쉼표로 구분, 최대 5개)" error={err.tags}>
+        <Field
+          id="feed-tags"
+          label="태그 (쉼표로 구분, 최대 5개)"
+          error={err.tags}
+        >
           <input
             name="tags"
             defaultValue={d.tags ?? ""}
             placeholder="던파, 개발 후기"
             className={inputCls}
+            {...fieldA11y("feed-tags", err.tags)}
           />
         </Field>
-        <Field label="본문 (마크다운)" error={err.content}>
+        <Field id="feed-content" label="본문 (마크다운)" error={err.content}>
           <textarea
             ref={contentRef}
             name="content"
             defaultValue={d.content}
             rows={12}
             className={inputCls}
+            {...fieldA11y("feed-content", err.content)}
           />
           <div className="mt-2 flex items-center gap-3 text-sm">
             <label className="cursor-pointer rounded border border-black/15 px-2 py-1 dark:border-white/20">
@@ -270,7 +291,7 @@ export default function FeedForm({
           </Field>
         )}
         {state?.message && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
             {state.message}
           </p>
         )}
@@ -289,24 +310,53 @@ export default function FeedForm({
 
 const inputCls = INPUT_CLASS;
 
+// 입력과 이름표·오류 메시지를 연결하는 속성(id, aria-invalid, aria-describedby).
+function fieldA11y(id: string, error?: string[]) {
+  return {
+    id,
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": error ? `${id}-error` : undefined,
+  };
+}
+
+// 폼 필드 틀. id가 있으면 그 입력에 <label htmlFor>로 연결(입력엔 fieldA11y로 같은 id),
+// 없으면 여러 컨트롤을 묶는 그룹이라 fieldset/legend로 이름을 준다(예: 예약 발행).
 function Field({
+  id,
   label,
   error,
   children,
 }: {
+  id?: string;
   label: string;
   error?: string[];
   children: React.ReactNode;
 }) {
+  const message = error && (
+    <p
+      id={id ? `${id}-error` : undefined}
+      role="alert"
+      className="text-sm text-red-600 dark:text-red-400"
+    >
+      {error.join(" ")}
+    </p>
+  );
+  if (!id) {
+    return (
+      <fieldset className="flex flex-col gap-1">
+        <legend className="mb-1 text-sm font-medium">{label}</legend>
+        {children}
+        {message}
+      </fieldset>
+    );
+  }
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium">{label}</label>
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
       {children}
-      {error && (
-        <p role="alert" className="text-sm text-red-600">
-          {error.join(" ")}
-        </p>
-      )}
+      {message}
     </div>
   );
 }

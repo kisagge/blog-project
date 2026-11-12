@@ -94,7 +94,7 @@ export default async function MemberProfilePage({
           작성 글 ({posts.length})
         </h2>
         {posts.length === 0 ? (
-          <p className="text-sm text-zinc-400">게시한 글이 없습니다.</p>
+          <p className="text-sm text-zinc-500">게시한 글이 없습니다.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
             {posts.map((p) => (
@@ -120,7 +120,7 @@ export default async function MemberProfilePage({
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold tracking-tight">최근 댓글</h2>
         {comments.length === 0 ? (
-          <p className="text-sm text-zinc-400">작성한 댓글이 없습니다.</p>
+          <p className="text-sm text-zinc-500">작성한 댓글이 없습니다.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
             {comments.map((c) => (

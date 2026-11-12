@@ -12,7 +12,7 @@ export function RejectUserButton({ id, label }: { id: string; label: string }) {
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className="rounded border border-red-300 px-2 py-1 text-red-600"
+        className="rounded border border-red-300 px-2 py-1 text-red-600 dark:text-red-400"
       >
         거절
       </button>

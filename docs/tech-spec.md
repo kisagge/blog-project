@@ -152,7 +152,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 691 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 695 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -219,6 +219,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **읽기 진행바**(`reading-progress-bar`): 뷰포트 상단 고정 바가 문서 스크롤 진행률 표시. passive 스크롤 + `requestAnimationFrame` 스로틀, 장식이라 `aria-hidden`.
 - **맨 위로**(`back-to-top-button`): 임계 스크롤 초과 시 우하단에 등장(미표시 땐 DOM 미렌더 → 포커스 제외), 클릭 시 최상단으로.
 - **모션·포커스 a11y**: CSS 트랜지션·애니메이션·`scroll-behavior`는 `globals.css`의 `@media (prefers-reduced-motion: reduce)`가 중화하지만, **JS 스무스 스크롤은 미디어쿼리로 못 막으므로** 공용 `prefersReducedMotion()`(`lib/motion`)로 호출부에서 분기 — 맨 위로·댓글 알림 딥링크 스크롤이 동작 줄이기 선호 시 즉시 점프. 폼 입력의 box-shadow 포커스 링에 더해 **버튼·링크·summary에도 일관된 `:focus-visible` outline 링**을 전역 추가(브라우저 기본 대체, currentColor 기반 테마 정합).
+- **자동 접근성 점검(axe-core) 일괄 보정**: 운영 빌드에 전 기능 샘플 글을 넣고 공개 16쪽×3테마·관리자 15쪽×2테마를 axe(WCAG 2.1 AA + best-practice)로 스캔. ① 기본(brand)·다크 테마에서 보조 글씨(`text-zinc-500`)가 3.69·4.1:1로 미달 → `text-zinc-500`이 글자색 전용임을 확인하고 어두운 테마에서 **`--color-zinc-500` 토큰을 zinc-400으로 교체**해 158곳 일괄 보정(호버·`dark:` 변형 유지), 밝은 테마의 단독 `text-zinc-400`(2.6:1) 38곳은 zinc-500으로. ② 관리자 글 폼 `Field`의 label이 입력과 미연결 → `htmlFor`/`id` + 오류 `aria-invalid`·`aria-describedby`, 여러 컨트롤 그룹(예약 발행)은 `fieldset`/`legend`. 관리자 닉네임 입력 label. ③ 마크다운 작업 목록 체크박스 이름("완료한/미완료 항목"). ④ 사이트 404가 Next 기본 화면(흰 배경·main 없음)이라 테마 대비 2.62:1 → 전역 `app/not-found.tsx`. ⑤ 신고 화면 h1. ⑥ 삭제 버튼·오류 문구의 `text-red-600`이 brand 배경 3.74:1 → 어두운 테마 `dark:text-red-400`(6.18:1) 47곳(배경용 `bg-red-600`이 있어 토큰 교체 대신 개별 지정). 재측정 결과 공개 16쪽×3테마·관리자 15쪽×2테마·오류 표시 상태까지 위반 0건. 스캔 중 사이트 자체 레이트 리밋(429)이 결과를 오염시켜 요청 간격을 두고 재측정.
 
 ### 4.20 코드 신택스 하이라이팅
 
@@ -293,5 +294,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 691), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 695), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

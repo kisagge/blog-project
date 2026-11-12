@@ -49,7 +49,7 @@ export default async function AdminAuditPage({
                 <span className="block truncate">{a.summary}</span>
                 <time
                   dateTime={isoInstant(a.createdAt)}
-                  className="text-xs text-zinc-400"
+                  className="text-xs text-zinc-500"
                 >
                   {kstDateTime(a.createdAt)}
                 </time>

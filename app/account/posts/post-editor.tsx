@@ -157,7 +157,7 @@ export default function PostEditor({
           className={inputCls}
         />
         {state?.errors?.title && (
-          <span role="alert" className="text-xs text-red-600">
+          <span role="alert" className="text-xs text-red-600 dark:text-red-400">
             {state.errors.title[0]}
           </span>
         )}
@@ -249,7 +249,10 @@ export default function PostEditor({
             )}
           </div>
           {uploadError && (
-            <p role="alert" className="mb-2 text-xs text-red-600">
+            <p
+              role="alert"
+              className="mb-2 text-xs text-red-600 dark:text-red-400"
+            >
               {uploadError}
             </p>
           )}
@@ -277,14 +280,14 @@ export default function PostEditor({
         >
           {tab === "preview" &&
             (contentEmpty ? (
-              <p className="text-zinc-400">미리볼 내용이 없습니다.</p>
+              <p className="text-zinc-500">미리볼 내용이 없습니다.</p>
             ) : (
               <MarkdownContent content={content} />
             ))}
         </div>
 
         {state?.errors?.content && (
-          <span role="alert" className="text-xs text-red-600">
+          <span role="alert" className="text-xs text-red-600 dark:text-red-400">
             {state.errors.content[0]}
           </span>
         )}
@@ -293,7 +296,7 @@ export default function PostEditor({
       <MarkdownHelp />
 
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}

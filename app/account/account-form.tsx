@@ -78,7 +78,7 @@ export default function AccountForm({
               <button
                 type="button"
                 onClick={() => setAvatar("")}
-                className="self-start text-xs text-red-600 underline"
+                className="self-start text-xs text-red-600 underline dark:text-red-400"
               >
                 이미지 제거
               </button>
@@ -91,7 +91,7 @@ export default function AccountForm({
           </span>
         )}
         {avatarError && (
-          <span role="alert" className="text-xs text-red-600">
+          <span role="alert" className="text-xs text-red-600 dark:text-red-400">
             {avatarError}
           </span>
         )}
@@ -112,7 +112,10 @@ export default function AccountForm({
           className={inputCls}
         />
         {state?.errors?.nickname && (
-          <span id="nickname-error" className="text-xs text-red-600">
+          <span
+            id="nickname-error"
+            className="text-xs text-red-600 dark:text-red-400"
+          >
             {state.errors.nickname[0]}
           </span>
         )}
@@ -137,14 +140,17 @@ export default function AccountForm({
           className={`${inputCls} resize-y`}
         />
         {state?.errors?.bio && (
-          <span id="bio-error" className="text-xs text-red-600">
+          <span
+            id="bio-error"
+            className="text-xs text-red-600 dark:text-red-400"
+          >
             {state.errors.bio[0]}
           </span>
         )}
       </label>
 
       {state?.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}

@@ -118,7 +118,7 @@ function Row({
         <button
           type="button"
           aria-label="드래그하여 순서 변경"
-          className="cursor-grab touch-none text-zinc-400 select-none active:cursor-grabbing"
+          className="cursor-grab touch-none text-zinc-500 select-none active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
@@ -135,7 +135,7 @@ function Row({
         />
         <form action={removeDfCharacterAction}>
           <input type="hidden" name="id" value={item.id} />
-          <button className="rounded border border-red-300 px-2 py-1 text-red-600">
+          <button className="rounded border border-red-300 px-2 py-1 text-red-600 dark:text-red-400">
             삭제
           </button>
         </form>

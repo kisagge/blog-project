@@ -127,7 +127,7 @@ export default function AboutEditor({ initial }: { initial: string }) {
           )}
         </div>
         {uploadError && (
-          <p role="alert" className="text-xs text-red-600">
+          <p role="alert" className="text-xs text-red-600 dark:text-red-400">
             {uploadError}
           </p>
         )}
@@ -164,7 +164,7 @@ export default function AboutEditor({ initial }: { initial: string }) {
 
       <p
         id="about-hint"
-        className={`text-xs ${tooLong ? "text-red-600" : "text-zinc-500 dark:text-zinc-400"}`}
+        className={`text-xs ${tooLong ? "text-red-600 dark:text-red-400" : "text-zinc-500 dark:text-zinc-400"}`}
       >
         {content.length.toLocaleString()} / {ABOUT_MAX_LENGTH.toLocaleString()}
         자 · 비워서 저장하면 소개 페이지와 메뉴 링크가 숨겨집니다.
@@ -194,7 +194,7 @@ export default function AboutEditor({ initial }: { initial: string }) {
         </span>
       </div>
       {state.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
         </p>
       )}
