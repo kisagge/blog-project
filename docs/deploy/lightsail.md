@@ -103,6 +103,8 @@ server {
 }
 ```
 
+> **클라이언트 IP 판별 전제**: 앱은 `X-Forwarded-For`의 **마지막 항목**(nginx `$proxy_add_x_forwarded_for`가 덧붙인 실제 원격 주소)을 IP로 쓴다(`lib/forwarded-ip.ts`). 첫 항목은 클라이언트가 위조할 수 있기 때문. 이 전제는 **nginx 1홉 + 앱 포트 loopback 바인딩**(`127.0.0.1:3010`)에서만 성립하므로, 앞단에 Cloudflare 프록시·CDN·로드밸런서를 추가하면 모든 사용자가 그 프록시 IP 하나로 묶인다 — 그때는 nginx `real_ip`(set_real_ip_from)로 실제 IP를 복원하거나 판별 로직을 함께 바꿀 것.
+
 > **실시간 알림(SSE, `/api/events`)**: nginx 추가 설정 불필요. 앱이 응답에 `X-Accel-Buffering: no`를 보내 버퍼링을 끄고 25초 하트비트로 idle 타임아웃을 피한다. (장시간 SSE가 끊기면 `proxy_read_timeout`을 늘릴 수 있으나 하트비트로 충분.) 단일 컨테이너 인메모리 버스라 다중 인스턴스로 확장 시엔 외부 pub/sub 필요.
 
 ```bash
