@@ -39,6 +39,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - **README.md**: 사용자·개발자가 가장 먼저 보는 정보. 새 기능, 기술 스택, 환경 변수, 스크립트, 프로젝트 구조에 변화가 있으면 반영한다.
 - **.env.example**: 새 환경 변수(`process.env.*`)를 추가하면 즉시 항목을 추가한다. **플레이스홀더만** 두고 실제 비밀값은 절대 커밋하지 않는다.
+- **CHANGELOG.md**: `package.json` 버전을 올리는 PR에서 해당 버전 항목(Added/Changed/Performance/Fixed/Security/Removed, 끝에 PR 링크)을 맨 위에 추가한다. 버전을 올리지 않는 의존성·CI 변경은 다음 버전 항목에 함께 적는다.
 - **docs/tech-spec.md + tech-spec.en.md**: 아키텍처·접근 제어·인증 등 설계 수준 변화나 주목할 엔지니어링이 생기면 해당 섹션과 요약·테스트 수를 갱신한다(국문·영문을 **함께**).
 - **docs/plans/**: 구현이 머지되면 해당 계획 문서를 `docs/plans/archive/`로 옮긴다.
 
