@@ -140,10 +140,13 @@ describe("rehypeFigures", () => {
     expect((tree.children[0] as Element).tagName).toBe("figure");
   });
 
-  test("제목 없는 이미지·문장 속 이미지는 그대로 p(제목은 툴팁으로 유지)", () => {
+  test("제목 없는 단독 이미지도 figure(캡션 없음), 문장 속 이미지는 그대로 p(제목은 툴팁으로 유지)", () => {
     const plain = root(el("p", [img({ src: "/a.png", alt: "x" })]));
     rehypeFigures()(plain);
-    expect((plain.children[0] as Element).tagName).toBe("p");
+    const fig = plain.children[0] as Element;
+    expect(fig.tagName).toBe("figure");
+    expect(fig.children).toHaveLength(1);
+    expect((fig.children[0] as Element).tagName).toBe("img");
 
     const inline = root(
       el("p", [text("앞 "), img({ src: "/a.png", title: "툴팁" })]),

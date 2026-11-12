@@ -71,9 +71,11 @@ export function rehypeCallouts() {
 
 const isBlank = (c: ElementContent) => c.type === "text" && !c.value.trim();
 
-// 제목(title)이 있는 단독 이미지 문단(`![alt](src "캡션")`)을 figure + figcaption으로.
-// alt(대체 텍스트)와 캡션을 분리해 스크린리더가 같은 문장을 두 번 읽지 않게 하고,
-// 캡션으로 옮긴 title은 img에서 제거(툴팁 중복 방지). p 안엔 figure를 둘 수 없어 p 자체를 바꾼다.
+// 단독 이미지 문단(한 줄에 이미지만)을 figure로 — 블록 이미지와 문장 속 이미지를 구조로 구분해
+// 문장 속 이미지는 글줄에 맞추고(globals.css .md-content p img) 단독 이미지는 블록으로 배치한다.
+// 제목(title, `![alt](src "캡션")`)이 있으면 figcaption으로 옮기고 img의 title은 제거:
+// alt(대체 텍스트)와 캡션을 분리해 스크린리더가 같은 문장을 두 번 읽지 않게(툴팁 중복도 방지).
+// p 안엔 figure를 둘 수 없어 p 자체를 바꾼다.
 export function rehypeFigures() {
   return (tree: Root) =>
     walk(tree, (el) => {
@@ -82,10 +84,13 @@ export function rehypeFigures() {
       const img = solid[0];
       if (solid.length !== 1 || img.type !== "element" || img.tagName !== "img")
         return;
-      const caption = img.properties.title;
-      if (typeof caption !== "string" || !caption.trim()) return;
-      delete img.properties.title;
       el.tagName = "figure";
+      const caption = img.properties.title;
+      if (typeof caption !== "string" || !caption.trim()) {
+        el.children = [img];
+        return;
+      }
+      delete img.properties.title;
       el.children = [
         img,
         {

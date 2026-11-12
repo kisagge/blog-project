@@ -36,7 +36,7 @@ export default function ZoomableImage({
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={alt ? `이미지 크게 보기: ${alt}` : "이미지 크게 보기"}
-        className="my-4 max-w-full cursor-zoom-in rounded"
+        className="max-w-full cursor-zoom-in rounded"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
