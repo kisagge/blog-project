@@ -11,13 +11,26 @@ type Body = { title: string; summary: string | null; content: string };
 type Db = Pick<typeof prisma, "feedRevision">;
 
 // 이전 버전을 스냅샷하고 오래된 것부터 REVISION_LIMIT 초과분을 정리.
+// 같은 밀리초에 여러 건이 생기면 createdAt이 같아 정렬·정리 대상이 무작위가 되므로(방금 저장한 것이
+// 정리될 수도 있음), 글별로 직전 이력보다 엄격히 늦은 시각(+1ms)을 부여해 순서를 결정적으로 만든다.
 export async function snapshotRevision(db: Db, feedId: string, prev: Body) {
+  const latest = await db.feedRevision.findFirst({
+    where: { feedId },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+  const now = new Date();
+  const createdAt =
+    latest && latest.createdAt >= now
+      ? new Date(latest.createdAt.getTime() + 1)
+      : now;
   await db.feedRevision.create({
     data: {
       feedId,
       title: prev.title,
       summary: prev.summary,
       content: prev.content,
+      createdAt,
     },
   });
   const stale = await db.feedRevision.findMany({
