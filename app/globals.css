@@ -313,6 +313,16 @@ body {
   --callout-text: #fca5a5;
 }
 
+/* 문장 속 이미지(문단 안): Tailwind preflight의 img{display:block}·블록 여백 때문에 줄이 끊기거나
+   기준선 위로 떠 보이던 것을 글줄 가운데에 인라인으로 맞춘다. 확대 버튼도 같은 정렬. 단독 이미지는
+   rehypeFigures가 figure로 바꿔 블록으로 배치(본문 flex gap으로 간격). */
+.md-content p img,
+.md-content p button:has(> img) {
+  display: inline-block;
+  vertical-align: middle;
+  margin-block: 0;
+}
+
 /* 캡션 있는 단독 이미지(rehypeFigures). 캡션은 보조 텍스트 대비(흰 배경 7.0:1·다크 7:1 이상). */
 .md-content figure {
   display: flex;

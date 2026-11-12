@@ -191,7 +191,7 @@ const remarkRehypeOptions: Options["remarkRehypeOptions"] = {
 // 인용문·각주·콜아웃·캡션 스타일은 globals.css의 .md-content 규칙.
 export default function MarkdownContent({ content }: { content: string }) {
   return (
-    <div className="md-content flex flex-col gap-4 leading-7 [&_.task-list-item]:list-none [&_a]:underline [&_button>img]:my-0 [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 dark:[&_code]:bg-zinc-800 [&_h1]:scroll-mt-24 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:scroll-mt-24 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:scroll-mt-24 [&_h3]:text-lg [&_h3]:font-semibold [&_img]:my-4 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded [&_li]:ml-5 [&_ol]:list-decimal [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1 [&_ul]:list-disc">
+    <div className="md-content flex flex-col gap-4 leading-7 [&_.task-list-item]:list-none [&_a]:underline [&_code]:rounded [&_code]:bg-zinc-100 [&_code]:px-1 dark:[&_code]:bg-zinc-800 [&_h1]:scroll-mt-24 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:scroll-mt-24 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:scroll-mt-24 [&_h3]:text-lg [&_h3]:font-semibold [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded [&_li]:ml-5 [&_ol]:list-decimal [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1 [&_ul]:list-disc">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, [remarkMath, REMARK_MATH]]}
         remarkRehypeOptions={remarkRehypeOptions}

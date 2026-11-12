@@ -236,4 +236,21 @@ describe("MarkdownContent", () => {
       screen.getByRole("checkbox", { name: "미완료 항목" }),
     ).not.toBeChecked();
   });
+
+  test("단독 이미지는 figure(블록), 문장 속·링크 속 이미지는 문단(p) 안에 남음", () => {
+    const { container } = render(
+      <MarkdownContent
+        content={
+          "![단독](/a.png?w=8&h=5)\n\n문장 속 ![배지](/b.png?w=3&h=1) 끝\n\n[![링크 배지](/c.png)](https://x.dev) 끝"
+        }
+      />,
+    );
+    expect(container.querySelector("figure img")).toHaveAttribute(
+      "alt",
+      "단독",
+    );
+    expect(container.querySelector("figure figcaption")).toBeNull();
+    expect(container.querySelector("p img[alt='배지']")).not.toBeNull();
+    expect(container.querySelector("p a img[alt='링크 배지']")).not.toBeNull();
+  });
 });
