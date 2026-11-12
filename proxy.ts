@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decrypt } from "@/lib/jwt";
 import { rateLimit, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
+import { clientIpFromXff } from "@/lib/forwarded-ip";
 import { RATE_LIMITS, rateBucket, requestKind } from "@/lib/request-kind";
 
 // 문서 요청이 429일 때 보여 줄 최소 HTML(언어·제목·본문 랜드마크 포함 — 평문 응답은 lang·title 없는 빈 화면).
@@ -9,8 +10,7 @@ const TOO_MANY_HTML = `<!doctype html><html lang="ko"><head><meta charset="utf-8
 // 전반적 요청 어뷰징 방지: IP당 10초 윈도우 요청 수 제한(정적 자산은 matcher에서 제외).
 // 링크 프리페치·앱 내 이동(RSC)은 페이지마다 수십 건이라 별도 버킷으로 센다(lib/request-kind).
 export async function proxy(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = clientIpFromXff(req.headers.get("x-forwarded-for")) ?? "unknown";
   const kind = requestKind(req.method, req.nextUrl.pathname, req.headers);
   const bucket = rateBucket(kind);
   const { limit, windowMs } = RATE_LIMITS[bucket];

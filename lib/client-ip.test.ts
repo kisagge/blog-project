@@ -19,9 +19,9 @@ describe("getClientIp", () => {
     xff = "1.2.3.4";
     expect(await getClientIp()).toBe("1.2.3.4");
   });
-  test("다중(a, b) → 첫 항목 trim", async () => {
-    xff = " 1.1.1.1 , 2.2.2.2";
-    expect(await getClientIp()).toBe("1.1.1.1");
+  test("다중(위조값, 실제값) → nginx가 덧붙인 마지막 항목 trim", async () => {
+    xff = " 1.1.1.1 , 2.2.2.2 ";
+    expect(await getClientIp()).toBe("2.2.2.2");
   });
   test("헤더 없음 → undefined", async () => {
     xff = null;

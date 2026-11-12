@@ -2,6 +2,12 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.110.1] - 2026-11-12
+
+### Security
+
+- 클라이언트 IP를 `X-Forwarded-For` 마지막 항목(nginx가 덧붙인 실제 주소)으로 판별 — 첫 항목 위조로 모든 IP 요청 제한을 우회하던 문제 수정, 버킷 상한 초과 시 전체 초기화 대신 오래된 키만 정리 ([#220](https://github.com/kisagge/blog-project/pull/220))
+
 ## [0.110.0] - 2026-11-12
 
 ### Added

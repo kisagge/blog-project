@@ -51,4 +51,16 @@ describe("버킷 메모리 상한", () => {
     rateLimit("flood-final", 5, 60_000, now); // 마지막 진입에서 캡 정리 트리거
     expect(bucketCount()).toBeLessThanOrEqual(50_000);
   });
+
+  test("상한 초과 정리 시 오래된 키만 지우고 최근 사용자 카운터는 유지(전체 초기화 금지)", () => {
+    const now = 19_000_000;
+    const base = bucketCount();
+    // 상한 직전까지 폭주 키 → 피해자가 한도 소진 → 폭주 키 몇 개 더로 상한 초과 정리 유발
+    for (let i = 0; base + i < 50_000 - 1; i++)
+      rateLimit(`flood2-${i}`, 5, 60_000, now);
+    for (let i = 0; i < 2; i++) rateLimit("victim", 2, 60_000, now);
+    for (let i = 0; i < 20; i++) rateLimit(`flood2-tail-${i}`, 5, 60_000, now);
+    expect(bucketCount()).toBeLessThanOrEqual(50_000);
+    expect(rateLimit("victim", 2, 60_000, now)).toBe(false); // 최근 카운터는 정리돼도 유지
+  });
 });

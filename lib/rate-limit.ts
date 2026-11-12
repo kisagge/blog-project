@@ -18,11 +18,19 @@ export function rateLimit(
   now: number = Date.now(),
 ): boolean {
   // 가끔(또는 상한 초과 시) 만료 버킷 정리(메모리 누수 방지).
-  if (now - lastSweep > 60_000 || buckets.size > MAX_BUCKETS) {
+  if (now - lastSweep > 60_000 || buckets.size >= MAX_BUCKETS) {
     lastSweep = now;
     for (const [k, b] of buckets) if (b.resetAt <= now) buckets.delete(k);
-    // 만료분 정리 후에도 상한 초과면(병적 폭주=공격) 전체 비움 — OOM 방지 우선.
-    if (buckets.size > MAX_BUCKETS) buckets.clear();
+    // 만료분 정리 후에도 상한 초과면(병적 폭주=공격) 가장 오래 전에 생긴 키부터 초과분만 제거 — OOM 방지.
+    // (전체 비우기는 공격자가 고유 키를 쏟아 다른 사용자의 한도까지 초기화하는 수단이 되므로 쓰지 않는다.)
+    // 상한의 90%까지 한 번에 비워, 폭주 중 매 요청이 전체 순회(O(n))를 반복하지 않게 한다.
+    if (buckets.size >= MAX_BUCKETS) {
+      let excess = buckets.size - Math.floor(MAX_BUCKETS * 0.9);
+      for (const k of buckets.keys()) {
+        if (excess-- <= 0) break;
+        buckets.delete(k);
+      }
+    }
   }
   const b = buckets.get(key);
   if (!b || b.resetAt <= now) {

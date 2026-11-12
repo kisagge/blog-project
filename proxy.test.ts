@@ -57,6 +57,14 @@ describe("proxy 레이트 리밋 버킷", () => {
     expect(action.status).toBe(429);
   });
 
+  test("X-Forwarded-For 앞부분을 매번 바꿔도(위조) 실제 IP 기준으로 한도에 걸림", async () => {
+    const real = freshIp();
+    for (let i = 0; i < RATE_LIMITS.default.limit; i++)
+      await proxy(req(`spoof-${i}, ${real}`, "document"));
+    const res = await proxy(req(`spoof-final, ${real}`, "document"));
+    expect(res.status).toBe(429);
+  });
+
   test("관리자 경로 가드는 그대로(세션 없으면 /login)", async () => {
     const res = await proxy(req(freshIp(), "document", "/admin"));
     expect(res.status).toBe(307);
