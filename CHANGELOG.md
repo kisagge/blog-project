@@ -2,6 +2,20 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.110.4] - 2026-11-16
+
+### Security
+
+- 업로드 파일 소유 기록 추가 — 남의 업로드(다른 회원 아바타·관리자 본문 이미지)를 아바타로 지정한 뒤 교체해 그 파일을 삭제할 수 있던 문제 수정. 아바타는 본인이 올린 이미지만, 교체 시 삭제도 본인 파일만
+
+### Fixed
+
+- 같은 아바타를 다시 저장할 때 쓰는 중인 파일이 지워질 수 있던 문제, 저장 시 아바타 검증 오류가 화면에 보이지 않던 문제
+
+### Changed
+
+- 의존성 마이너·패치 업데이트 14건(next 16.4.6, react 19.3.1, mermaid 12.3.0, tailwindcss 4.3.5 등) ([#221](https://github.com/kisagge/blog-project/pull/221))
+
 ## [0.110.3] - 2026-11-16
 
 ### Security
