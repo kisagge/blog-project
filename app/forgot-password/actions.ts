@@ -44,6 +44,9 @@ export async function requestCode(
     email: String(formData.get("email") ?? ""),
   });
   if (!parsed.success) return { error: "올바른 이메일을 입력하세요." };
+  // 이메일당 발급 한도 — 존재 여부와 무관하게 적용해 계정 존재를 드러내지 않는다.
+  if (!allowAction("resetIssue", parsed.data.email.trim().toLowerCase()))
+    return { error: TOO_MANY_REQUESTS };
   // 백엔드 오류(DB 락 등)가 화면을 깨지 않도록 흡수 — redirect는 try 밖(NEXT_REDIRECT 보존).
   try {
     const { expiresAt } = await requestPasswordReset(parsed.data.email);
@@ -62,9 +65,12 @@ export async function requestCode(
 }
 
 // 재전송: 쿠키의 이메일로 코드 재발급 + 타이머 갱신.
+// 이메일당 발급 한도를 넘으면 새 코드 없이 화면만 유지(재발급으로 시도 횟수를 늘리는 대입 차단).
 export async function resendCode() {
   const cookie = await getResetCookie();
   if (!cookie) redirect("/forgot-password");
+  if (!allowAction("resetIssue", cookie.email.trim().toLowerCase()))
+    redirect("/forgot-password/verify");
   try {
     const { expiresAt } = await requestPasswordReset(cookie.email);
     await setResetCookie({
@@ -89,6 +95,13 @@ export async function verifyCode(
     code: String(formData.get("code") ?? ""),
   });
   if (!parsed.success) return { error: "6자리 숫자 코드를 입력하세요." };
+  // 코드 대입 방지: 이메일당(IP 교체 무력화) + IP당(여러 이메일 두드리기) 둘 다 통과해야 검증.
+  const ip = (await getClientIp()) ?? "unknown";
+  if (
+    !allowAction("resetVerifyIp", ip) ||
+    !allowAction("resetVerifyEmail", cookie.email.trim().toLowerCase())
+  )
+    return { error: TOO_MANY_REQUESTS };
   try {
     const res = await verifyResetCode(cookie.email, parsed.data.code);
     if (!res.ok) return { error: res.error };

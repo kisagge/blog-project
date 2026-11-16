@@ -175,4 +175,19 @@ describe("password-reset", () => {
     });
     expect(after!.id).toBe(before!.id);
   });
+  test("병렬 오답 시도도 시도 상한을 넘지 못함(원자적 선점)", async () => {
+    await approvedMember("race@x.com");
+    sendMock.mockClear();
+    await pr.requestPasswordReset("race@x.com");
+    const code = sendMock.mock.calls[0][1] as string;
+    const bad = wrongOf(code);
+    await Promise.all(
+      Array.from({ length: 10 }, () => pr.verifyResetCode("race@x.com", bad)),
+    );
+    const rec = await prisma.passwordResetCode.findFirst({
+      where: { email: "race@x.com", consumedAt: null },
+    });
+    expect(rec!.attempts).toBeLessThanOrEqual(5);
+    expect((await pr.verifyResetCode("race@x.com", code)).ok).toBe(false);
+  });
 });

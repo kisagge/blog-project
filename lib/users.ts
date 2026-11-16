@@ -28,6 +28,9 @@ export async function isNicknameTaken(
   return found !== null;
 }
 
+export const BLOCKED_SIGNUP_MESSAGE =
+  "이 이메일로는 가입할 수 없습니다. 관리자에게 문의해 주세요.";
+
 export async function createPendingUser(input: {
   email: string;
   nickname: string;
@@ -46,6 +49,10 @@ export async function createPendingUser(input: {
       };
     if (existing.status === "approved")
       return { ok: false, error: "이미 가입된 이메일입니다." };
+    // 차단 회원이 재신청으로 pending에 복귀(차단 해제)하거나, 이메일만 아는 제3자가
+    // 비밀번호를 덮어쓰지 못하게 거부. 재신청은 거절(rejected)된 경우에만 허용.
+    if (existing.status === "blocked")
+      return { ok: false, error: BLOCKED_SIGNUP_MESSAGE };
     if (await isNicknameTaken(input.nickname, existing.id))
       return { ok: false, error: NICKNAME_TAKEN_MESSAGE };
     // rejected → 재신청: 같은 행을 pending으로 되돌리고 새 입력값으로 갱신.

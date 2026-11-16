@@ -235,6 +235,27 @@ describe("users", () => {
     expect((await m.authenticateMember("blk@x.com", "Aa1!aaaa")).ok).toBe(true);
   });
 
+  test("차단된 이메일은 재가입으로 pending 복귀·비밀번호 덮어쓰기 불가", async () => {
+    await m.createPendingUser({
+      email: "reblk@x.com",
+      nickname: "재가입차단",
+      password: "Aa1!aaaa",
+    });
+    const u = await m.findUserByEmail("reblk@x.com");
+    await m.approveUser(u!.id);
+    await m.blockUser(u!.id);
+    const r = await m.createPendingUser({
+      email: "reblk@x.com",
+      nickname: "다른닉",
+      password: "Bb2@bbbb",
+    });
+    expect(r).toEqual({ ok: false, error: m.BLOCKED_SIGNUP_MESSAGE });
+    const after = await m.findUserByEmail("reblk@x.com");
+    expect(after?.status).toBe("blocked");
+    expect(after?.passwordHash).toBe(u!.passwordHash);
+    expect(after?.nickname).toBe("재가입차단");
+  });
+
   test("getMemberProfile: 회원만 반환, admin·없는 id는 null", async () => {
     await m.createPendingUser({
       email: "prof@x.com",
