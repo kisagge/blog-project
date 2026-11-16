@@ -386,7 +386,19 @@ describe("getCommentsByUser", () => {
         data: { feedId: f, userId: u, content: "x" },
       });
     }
+    const hidden = await prisma.feed.create({
+      data: {
+        slug: "reported",
+        title: "신고로 숨김",
+        content: "c",
+        visibility: "public",
+        hiddenAt: new Date(),
+      },
+    });
+    await prisma.comment.create({
+      data: { feedId: hidden.id, userId: u, content: "x" },
+    });
     const list = await m.getCommentsByUser(u, 20);
-    expect(list.map((c) => c.feed.slug)).toEqual(["open"]); // 비공개·초안 제외
+    expect(list.map((c) => c.feed.slug)).toEqual(["open"]); // 비공개·초안·숨김 제외
   });
 });

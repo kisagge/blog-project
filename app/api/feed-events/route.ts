@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getViewerRole } from "@/lib/dal";
-import { checkAccess, type Visibility } from "@/lib/visibility";
+import { canReadFeed } from "@/lib/feed-access";
 import { subscribeFeed } from "@/lib/events";
 
 // SSE: 특정 글의 피드 이벤트(댓글 생성·수정·삭제 + 글 좋아요 수)를 실시간 전달.
@@ -19,14 +19,9 @@ export async function GET(req: Request) {
   });
   if (!feed) return new Response("Not Found", { status: 404 });
 
-  // 글 상세와 동일 게이트: 비관리자는 게시·미숨김·접근 가능한 글만 구독.
-  const role = await getViewerRole();
-  if (role !== "admin") {
-    if (feed.status !== "published" || feed.hiddenAt)
-      return new Response("Forbidden", { status: 403 });
-    if (checkAccess(feed.visibility as Visibility, role) !== "ok")
-      return new Response("Forbidden", { status: 403 });
-  }
+  // 글 상세·댓글 액션과 같은 게이트(lib/feed-access): 비관리자는 게시·미숨김·접근 가능한 글만 구독.
+  if (!canReadFeed(feed, await getViewerRole()))
+    return new Response("Forbidden", { status: 403 });
 
   const encoder = new TextEncoder();
   let unsubscribe: (() => void) | undefined;

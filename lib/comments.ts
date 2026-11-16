@@ -274,7 +274,12 @@ export async function getCommentsByUser(
       userId,
       deletedAt: null,
       hiddenAt: null,
-      feed: { status: "published", visibility: { not: "private" } },
+      // 신고로 숨김 처리된 글도 제외(관리자 외엔 404인 글의 제목 노출 방지).
+      feed: {
+        status: "published",
+        visibility: { not: "private" },
+        hiddenAt: null,
+      },
     },
     orderBy: { createdAt: "desc" },
     take,
