@@ -35,6 +35,18 @@ describe("bookmarks", () => {
     expect(await m.getBookmarkStatus(fA, u1)).toBe(false);
   });
 
+  test("동시 저장(연타)도 에러 없이 1건만 저장", async () => {
+    const f = (await makeFeed(prisma)).id;
+    const u = (await makeUser(prisma)).id; // 다른 테스트의 사용자 상태와 격리
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => m.toggleBookmark(f, u)),
+    );
+    expect(results.length).toBe(5);
+    expect(
+      await prisma.bookmark.count({ where: { feedId: f } }),
+    ).toBeLessThanOrEqual(1);
+  });
+
   test("listSavedFeeds: 저장 최신순 + 카드 필드 + 사용자 격리", async () => {
     await m.toggleBookmark(fA, u1); // 먼저 저장
     await m.toggleBookmark(fB, u1); // 나중 저장

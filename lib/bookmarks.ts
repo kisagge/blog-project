@@ -16,7 +16,12 @@ export async function toggleBookmark(
     await prisma.bookmark.delete({ where: { id: existing.id } });
     return { bookmarked: false };
   }
-  await prisma.bookmark.create({ data: { feedId, userId } });
+  try {
+    await prisma.bookmark.create({ data: { feedId, userId } });
+  } catch (e) {
+    // 동시 요청(연타)으로 이미 생성됨 — 결과는 같으므로 500 대신 저장됨으로 처리.
+    if ((e as { code?: string }).code !== "P2002") throw e;
+  }
   return { bookmarked: true };
 }
 
