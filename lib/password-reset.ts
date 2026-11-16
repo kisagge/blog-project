@@ -74,15 +74,16 @@ export async function verifyResetCode(
   if (!rec) return { ok: false, error: "코드를 먼저 요청해 주세요." };
   if (rec.expiresAt < new Date())
     return { ok: false, error: "코드가 만료되었습니다. 재전송해 주세요." };
-  if (rec.attempts >= MAX_ATTEMPTS)
+  // 시도 1회를 검증 "전에" 조건부 증가로 선점 — 확인 후 증가하면 병렬 요청이 모두 같은
+  // attempts를 읽고 통과해 상한을 넘는다(해시 비교가 느려 경합 창이 넓음).
+  const claimed = await prisma.passwordResetCode.updateMany({
+    where: { id: rec.id, attempts: { lt: MAX_ATTEMPTS } },
+    data: { attempts: { increment: 1 } },
+  });
+  if (claimed.count === 0)
     return { ok: false, error: "시도 횟수를 초과했습니다. 재전송해 주세요." };
-  if (!(await verifyPassword(code, rec.codeHash))) {
-    await prisma.passwordResetCode.update({
-      where: { id: rec.id },
-      data: { attempts: { increment: 1 } },
-    });
+  if (!(await verifyPassword(code, rec.codeHash)))
     return { ok: false, error: "코드가 일치하지 않습니다." };
-  }
   await prisma.passwordResetCode.update({
     where: { id: rec.id },
     data: { verifiedAt: new Date() },

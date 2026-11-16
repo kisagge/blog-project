@@ -51,6 +51,12 @@ export const ACTION_LIMITS = {
   signin: { limit: 10, windowMs: 5 * 60_000 }, // 로그인 브루트포스
   signup: { limit: 5, windowMs: 10 * 60_000 }, // 가입 스팸
   passwordReset: { limit: 5, windowMs: 10 * 60_000 }, // 코드 요청(이메일당 60s 쿨다운은 별개)
+  // 재설정 코드 무차별 대입 방지: 코드당 5회 제한만으론 재발급(60s마다)으로 시도를 계속 늘릴 수 있어
+  // 이메일당 발급·검증 자체를 묶는다(IP를 바꿔도 이메일 키로 걸림).
+  resetIssue: { limit: 10, windowMs: 60 * 60_000 }, // 이메일당 코드 발급(요청+재전송)
+  resetVerifyEmail: { limit: 10, windowMs: 60 * 60_000 }, // 이메일당 코드 검증
+  resetVerifyIp: { limit: 20, windowMs: 10 * 60_000 }, // IP당 코드 검증(여러 이메일 두드리기)
+  adminLogin: { limit: 5, windowMs: 15 * 60_000 }, // 관리자 로그인 브루트포스(TOTP 미설정 시 비밀번호만)
   report: { limit: 10, windowMs: 10 * 60_000 }, // 신고 남용
   avatarUpload: { limit: 20, windowMs: 10 * 60_000 }, // 회원 아바타 업로드(디스크 채우기 방지)
   postImageUpload: { limit: 30, windowMs: 10 * 60_000 }, // 회원 본문 이미지 업로드(여러 장 가능)

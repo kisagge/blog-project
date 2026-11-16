@@ -25,6 +25,7 @@ vi.mock("next/navigation", () => ({
 
 import {
   requestCode,
+  resendCode,
   verifyCode,
   submitNewPassword,
 } from "@/app/forgot-password/actions";
@@ -115,7 +116,82 @@ describe("requestCode (1단계)", () => {
   });
 });
 
+describe("이메일당 코드 발급 한도", () => {
+  test("requestCode: 같은 이메일 반복 요청은 IP를 바꿔도 한도 초과 시 차단", async () => {
+    vt.mockResolvedValue(true);
+    rpr.mockResolvedValue({ expiresAt: EXPIRES });
+    const { limit } = ACTION_LIMITS.resetIssue;
+    for (let i = 0; i < limit; i++) {
+      gci.mockResolvedValue(`issue-ip-${i}`);
+      await expect(
+        requestCode(undefined, fd({ email: "issue@x.com" })),
+      ).rejects.toThrow("NEXT_REDIRECT");
+    }
+    gci.mockResolvedValue("issue-ip-last");
+    expect(await requestCode(undefined, fd({ email: "issue@x.com" }))).toEqual({
+      error: TOO_MANY_REQUESTS,
+    });
+    expect(rpr).toHaveBeenCalledTimes(limit);
+  });
+
+  test("resendCode: 한도 초과 시 새 코드 발급 없이 검증 화면 유지", async () => {
+    getCk.mockResolvedValue({
+      email: "resend@x.com",
+      expiresAt: "",
+      verified: false,
+    });
+    rpr.mockResolvedValue({ expiresAt: EXPIRES });
+    const { limit } = ACTION_LIMITS.resetIssue;
+    for (let i = 0; i < limit + 3; i++)
+      await expect(resendCode()).rejects.toThrow("NEXT_REDIRECT");
+    expect(rpr).toHaveBeenCalledTimes(limit);
+    expect(rd).toHaveBeenLastCalledWith("/forgot-password/verify");
+  });
+});
+
 describe("verifyCode (2단계)", () => {
+  test("레이트리밋: 같은 이메일 코드 검증은 IP를 바꿔도 한도 초과 시 검증 미호출", async () => {
+    getCk.mockResolvedValue({
+      email: "brute@x.com",
+      expiresAt: "",
+      verified: false,
+    });
+    vrc.mockResolvedValue({ ok: false, error: "코드가 일치하지 않습니다." });
+    const { limit } = ACTION_LIMITS.resetVerifyEmail;
+    for (let i = 0; i < limit; i++) {
+      gci.mockResolvedValue(`brute-ip-${i}`);
+      await verifyCode(undefined, fd({ code: "123456" }));
+    }
+    gci.mockResolvedValue("brute-ip-last");
+    expect(await verifyCode(undefined, fd({ code: "123456" }))).toEqual({
+      error: TOO_MANY_REQUESTS,
+    });
+    expect(vrc).toHaveBeenCalledTimes(limit);
+  });
+
+  test("레이트리밋: 한 IP가 여러 이메일 코드를 두드리면 차단", async () => {
+    gci.mockResolvedValue("brute-one-ip");
+    vrc.mockResolvedValue({ ok: false, error: "코드가 일치하지 않습니다." });
+    const { limit } = ACTION_LIMITS.resetVerifyIp;
+    for (let i = 0; i < limit; i++) {
+      getCk.mockResolvedValue({
+        email: `victim${i}@x.com`,
+        expiresAt: "",
+        verified: false,
+      });
+      await verifyCode(undefined, fd({ code: "123456" }));
+    }
+    getCk.mockResolvedValue({
+      email: "victim-last@x.com",
+      expiresAt: "",
+      verified: false,
+    });
+    expect(await verifyCode(undefined, fd({ code: "123456" }))).toEqual({
+      error: TOO_MANY_REQUESTS,
+    });
+    expect(vrc).toHaveBeenCalledTimes(limit);
+  });
+
   test("쿠키 없음 → redirect(forgot-password)", async () => {
     getCk.mockResolvedValue(undefined);
     await expect(verifyCode(undefined, fd({ code: "123456" }))).rejects.toThrow(
