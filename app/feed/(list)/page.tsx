@@ -2,6 +2,7 @@ import { searchFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
 import FeedList from "./feed-list";
 import { toFeedCard } from "./feed-card";
+import { guardPublicAccess } from "@/lib/site-config";
 
 export const metadata = {
   title: "피드",
@@ -16,6 +17,8 @@ export default async function FeedListPage({
 }: {
   searchParams: Promise<{ q?: string; tag?: string }>;
 }) {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const sp = await searchParams;
   const q = sp.q ?? "";
   const tag = sp.tag || undefined;

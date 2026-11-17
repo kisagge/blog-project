@@ -144,6 +144,8 @@ Lets the admin toggle the public site on/off for external visitors, backed by a 
 
 - The guard lives in a **layout**, not the page, so it runs before the `loading.tsx` Suspense boundary — giving non-admins a **clean 307 redirect** to `/maintenance` with no skeleton flash.
 - The same guard is applied to the infinite-scroll Server Action to prevent data leakage.
+- **A layout guard alone leaked the content**: Next renders layouts and pages **in parallel**, so a layout's `redirect()` doesn't stop the page from rendering (the official "Layouts and auth checks" note). Measured: during maintenance a post URL returned 307, but **the redirect body (RSC payload) still carried the post body, title and OG meta**. The layout guard (clean 307, no flash) stays, and **every `page.tsx` and `generateMetadata` under a guarded layout also calls `guardPublicAccess()`**. A regression test (`app/maintenance-guard.test.ts`) scans the source of pages under guarded layouts so new pages can't skip it.
+- **Public responses outside pages**: RSS, series RSS and llms.txt bypass the page guard and kept serving post lists and full text during maintenance → now `503` + `Retry-After: 3600` + `no-store` (`maintenanceResponse`); the sitemap is empty and post/tag OG images fall back to the default card. Measured: none of 15 public routes contains a post title or body during maintenance, while the admin can still browse.
 
 ### 4.10 Feed search + infinite scroll
 
@@ -161,7 +163,7 @@ Combines title/body/summary search with 10-item infinite scroll. Queries of 3+ c
 
 ### 4.11 Testing approach
 
-Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 800**.
+Mocking Prisma calls for DB logic only restates the code, so I built an integration helper (`lib/test-db.ts`) that runs **real queries against a temporary SQLite database**, covering pagination, search, access control, the approval flow, comment depth, likes, notifications, rate limiting, and reporting. The auth layer is guarded too: **JWT forgery rejection** (wrong secret, tampered token), **session/reset cookies** (`next/headers` mocked), **DAL authorization** (role, approval, `verifySession` redirect — `React cache()` worked around via per-scenario `resetModules` + re-import), and **auth server actions** (signin, signup, the 3-stage forgot-password — dependencies mocked, asserting `redirect()`'s `NEXT_REDIRECT` throw). **Core client components are also covered with RTL (jsdom)** — the comment-tree merge pure logic (`merge`: create/edit/delete/like/dedup), comment item (author link, edit/delete permissions, edit flow), share bar (clipboard, native share, X intent), nav drawer (role-based menu, `aria-expanded`, `inert`, Esc), and comment-section SSE wiring (emit fake events → tree updates). Server actions, EventSource, and toast are isolated via `vi.mock`/injection. Test count grew from **17 to 814**.
 
 ### 4.12 Content reporting & moderation
 
@@ -305,5 +307,5 @@ Saves the pre-save version so an admin post can be recovered if overwritten by m
 - Diagnosed and resolved production incidents (disk exhaustion, OOM), restoring deploy reliability
 - Removed the runtime engine binary via the Prisma 7 driver adapter
 - Grew from a single admin to approved members with comments, likes, notifications, reporting/moderation, and PWA (role-union session, shared access control)
-- Introduced integration tests (17 → 800); CI gates on typecheck, lint, test, and image build
+- Introduced integration tests (17 → 814); CI gates on typecheck, lint, test, and image build
 - Per-feature PRs, automated deploys, and pre-1.0 semver for a clean change history

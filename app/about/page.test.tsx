@@ -1,7 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-vi.mock("@/lib/site-config", () => ({ getAbout: vi.fn() }));
+vi.mock("@/lib/site-config", () => ({
+  getAbout: vi.fn(),
+  guardPublicAccess: vi.fn(),
+}));
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");

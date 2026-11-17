@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 
 vi.mock("@/lib/dal", () => ({ getViewerRole: vi.fn(async () => "anon") }));
 vi.mock("@/lib/feeds", () => ({ getArchiveFeeds: vi.fn() }));
+vi.mock("@/lib/site-config", () => ({ guardPublicAccess: vi.fn() }));
 
 import ArchivePage from "@/app/archive/page";
 import { getArchiveFeeds } from "@/lib/feeds";

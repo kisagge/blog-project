@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { SITE_ORIGIN } from "@/lib/share";
 import { getPublicTagSlugs } from "@/lib/tags";
 import { feedLastModified } from "@/lib/feed-dates";
-import { readAboutRaw } from "@/lib/site-config";
+import { getPublicEnabled, readAboutRaw } from "@/lib/site-config";
 
 // DB를 조회하므로 요청 시 생성(빌드 타임 prerender 방지).
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // 점검 중엔 색인할 공개 페이지가 없다(모두 /maintenance로 리다이렉트) — 빈 목록.
+  if (!(await getPublicEnabled())) return [];
   // 비로그인도 볼 수 있는 전체공개 콘텐츠만 색인 대상(회원공개·비공개 제외).
   const [feeds, dfs, publicSeries, tagSlugs, about] = await Promise.all([
     prisma.feed.findMany({

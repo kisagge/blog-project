@@ -32,6 +32,19 @@ export async function guardPublicAccess() {
   redirect("/maintenance");
 }
 
+// 점검 중 피드·크롤러용 응답(RSS·llms.txt). 페이지 가드(/maintenance 리다이렉트)를 거치지 않는
+// 라우트라 따로 막는다. 세션과 무관 — 피드 리더·봇은 비로그인이고 캐시되면 안 된다.
+export function maintenanceResponse(): Response {
+  return new Response("점검 중입니다. 잠시 후 다시 시도해 주세요.", {
+    status: 503,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Retry-After": "3600",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
 // ── 소개 페이지(/about) — 관리자가 마크다운으로 편집. 본문이 비면 페이지·내비 링크를 숨긴다. ──
 
 export type About = { content: string; updatedAt: Date | null };

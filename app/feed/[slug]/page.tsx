@@ -24,6 +24,7 @@ import ShareBar from "@/app/share-bar";
 import ReportButton from "@/app/report/report-button";
 import { absoluteUrl, firstContentImage, toAbsolute } from "@/lib/share";
 import { buildFeedJsonLd, jsonLdHtml } from "@/lib/structured-data";
+import { guardPublicAccess } from "@/lib/site-config";
 
 // 임시저장(draft) 글은 작성자 본인(또는 관리자)만 볼 수 있다.
 type DraftCheck = { status: string; authorId: string | null };
@@ -41,6 +42,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // 점검 중엔 레이아웃 가드보다 먼저 메타데이터가 만들어져 리다이렉트 응답에 제목·OG가 실렸다 → 여기서도 가드.
+  await guardPublicAccess();
   const { slug } = await params;
   const [feed, role, session] = await Promise.all([
     getFeedBySlug(slug),
@@ -72,6 +75,8 @@ export default async function FeedDetailPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ sort?: string; c?: string }>;
 }) {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const { slug } = await params;
   const [feed, role, session] = await Promise.all([
     getFeedBySlug(slug),

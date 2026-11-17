@@ -144,6 +144,8 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 - 가드를 페이지가 아닌 **레이아웃**에 두어 `loading.tsx`의 Suspense 경계보다 먼저 실행 → 점검 중 비어드민을 **스켈레톤 깜빡임 없이 깔끔한 307**로 `/maintenance` 리다이렉트.
 - 무한스크롤 Server Action에도 동일 가드를 적용해 데이터 노출 차단.
+- **레이아웃 가드만으론 본문이 샜다**: Next는 레이아웃과 페이지를 **병렬 렌더**해 레이아웃의 `redirect()`가 페이지 렌더를 멈추지 못한다(공식 문서 "Layouts and auth checks"). 실측: 점검 중 글 URL은 307이었지만 **리다이렉트 응답 본문(RSC 페이로드)에 글 본문·제목·OG 메타가 그대로** 실렸다. 레이아웃 가드(깜빡임 없는 307)는 유지하고, 가드 레이아웃 아래 **모든 `page.tsx`와 `generateMetadata`에서도 `guardPublicAccess()`**를 호출. 누락 방지를 위해 가드 레이아웃 아래 페이지를 소스 스캔하는 회귀 테스트(`app/maintenance-guard.test.ts`)를 둠.
+- **페이지 밖 공개 응답**: RSS·시리즈 RSS·llms.txt는 페이지 가드를 거치지 않아 점검 중에도 글 목록·전문을 내보냈다 → `503` + `Retry-After: 3600` + `no-store`(`maintenanceResponse`), sitemap은 빈 목록, 글·태그 OG 이미지는 기본 카드. 실측: 점검 중 공개 경로 15개 응답 어디에도 글 제목·본문 없음, 관리자는 그대로 열람.
 
 ### 4.10 피드 검색 + 무한스크롤
 
@@ -161,7 +163,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 800 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 814 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -305,5 +307,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 800), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 814), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리
