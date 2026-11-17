@@ -112,7 +112,11 @@ export async function resetPassword(
   if (!user) return { ok: false, error: "계정을 찾을 수 없습니다." };
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: await hashPassword(newPassword) },
+    // 세션 버전 +1 — 비밀번호가 유출돼 재설정한 경우 탈취된 기존 로그인을 모두 끊는다.
+    data: {
+      passwordHash: await hashPassword(newPassword),
+      sessionVersion: { increment: 1 },
+    },
   });
   await prisma.passwordResetCode.update({
     where: { id: rec.id },

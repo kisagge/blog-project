@@ -95,6 +95,7 @@ const SCHEMA = [
     "notifyOnComment" BOOLEAN NOT NULL DEFAULT true,
     "notifyOnMention" BOOLEAN NOT NULL DEFAULT true,
     "notifyOnFollow" BOOLEAN NOT NULL DEFAULT true,
+    "sessionVersion" INTEGER NOT NULL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
   )`,

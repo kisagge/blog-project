@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe("session", () => {
   test("createMemberSession: session 쿠키 + 보안 옵션 + 복호화 페이로드", async () => {
-    await createMemberSession("u1", "닉네임");
+    await createMemberSession("u1", "닉네임", 2);
     const entry = store.get("session");
     expect(entry).toBeDefined();
     expect(entry!.options).toMatchObject({
@@ -47,6 +47,7 @@ describe("session", () => {
       role: "member",
       userId: "u1",
       nickname: "닉네임",
+      sv: 2,
     });
   });
 

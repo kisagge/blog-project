@@ -116,6 +116,82 @@ describe("dal", () => {
     expect(await dal.isBlockedMember()).toBe(true);
   });
 
+  test("세션 버전 불일치(비번 재설정·차단 후 옛 토큰): 비로그인 취급", async () => {
+    await prisma.user.update({
+      where: { id: approvedId },
+      data: { sessionVersion: 3 },
+    });
+    token = await encrypt({
+      role: "member",
+      userId: approvedId,
+      nickname: "승인",
+      sv: 2,
+      expiresAt: exp,
+    });
+    let dal = await freshDal();
+    expect(await dal.getSession()).toBeUndefined();
+    expect(await dal.getViewerRole()).toBe("anon");
+    expect(await dal.getMemberSession()).toBeNull();
+    // 같은 버전의 새 토큰은 유효
+    token = await encrypt({
+      role: "member",
+      userId: approvedId,
+      nickname: "승인",
+      sv: 3,
+      expiresAt: exp,
+    });
+    dal = await freshDal();
+    expect(await dal.getViewerRole()).toBe("member");
+    await prisma.user.update({
+      where: { id: approvedId },
+      data: { sessionVersion: 0 },
+    });
+  });
+
+  test("sv 없는 옛 토큰은 버전 0으로 간주(배포 시 로그인 유지)", async () => {
+    token = await encrypt({
+      role: "member",
+      userId: approvedId,
+      nickname: "승인",
+      expiresAt: exp,
+    });
+    const dal = await freshDal();
+    expect(await dal.getViewerRole()).toBe("member");
+  });
+
+  test("차단 회원의 남은 토큰: 회원 공개 글 열람 권한 없음(anon)", async () => {
+    const b = await prisma.user.create({
+      data: {
+        email: "blk-dal@x.com",
+        nickname: "차단",
+        passwordHash: "-",
+        status: "blocked",
+      },
+    });
+    token = await encrypt({
+      role: "member",
+      userId: b.id,
+      nickname: "차단",
+      expiresAt: exp,
+    });
+    const dal = await freshDal();
+    expect(await dal.getViewerRole()).toBe("anon");
+    expect(await dal.getMemberSession()).toBeNull();
+    expect(await dal.isBlockedMember()).toBe(true);
+  });
+
+  test("삭제된 회원의 토큰은 무효", async () => {
+    token = await encrypt({
+      role: "member",
+      userId: "no-such-user",
+      nickname: "유령",
+      expiresAt: exp,
+    });
+    const dal = await freshDal();
+    expect(await dal.getSession()).toBeUndefined();
+    expect(await dal.getViewerRole()).toBe("anon");
+  });
+
   test("admin: role admin, verifySession 통과", async () => {
     token = await encrypt({ role: "admin", expiresAt: exp });
     const dal = await freshDal();

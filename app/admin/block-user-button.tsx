@@ -24,7 +24,7 @@ export function BlockUserButton({
       desc={
         blocked
           ? `‘${label}’ 회원의 차단을 해제합니다. 다시 로그인·활동할 수 있습니다.`
-          : `‘${label}’ 회원을 차단합니다. 로그인·댓글·좋아요·글 작성이 즉시 막힙니다(글·댓글은 보존, 차단 해제 시 원복).`
+          : `‘${label}’ 회원을 차단합니다. 로그인 중인 모든 기기에서 즉시 로그아웃되고 로그인·댓글·좋아요·글 작성이 막힙니다(글·댓글은 보존, 차단 해제 시 원복).`
       }
       confirmLabel={blocked ? "차단 해제" : "차단"}
       confirmClassName={blocked ? "bg-zinc-700" : "bg-red-600"}

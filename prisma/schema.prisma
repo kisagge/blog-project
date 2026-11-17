@@ -107,6 +107,7 @@ model User {
   notifyOnComment Boolean @default(true)        // 내 글에 댓글 알림 수신 여부
   notifyOnMention Boolean @default(true)        // 댓글에서 @멘션 알림 수신 여부
   notifyOnFollow  Boolean @default(true)        // 누군가 나를 팔로우하면 알림 수신 여부
+  sessionVersion  Int     @default(0)           // 세션 무효화 버전. JWT의 sv와 다르면 로그인 무효(비번 재설정·차단 시 +1)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   comments  Comment[]

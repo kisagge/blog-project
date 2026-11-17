@@ -216,9 +216,11 @@ describe("users", () => {
     const u = await m.findUserByEmail("blk@x.com");
     await m.approveUser(u!.id);
 
-    // 차단 → blocked, 로그인 불가
+    // 차단 → blocked, 로그인 불가, 세션 버전 증가(기존 로그인 무효화)
     await m.blockUser(u!.id);
-    expect((await m.findUserByEmail("blk@x.com"))?.status).toBe("blocked");
+    const blocked = await m.findUserByEmail("blk@x.com");
+    expect(blocked?.status).toBe("blocked");
+    expect(blocked?.sessionVersion).toBe(u!.sessionVersion + 1);
     expect(await m.authenticateMember("blk@x.com", "Aa1!aaaa")).toEqual({
       ok: false,
       error: "이용이 제한된 계정입니다.",
@@ -232,7 +234,14 @@ describe("users", () => {
     // 차단 해제 → approved 복구 + 로그인 가능
     await m.unblockUser(u!.id);
     expect((await m.findUserByEmail("blk@x.com"))?.status).toBe("approved");
-    expect((await m.authenticateMember("blk@x.com", "Aa1!aaaa")).ok).toBe(true);
+    expect(await m.authenticateMember("blk@x.com", "Aa1!aaaa")).toEqual({
+      ok: true,
+      user: {
+        id: u!.id,
+        nickname: "차단대상",
+        sessionVersion: u!.sessionVersion + 1,
+      },
+    });
   });
 
   test("차단된 이메일은 재가입으로 pending 복귀·비밀번호 덮어쓰기 불가", async () => {
