@@ -63,6 +63,7 @@ export const ACTION_LIMITS = {
   follow: { limit: 60, windowMs: 10 * 60_000 }, // 팔로우/언팔로우 토글 남용 방지
   comment: { limit: 30, windowMs: 10 * 60_000 }, // 회원 댓글 작성(도배·멘션 알림 남발 방지)
   view: { limit: 60, windowMs: 10 * 60_000 }, // IP당 조회 기록(쿠키 없이 반복 호출로 조회수 부풀리기 방지)
+  pushSubscribe: { limit: 20, windowMs: 10 * 60_000 }, // 회원 푸시 구독 등록(구독 교체 난타 방지)
 } as const;
 
 // 액션 레이트리밋. 허용이면 true. id는 IP(비로그인) 또는 userId(로그인).

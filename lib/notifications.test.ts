@@ -322,9 +322,9 @@ describe("notification prefs", () => {
     });
     // 각 회원 구독(미멘션 u3 포함) — u3 엔드포인트로는 전송되면 안 됨.
     for (const [u, ep] of [
-      [u1, "https://push/ep1"],
-      [u2, "https://push/ep2"],
-      [u3, "https://push/ep3"],
+      [u1, "https://fcm.googleapis.com/fcm/send/ep1"],
+      [u2, "https://fcm.googleapis.com/fcm/send/ep2"],
+      [u3, "https://fcm.googleapis.com/fcm/send/ep3"],
     ] as const) {
       await prisma.pushSubscription.create({
         data: { userId: u.id, endpoint: ep, p256dh: "k", auth: "a" },
@@ -345,7 +345,10 @@ describe("notification prefs", () => {
     const endpoints = sendNotification.mock.calls
       .map((c) => c[0].endpoint)
       .sort();
-    expect(endpoints).toEqual(["https://push/ep1", "https://push/ep2"]);
+    expect(endpoints).toEqual([
+      "https://fcm.googleapis.com/fcm/send/ep1",
+      "https://fcm.googleapis.com/fcm/send/ep2",
+    ]);
     // 멘션 대상 둘 다 인앱 1건씩(createMany 경로).
     expect(await prisma.notification.count({ where: { userId: u1.id } })).toBe(
       1,

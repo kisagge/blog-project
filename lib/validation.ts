@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isAllowedPushEndpoint } from "@/lib/push-endpoint";
 
 export const FeedFormSchema = z.object({
   title: z.string().trim().min(1, "제목을 입력하세요."),
@@ -158,4 +159,15 @@ export const AboutSchema = z.object({
       ABOUT_MAX_LENGTH,
       `소개는 ${ABOUT_MAX_LENGTH.toLocaleString()}자 이하로 입력하세요.`,
     ),
+});
+
+// 웹 푸시 구독(브라우저 PushSubscription.toJSON()). endpoint는 푸시 서비스 허용 목록만(SSRF 방지),
+// 키는 base64url — p256dh는 65바이트 공개키(≈87자), auth는 16바이트(≈22자). 여유를 두되 과대 입력은 거부.
+const base64url = /^[A-Za-z0-9_-]+={0,2}$/;
+export const PushSubscriptionSchema = z.object({
+  endpoint: z.string().max(1024).refine(isAllowedPushEndpoint),
+  keys: z.object({
+    p256dh: z.string().min(80).max(100).regex(base64url),
+    auth: z.string().min(16).max(32).regex(base64url),
+  }),
 });
