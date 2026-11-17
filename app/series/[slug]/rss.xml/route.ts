@@ -3,6 +3,7 @@ import { SITE_ORIGIN } from "@/lib/share";
 import { prisma } from "@/lib/prisma";
 import { renderRssFeed } from "@/lib/rss";
 import { markdownToFeedHtml } from "@/lib/rss-content";
+import { getPublicEnabled, maintenanceResponse } from "@/lib/site-config";
 
 // 시리즈별 RSS 2.0 피드(본문 전문 포함). 공개 글만(피드 리더는 비로그인 → anon 범위), 시리즈 순서대로.
 export const dynamic = "force-dynamic";
@@ -11,6 +12,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  if (!(await getPublicEnabled())) return maintenanceResponse();
   const { slug } = await params;
   const series = await getSeriesBySlug(slug);
   if (!series) return new Response("Not found", { status: 404 });

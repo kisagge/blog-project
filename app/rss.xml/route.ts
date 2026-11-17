@@ -2,11 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { SITE_ORIGIN } from "@/lib/share";
 import { renderRssFeed } from "@/lib/rss";
 import { markdownToFeedHtml } from "@/lib/rss-content";
+import { getPublicEnabled, maintenanceResponse } from "@/lib/site-config";
 
 // 전체공개 글 RSS 2.0 피드(본문 전문 포함). 요청 시 생성(빌드 타임 DB 접근 방지).
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!(await getPublicEnabled())) return maintenanceResponse();
   const feeds = await prisma.feed.findMany({
     // 신고로 가려진 글 제외(모더레이션 일관성).
     where: { status: "published", visibility: "public", hiddenAt: null },

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSeriesWithCounts } from "@/lib/series";
 import { getViewerRole } from "@/lib/dal";
+import { guardPublicAccess } from "@/lib/site-config";
 
 export const metadata = {
   title: "시리즈",
@@ -12,6 +13,8 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function SeriesIndexPage() {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const series = await getSeriesWithCounts(await getViewerRole());
 
   return (

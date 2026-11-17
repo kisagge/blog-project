@@ -7,6 +7,7 @@ import { toFeedCard } from "@/app/feed/(list)/feed-card";
 import FeedCardItem from "@/app/feed/(list)/feed-card-item";
 import { buildTagJsonLd, jsonLdHtml } from "@/lib/structured-data";
 import { absoluteUrl } from "@/lib/share";
+import { guardPublicAccess } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  // 점검 중엔 레이아웃 가드보다 먼저 메타데이터가 만들어져 리다이렉트 응답에 제목·OG가 실렸다 → 여기서도 가드.
+  await guardPublicAccess();
   const { slug } = await params;
   // Next는 [slug]를 URL 디코딩하지 않고 넘긴다(한글은 퍼센트 인코딩 상태) — getTagBySlug가
   // 내부에서 디코딩·NFC/NFD 정규화로 해소한다.
@@ -37,6 +40,8 @@ export default async function TagPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const { slug } = await params;
   const tag = await getTagBySlug(slug);
   if (!tag) notFound();

@@ -4,6 +4,7 @@ import { getSeriesBySlug, getSeriesPosts } from "@/lib/series";
 import { getViewerRole } from "@/lib/dal";
 import { toFeedCard } from "@/app/feed/(list)/feed-card";
 import FeedCardItem from "@/app/feed/(list)/feed-card-item";
+import { guardPublicAccess } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  // 점검 중엔 레이아웃 가드보다 먼저 메타데이터가 만들어져 리다이렉트 응답에 제목·OG가 실렸다 → 여기서도 가드.
+  await guardPublicAccess();
   const { slug } = await params;
   const series = await getSeriesBySlug(slug);
   if (!series) return { title: "찾을 수 없음" };
@@ -30,6 +33,8 @@ export default async function SeriesPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const { slug } = await params;
   const role = await getViewerRole();
   const series = await getSeriesBySlug(slug);

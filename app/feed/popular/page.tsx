@@ -2,6 +2,7 @@ import { getPublicTopFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
 import { toFeedCard } from "@/app/feed/(list)/feed-card";
 import FeedCardItem from "@/app/feed/(list)/feed-card-item";
+import { guardPublicAccess } from "@/lib/site-config";
 
 export const metadata = {
   title: "인기 글",
@@ -13,6 +14,8 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PopularPage() {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const role = await getViewerRole();
   const feeds = await getPublicTopFeeds(role);
 

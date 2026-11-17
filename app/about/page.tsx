@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getAbout } from "@/lib/site-config";
+import { getAbout, guardPublicAccess } from "@/lib/site-config";
 import { stripMarkdown } from "@/lib/content";
 import { isoInstant, kstDate } from "@/lib/kst";
 import { buildAboutJsonLd, jsonLdHtml } from "@/lib/structured-data";
@@ -15,6 +15,8 @@ function describe(content: string): string {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
+  // 점검 중엔 레이아웃 가드보다 먼저 메타데이터가 만들어져 리다이렉트 응답에 제목·OG가 실렸다 → 여기서도 가드.
+  await guardPublicAccess();
   const about = await getAbout();
   return {
     title: "소개",
@@ -25,6 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // 관리자가 /admin/about에서 편집하는 소개 페이지. 본문이 비어 있으면 404(내비 링크도 숨김).
 export default async function AboutPage() {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const about = await getAbout();
   if (!about) notFound();
 

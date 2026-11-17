@@ -2,6 +2,13 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.111.3] - 2026-11-17
+
+### Security
+
+- 점검 모드에서 글 페이지가 /maintenance로 리다이렉트되면서도 응답 안에 글 본문·제목이 실려 나가던 문제 수정 — 레이아웃뿐 아니라 각 페이지·메타데이터에서도 점검 가드
+- 점검 모드에서 RSS·시리즈 RSS·llms.txt는 503(Retry-After), 사이트맵은 빈 목록, 글·태그 공유 이미지는 기본 카드 ([#228](https://github.com/kisagge/blog-project/pull/228))
+
 ## [0.111.2] - 2026-11-17
 
 ### Security

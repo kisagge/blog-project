@@ -1,6 +1,7 @@
 import { getTagBySlug } from "@/lib/tags";
 import { countFeedsByTag } from "@/lib/feeds";
 import { ogImage, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/og";
+import { getPublicEnabled } from "@/lib/site-config";
 
 export const alt = "BY Playground";
 export const size = OG_SIZE;
@@ -15,6 +16,8 @@ export default async function Image({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  // 점검 중엔 태그명·글 수도 노출하지 않는다(기본 카드).
+  if (!(await getPublicEnabled())) return ogImage("BY Playground");
   const tag = await getTagBySlug(slug); // 디코딩·NFC/NFD 정규화 내장
   if (!tag) return ogImage("BY Playground");
   const count = await countFeedsByTag(tag.slug, "anon");

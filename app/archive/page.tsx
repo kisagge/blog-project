@@ -3,6 +3,7 @@ import { getArchiveFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
 import { groupByYearMonth, kstDayOfMonth } from "@/lib/archive";
 import { isoInstant } from "@/lib/kst";
+import { guardPublicAccess } from "@/lib/site-config";
 
 export const metadata = {
   title: "아카이브",
@@ -15,6 +16,8 @@ export const dynamic = "force-dynamic";
 
 // 블로그 본편(/feed 범위) 전체 글을 KST 연→월로 묶은 목록. 무한스크롤로 닿기 어려운 과거 글 탐색용.
 export default async function ArchivePage() {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const role = await getViewerRole();
   const years = groupByYearMonth(await getArchiveFeeds(role));
   const total = years.reduce((n, y) => n + y.count, 0);
