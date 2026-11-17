@@ -7,7 +7,7 @@
 ### Security
 
 - 점검 모드에서 글 페이지가 /maintenance로 리다이렉트되면서도 응답 안에 글 본문·제목이 실려 나가던 문제 수정 — 레이아웃뿐 아니라 각 페이지·메타데이터에서도 점검 가드
-- 점검 모드에서 RSS·시리즈 RSS·llms.txt는 503(Retry-After), 사이트맵은 빈 목록, 글·태그 공유 이미지는 기본 카드
+- 점검 모드에서 RSS·시리즈 RSS·llms.txt는 503(Retry-After), 사이트맵은 빈 목록, 글·태그 공유 이미지는 기본 카드 ([#228](https://github.com/kisagge/blog-project/pull/228))
 
 ## [0.111.2] - 2026-11-17
 
