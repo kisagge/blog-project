@@ -72,6 +72,11 @@ export default function AccountForm({
               onChange={onPickFile}
               disabled={uploading}
               aria-label="프로필 이미지 업로드"
+              aria-describedby={
+                avatarError || state?.errors?.avatarUrl
+                  ? "avatar-error"
+                  : undefined
+              }
               className="text-xs file:mr-2 file:rounded-full file:border file:border-black/15 file:bg-transparent file:px-3 file:py-1.5 file:text-sm file:font-medium dark:file:border-white/20"
             />
             {avatar && (
@@ -90,9 +95,14 @@ export default function AccountForm({
             업로드 중…
           </span>
         )}
-        {avatarError && (
-          <span role="alert" className="text-xs text-red-600 dark:text-red-400">
-            {avatarError}
+        {/* 업로드 실패(클라이언트) 또는 저장 시 서버 검증 실패(남의 업로드 지정 등) */}
+        {(avatarError || state?.errors?.avatarUrl) && (
+          <span
+            id="avatar-error"
+            role="alert"
+            className="text-xs text-red-600 dark:text-red-400"
+          >
+            {avatarError || state?.errors?.avatarUrl?.[0]}
           </span>
         )}
         <input type="hidden" name="avatarUrl" value={avatar} />

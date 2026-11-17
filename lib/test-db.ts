@@ -65,6 +65,14 @@ const SCHEMA = [
     CONSTRAINT "FeedRevision_feedId_fkey" FOREIGN KEY ("feedId") REFERENCES "Feed" ("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
   `CREATE INDEX "FeedRevision_feedId_createdAt_idx" ON "FeedRevision"("feedId", "createdAt")`,
+  `CREATE TABLE "Upload" (
+      "name" TEXT NOT NULL PRIMARY KEY,
+      "ownerId" TEXT,
+      "kind" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Upload_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE INDEX "Upload_ownerId_kind_idx" ON "Upload"("ownerId", "kind")`,
   `CREATE TABLE "SiteConfig" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
     "publicEnabled" BOOLEAN NOT NULL DEFAULT true,

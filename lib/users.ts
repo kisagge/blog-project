@@ -1,4 +1,5 @@
 import "server-only";
+import { uploadNameFromUrl } from "@/lib/save-image";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE } from "@/lib/feeds";
 import { getAdminNickname } from "@/lib/comment-actor";
@@ -148,7 +149,11 @@ export async function updateProfile(
     data: { nickname, bio: bio || null, avatarUrl },
   });
   const old = before?.avatarUrl ?? null;
-  const replacedAvatarUrl = old && old !== avatarUrl ? old : null;
+  // 같은 파일을 쿼리(?w=&h=)만 달리해 다시 저장한 경우는 교체가 아님 — 쓰는 중인 파일을 지우지 않게 파일명으로 비교.
+  const replacedAvatarUrl =
+    old && uploadNameFromUrl(old) !== uploadNameFromUrl(avatarUrl ?? "")
+      ? old
+      : null;
   return { nickname, replacedAvatarUrl };
 }
 

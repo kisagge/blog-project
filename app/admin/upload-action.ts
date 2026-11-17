@@ -1,6 +1,7 @@
 "use server";
 import { verifySession } from "@/lib/dal";
-import { saveImage, type UploadResult } from "@/lib/save-image";
+import type { UploadResult } from "@/lib/save-image";
+import { saveOwnedImage } from "@/lib/uploads";
 
 // 주의: "use server" 파일은 async 함수만 export해야 한다. 여기서 타입을
 // `export type { UploadResult }`로 재-export하면 Turbopack prod 청크가 소거된
@@ -9,5 +10,5 @@ import { saveImage, type UploadResult } from "@/lib/save-image";
 
 export async function uploadImage(formData: FormData): Promise<UploadResult> {
   await verifySession();
-  return saveImage(formData.get("file"));
+  return saveOwnedImage(formData.get("file"), null, "admin");
 }

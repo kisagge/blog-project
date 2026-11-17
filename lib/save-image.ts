@@ -57,15 +57,21 @@ export async function saveImage(file: unknown): Promise<UploadResult> {
   return { url: `/uploads/${name}${q}` };
 }
 
-// 업로드 파일 삭제(아바타 교체·제거 시 이전 파일 정리). best-effort — 미존재 등 에러는 무시.
-// `/uploads/<uuid>.<ext>` 형태만 처리해 경로 조작을 차단한다.
-export async function deleteUpload(url: string): Promise<void> {
+// `/uploads/<uuid>.<ext>[?…]` → 디스크 파일명(<uuid>.<ext>). 그 외 형태는 null(경로 조작 차단).
+export function uploadNameFromUrl(url: string): string | null {
   const m = /^\/uploads\/([a-f0-9-]+\.(?:jpg|jpeg|png|webp))(?:\?.*)?$/.exec(
     url,
   );
-  if (!m) return;
+  return m ? m[1] : null;
+}
+
+// 업로드 파일 삭제(아바타 교체·제거 시 이전 파일 정리). best-effort — 미존재 등 에러는 무시.
+// 소유 확인은 하지 않으므로 회원 경로에선 lib/uploads의 deleteOwnedUpload를 쓴다.
+export async function deleteUpload(url: string): Promise<void> {
+  const name = uploadNameFromUrl(url);
+  if (!name) return;
   try {
-    await unlink(join(UPLOAD_DIR, m[1]));
+    await unlink(join(UPLOAD_DIR, name));
   } catch {
     /* 이미 없음·권한 등 무시(정리는 비차단) */
   }
