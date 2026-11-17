@@ -2,6 +2,16 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.111.2] - 2026-11-17
+
+### Security
+
+- 서비스 워커가 정적 자산만 캐시하도록 변경 — 로그인·계정·회원 글 화면이 기기에 저장돼 공용 기기에서 로그아웃 후에도 오프라인 시 이전 사용자의 화면이 보일 수 있던 문제 수정, 기존 캐시는 자동 삭제
+
+### Changed
+
+- 오프라인에서 페이지를 열면 안내 페이지 표시(이전에 본 글은 오프라인으로 다시 열 수 없음) ([#227](https://github.com/kisagge/blog-project/pull/227))
+
 ## [0.111.1] - 2026-11-17
 
 ### Security
