@@ -28,6 +28,10 @@ export async function signin(
   const password = String(formData.get("password") ?? "");
   const res = await authenticateMember(email, password);
   if (!res.ok) return { error: res.error };
-  await createMemberSession(res.user.id, res.user.nickname);
+  await createMemberSession(
+    res.user.id,
+    res.user.nickname,
+    res.user.sessionVersion,
+  );
   redirect("/");
 }

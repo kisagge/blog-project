@@ -70,13 +70,16 @@ describe("signin action", () => {
     expect(cms).not.toHaveBeenCalled();
   });
 
-  test("성공 → createMemberSession(id,nick) + redirect('/')", async () => {
+  test("성공 → createMemberSession(id,nick,sv) + redirect('/')", async () => {
     vt.mockResolvedValue(true);
-    am.mockResolvedValue({ ok: true, user: { id: "u1", nickname: "닉" } });
+    am.mockResolvedValue({
+      ok: true,
+      user: { id: "u1", nickname: "닉", sessionVersion: 4 },
+    });
     await expect(
       signin(undefined, fd({ email: "a@x.com", password: "x" })),
     ).rejects.toThrow("NEXT_REDIRECT");
-    expect(cms).toHaveBeenCalledWith("u1", "닉");
+    expect(cms).toHaveBeenCalledWith("u1", "닉", 4);
     expect(rd).toHaveBeenCalledWith("/");
   });
 

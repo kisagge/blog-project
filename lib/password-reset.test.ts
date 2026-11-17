@@ -52,9 +52,14 @@ describe("password-reset", () => {
       error: "코드가 일치하지 않습니다.",
     });
     expect(await pr.verifyResetCode("m@x.com", code)).toEqual({ ok: true });
+    const svBefore = (await users.findUserByEmail("m@x.com"))!.sessionVersion;
     expect(await pr.resetPassword("m@x.com", "NewPass1!")).toEqual({
       ok: true,
     });
+    // 재설정 시 세션 버전 증가 → 탈취됐을 수 있는 기존 로그인 전부 무효화
+    expect((await users.findUserByEmail("m@x.com"))!.sessionVersion).toBe(
+      svBefore + 1,
+    );
 
     expect((await users.authenticateMember("m@x.com", "NewPass1!")).ok).toBe(
       true,

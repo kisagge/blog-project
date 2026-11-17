@@ -44,7 +44,7 @@ export async function updateProfileAction(
     session.userId,
     parsed.data,
   );
-  await createMemberSession(session.userId, nickname); // 세션 닉네임 갱신
+  await createMemberSession(session.userId, nickname, session.sv ?? 0); // 세션 닉네임 갱신(버전 유지)
   // 이전 아바타 파일 정리 — 본인 아바타 업로드 기록과 일치할 때만 삭제.
   if (replacedAvatarUrl)
     await deleteOwnedUpload(replacedAvatarUrl, session.userId, "avatar");

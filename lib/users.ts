@@ -113,7 +113,11 @@ export async function getMemberProfile(
   return u ? { ...u, status: u.status as UserStatus } : null;
 }
 
-export type AuthedMember = { id: string; nickname: string };
+export type AuthedMember = {
+  id: string;
+  nickname: string;
+  sessionVersion: number;
+};
 
 export async function authenticateMember(
   email: string,
@@ -128,7 +132,14 @@ export async function authenticateMember(
     return { ok: false, error: "이용이 제한된 계정입니다." };
   if (user.status !== "approved")
     return { ok: false, error: "관리자 승인 대기 중입니다." };
-  return { ok: true, user: { id: user.id, nickname: user.nickname } };
+  return {
+    ok: true,
+    user: {
+      id: user.id,
+      nickname: user.nickname,
+      sessionVersion: user.sessionVersion,
+    },
+  };
 }
 
 // 회원 본인 프로필(닉네임·자기소개·아바타) 변경. bio·avatarUrl은 빈 문자열이면 null(미설정·제거).
@@ -179,8 +190,12 @@ export async function rejectUser(id: string, reason: string) {
 }
 
 // 차단: 영구 삭제 대신 status=blocked로 두어 로그인·활동을 막는다(되돌리기 가능, 콘텐츠 보존).
+// 세션 버전을 올려 이미 로그인된 기기도 즉시 로그아웃(해제 후엔 다시 로그인해야 함).
 export async function blockUser(id: string) {
-  await prisma.user.update({ where: { id }, data: { status: "blocked" } });
+  await prisma.user.update({
+    where: { id },
+    data: { status: "blocked", sessionVersion: { increment: 1 } },
+  });
 }
 
 // 차단 해제: 다시 approved로 복구.

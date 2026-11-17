@@ -2,7 +2,14 @@ import { SignJWT, jwtVerify } from "jose";
 
 export type SessionPayload =
   | { role: "admin"; expiresAt: string }
-  | { role: "member"; userId: string; nickname: string; expiresAt: string };
+  | {
+      role: "member";
+      userId: string;
+      nickname: string;
+      // 세션 버전(User.sessionVersion). 없으면(도입 전 토큰) 0으로 간주.
+      sv?: number;
+      expiresAt: string;
+    };
 
 const encodedKey = () => new TextEncoder().encode(process.env.SESSION_SECRET);
 

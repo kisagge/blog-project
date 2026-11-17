@@ -31,8 +31,13 @@ export async function createAdminSession() {
   await setSessionCookie({ role: "admin" });
 }
 
-export async function createMemberSession(userId: string, nickname: string) {
-  await setSessionCookie({ role: "member", userId, nickname });
+// sv: 발급 시점의 User.sessionVersion — 이후 비번 재설정·차단으로 버전이 오르면 이 토큰은 무효.
+export async function createMemberSession(
+  userId: string,
+  nickname: string,
+  sv: number,
+) {
+  await setSessionCookie({ role: "member", userId, nickname, sv });
 }
 
 export async function deleteSession() {
