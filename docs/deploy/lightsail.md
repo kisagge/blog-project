@@ -148,8 +148,11 @@ curl -sI --http2 https://your-domain.com -o /dev/null -w '%{http_version}\n'   #
 ## 7. 운영
 
 - **로그**: `docker compose logs -f web`
-- **수동 업데이트**: `docker compose pull && docker compose up -d`
-- **롤백**: `compose.yaml`의 `image` 태그를 `ghcr.io/kisagge/blog-project:<원하는 sha>`로 바꾸고 `docker compose up -d`.
+- **자동 배포 흐름**: `main` push → Deploy 워크플로가 SSH로 [`scripts/deploy-remote.sh`](../../scripts/deploy-remote.sh)를 서버에서 실행한다. ① 이번 커밋 이미지 `:<sha>` pull ② 실행 중 컨테이너에서 **배포 전 DB 백업**(`backups/prod-*.db.gz`, 실패 시 배포 중단) ③ 그 이미지를 로컬 `:latest`로 지정 ④ `docker compose up -d`(엔트리포인트가 `migrate deploy`) ⑤ healthcheck가 `healthy`가 될 때까지 최대 3분 대기(실패 시 최근 로그 80줄 출력 후 실패) ⑥ 기동 로그(마이그레이션 출력) 40줄 기록. 끝으로 러너가 `https://<도메인>/api/health`를 확인한다.
+  - 배포는 동시에 하나만(`concurrency: production-deploy`). 연속 머지로 이전 커밋 배포가 늦게 돌면, 그 뒤에 코드 변경 커밋이 있을 때는 건너뛴다(그 커밋의 배포가 담당). 뒤 커밋이 문서뿐이면 그대로 배포.
+  - 서버 `compose.yaml`은 계속 `:latest`를 가리키면 된다(배포가 로컬 `:latest`를 커밋 이미지로 바꾼다 — 레지스트리 `:latest`를 끌어오지 않아 동시 빌드 경합이 없다).
+- **수동 업데이트(특정 커밋)**: `cd /srv/byjang && DEPLOY_SHA=<sha> sh -c "$(curl -fsSL https://raw.githubusercontent.com/kisagge/blog-project/main/scripts/deploy-remote.sh)"` — 또는 GitHub에서 Deploy 워크플로 수동 실행(main 최신).
+- **롤백**: 위 수동 업데이트를 이전 커밋 sha로 실행(배포 전 백업도 함께 남음). 스키마를 되돌려야 하면 배포 직전 백업(`data/backups/prod-<시각>.db.gz`)으로 7-1 복원 절차의 서버 교체 단계를 따른다.
 - **DB 백업**: 매일 04:00 KST `DB Backup` 워크플로가 서버 로컬 백업(`/srv/byjang/data/backups`, 14일 회전)을 만들고, **암호화한 사본을 GitHub 아티팩트로 90일 보관**(오프사이트 — 아래 7-1). 즉석 수동 백업: `cp /srv/byjang/data/prod.db /srv/byjang/data/prod.db.$(date +%F)`.
 
 ### 7-1. 오프사이트 백업 (암호화 아티팩트)
