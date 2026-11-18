@@ -6,7 +6,7 @@
 
 ### Fixed
 
-- 배포 스크립트가 healthcheck 없는 서버 compose에서 헬스 상태를 읽지 못해 정상 배포를 실패로 판정하던 문제 — 컨테이너 안에서 /api/health 직접 확인, 컨테이너가 죽으면 즉시 실패 판정
+- 배포 스크립트가 healthcheck 없는 서버 compose에서 헬스 상태를 읽지 못해 정상 배포를 실패로 판정하던 문제 — 컨테이너 안에서 /api/health 직접 확인, 컨테이너가 죽으면 즉시 실패 판정 ([#230](https://github.com/kisagge/blog-project/pull/230))
 
 ## [0.111.4] - 2026-11-18
 
