@@ -35,12 +35,25 @@ docker tag "$IMAGE:$SHA" "$IMAGE:latest"
 echo "== up =="
 docker compose up -d
 
-# compose 버전에 상관없이 동작하도록 healthcheck 상태를 직접 폴링(compose.yaml의 /api/health 핑).
+# 헬스 상태를 직접 폴링(compose 버전 무관). 컨테이너 상태와 healthcheck 상태를 함께 읽는다 —
+# healthcheck가 없는 컨테이너(손으로 복사한 옛 서버 compose.yaml)는 .State.Health 자체가 없어
+# 단순 '{{.State.Health.Status}}'는 템플릿 오류가 난다(첫 실전 배포에서 'unknown'으로 3분 대기 후 실패).
+probe() {
+  # healthcheck가 없을 때: 컨테이너 안에서 /api/health 직접 확인(런타임 이미지엔 curl·wget이 없어 node fetch).
+  docker compose exec -T web node -e "fetch('http://127.0.0.1:3010/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" >/dev/null 2>&1
+}
 status=""
 i=0
 while [ "$i" -lt "$TRIES" ]; do
-  status=$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q web)" 2>/dev/null || echo unknown)
-  [ "$status" = healthy ] || [ "$status" = unhealthy ] && break
+  # shellcheck disable=SC2016 # Go 템플릿(셸 확장 아님)
+  state=$(docker inspect --format '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$(docker compose ps -q web)" 2>/dev/null || echo "unknown unknown")
+  case "$state" in
+    running\ none) if probe; then status=healthy; else status=starting; fi ;;
+    running\ *) status=${state#running } ;;
+    unknown\ *) status=unknown ;; # 일시적 조회 실패 — 계속 대기
+    *) status="exited(${state%% *})" ;; # 종료·재시작 루프 — 더 기다릴 필요 없음
+  esac
+  case "$status" in healthy | unhealthy | exited*) break ;; esac
   i=$((i + 1))
   sleep "$INTERVAL"
 done

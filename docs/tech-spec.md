@@ -65,7 +65,7 @@ CI/CD: main push → GitHub Actions
 - **디스크 고갈**: 누적된 미사용 이미지로 `/`가 차서 레이어 압축 해제가 정지 → `pull` 전 정리 단계 추가 + 단계별 계측 로깅.
 - **메모리 부족(OOM)**: 512MB 인스턴스에서 배포 중 OOM으로 컨테이너 사망(→ 504) → 스왑 2GB 추가로 해소, 인스턴스 증설 권고.
 - **배포 워크플로**: `test → build/push(GHCR) → SSH 배포(+ `prisma migrate deploy`)`. 수동 트리거(workflow_dispatch) 지원, 타임아웃으로 실패 가시화.
-- **배포 안전장치(`scripts/deploy-remote.sh`)**: 이전 배포는 SSH로 `compose pull && up -d`만 해서 ① 연속 머지 시 실행이 겹치면 빌드가 늦은 **구버전이 신버전을 덮어쓸** 수 있고(레지스트리 `:latest` 경합) ② 마이그레이션 전 백업이 없었으며 ③ 컨테이너가 떠도 실제로 healthy인지 확인하지 않았고 ④ 엔트리포인트의 마이그레이션 출력이 로그에 남지 않았다. → 배포 잡 `concurrency`(진행 중 배포 유지) + 이후 코드 커밋이 있으면 건너뛰기(문서 커밋만 뒤따르면 배포), **커밋 이미지 `:sha`를 받아 로컬 `:latest`로 지정**(손으로 복사한 서버 `compose.yaml` 무수정), 기동 전 실행 중 컨테이너에서 **DB 백업(실패 시 중단)**, compose 버전 무관하게 `docker inspect` 헬스 폴링(최대 3분, 실패 시 로그 출력), 기동 로그·러너의 외부 헬스 확인. 원격 단계를 스크립트로 빼 `script_path`로 전달해 **가짜 docker로 순서·실패 경로를 단위 테스트**하고, 로컬 레지스트리 + 실제 Docker로 최초 배포·갱신 배포·불량 이미지 실패까지 e2e 확인. (`appleboy/ssh-action@v1`에 없는 `script_stop` 입력도 제거 — 무시되던 값.)
+- **배포 안전장치(`scripts/deploy-remote.sh`)**: 이전 배포는 SSH로 `compose pull && up -d`만 해서 ① 연속 머지 시 실행이 겹치면 빌드가 늦은 **구버전이 신버전을 덮어쓸** 수 있고(레지스트리 `:latest` 경합) ② 마이그레이션 전 백업이 없었으며 ③ 컨테이너가 떠도 실제로 healthy인지 확인하지 않았고 ④ 엔트리포인트의 마이그레이션 출력이 로그에 남지 않았다. → 배포 잡 `concurrency`(진행 중 배포 유지) + 이후 코드 커밋이 있으면 건너뛰기(문서 커밋만 뒤따르면 배포), **커밋 이미지 `:sha`를 받아 로컬 `:latest`로 지정**(손으로 복사한 서버 `compose.yaml` 무수정), 기동 전 실행 중 컨테이너에서 **DB 백업(실패 시 중단)**, compose 버전 무관하게 `docker inspect` 헬스 폴링(최대 3분, 실패 시 로그 출력), 기동 로그·러너의 외부 헬스 확인. 원격 단계를 스크립트로 빼 `script_path`로 전달해 **가짜 docker로 순서·실패 경로를 단위 테스트**하고, 로컬 레지스트리 + 실제 Docker로 최초 배포·갱신 배포·불량 이미지 실패까지 e2e 확인. (`appleboy/ssh-action@v1`에 없는 `script_stop` 입력도 제거 — 무시되던 값.) **첫 실전 배포에서 발견**: 서버 `compose.yaml`이 healthcheck 도입 전 사본이라 컨테이너에 `.State.Health`가 없어 `{{.State.Health.Status}}` 템플릿이 오류 → 상태 `unknown`으로 3분 대기 후 실패(앱은 정상 기동). e2e가 레포의 compose(healthcheck 있음)를 써서 놓친 조건이라, 상태·헬스를 `{{.State.Status}} {{if .State.Health}}…{{else}}none{{end}}`로 함께 읽고 healthcheck가 없으면 컨테이너 안에서 `node` fetch로 `/api/health`를 직접 확인, 컨테이너가 종료·재시작 루프면 즉시 실패하도록 수정. 운영과 같은 조건(healthcheck 없는 compose + `node:24-slim`)으로 e2e 재검증(크래시 이미지 8초 만에 실패 판정).
 - **CI 위생 게이트**: test 잡이 `tsc → eslint → prettier --check → vitest → pnpm audit(--prod --audit-level moderate)`를 통과해야 빌드·배포로 진행. 포맷·**moderate 이상 런타임 취약점** 회귀를 머지 전 차단(취약점 0건 달성 후 critical → moderate로 강화. dev 의존성은 배포 산출물에 없어 게이트 제외, Dependabot이 처리).
 - **의존성 자동화**: `.github/dependabot.yml`이 npm·GitHub Actions·Docker 베이스이미지를 주간 점검, minor/patch는 그룹 PR 1개로 묶고 major는 개별 PR로 분리(공급망·핀 회귀 차단, PR 노이즈 최소화).
 - **헬스체크 + 행 감지**: `/api/health`가 `SELECT 1` DB 핑까지 확인(상태 문자열만 반환, 내부정보 미노출)하고 `compose.yaml` `healthcheck`가 30초마다 프로브 — `restart: unless-stopped`가 못 잡는 "응답은 살아있되 DB가 죽은 행" 상태를 감지해 컨테이너를 unhealthy로 표시·재시작 유도. 런타임 이미지에 curl/wget이 없어 **node 글로벌 fetch**로 프로브, `start_period`로 `migrate deploy`+`next start` 기동 시간 확보. 헬스는 `proxy.ts` matcher에서 제외해 IP 레이트리밋·`/admin` 가드를 우회(프로브가 항상 응답).
@@ -164,7 +164,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 820 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 823 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -308,5 +308,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 820), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 823), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

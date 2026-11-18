@@ -22,17 +22,24 @@ let log: string;
 // 가짜 docker: 호출 인자를 log에 한 줄씩 기록. 시나리오는 env로.
 //  FAKE_RUNNING=1 → compose ps가 컨테이너 id 출력 / FAKE_BACKUP_FAIL=1 → 백업 exec 실패
 //  FAKE_HEALTH="starting healthy" → inspect 호출마다 순서대로 상태 반환(마지막 값 유지)
+// 가짜 docker: 호출 인자를 log에 한 줄씩 기록. 시나리오는 env로.
+//  FAKE_RUNNING=1 → compose ps가 컨테이너 id 출력 / FAKE_BACKUP_FAIL=1 → 백업 exec 실패
+//  FAKE_HEALTH="starting healthy" → inspect 호출마다 순서대로 헬스 상태(마지막 값 유지).
+//    "none"은 healthcheck 없는 컨테이너(손으로 복사한 옛 compose.yaml), "exited"는 컨테이너 종료
+//  FAKE_PROBE=ok|fail → healthcheck 없을 때 컨테이너 안 /api/health 직접 확인 결과
 const FAKE_DOCKER = `#!/bin/sh
 echo "$*" >> "$FAKE_LOG"
 case "$*" in
   "compose ps --status running -q web") [ "\${FAKE_RUNNING:-0}" = 1 ] && echo cid123; exit 0 ;;
   "compose ps -q web") echo cid123; exit 0 ;;
   "compose exec -T web sh scripts/backup-db.sh") [ "\${FAKE_BACKUP_FAIL:-0}" = 1 ] && exit 1; echo "[backup] ok"; exit 0 ;;
+  "compose exec -T web node -e"*) [ "\${FAKE_PROBE:-fail}" = ok ] && exit 0; exit 1 ;;
   inspect*)
     n=$(grep -c '^inspect' "$FAKE_LOG")
     set -- \${FAKE_HEALTH:-healthy}
     i=1; s=""; for x in "$@"; do s="$x"; [ "$i" -ge "$n" ] && break; i=$((i+1)); done
-    echo "$s"; exit 0 ;;
+    case "$s" in exited) echo "exited none" ;; *) echo "running $s" ;; esac
+    exit 0 ;;
 esac
 exit 0
 `;
@@ -126,6 +133,44 @@ describe("deploy-remote.sh", () => {
     });
     expect(r.status).not.toBe(0);
     expect(calls()).toContain("compose logs --tail=80 web");
+  });
+
+  test("healthcheck 없는 compose(옛 서버 파일): 컨테이너 안에서 /api/health 직접 확인해 통과", () => {
+    const r = deploy({
+      DEPLOY_SHA: SHA,
+      FAKE_RUNNING: "1",
+      FAKE_HEALTH: "none",
+      FAKE_PROBE: "ok",
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain(`deployed ${SHA}`);
+  });
+
+  test("healthcheck 없고 앱이 응답하지 않으면 시간 초과로 실패", () => {
+    const r = deploy({
+      DEPLOY_SHA: SHA,
+      FAKE_RUNNING: "1",
+      FAKE_HEALTH: "none",
+      FAKE_PROBE: "fail",
+      DEPLOY_HEALTH_TRIES: "3",
+    });
+    expect(r.status).not.toBe(0);
+    expect(calls()).toContain("compose logs --tail=80 web");
+  });
+
+  test("컨테이너가 종료되면 기다리지 않고 바로 실패", () => {
+    const r = deploy({
+      DEPLOY_SHA: SHA,
+      FAKE_RUNNING: "1",
+      FAKE_HEALTH: "starting exited",
+      DEPLOY_HEALTH_TRIES: "30",
+    });
+    expect(r.status).not.toBe(0);
+    const inspects = readFileSync(log, "utf8")
+      .split("\n")
+      .filter((l) => l.startsWith("inspect")).length;
+    expect(inspects).toBe(2);
+    expect(r.stdout).toContain("exited");
   });
 
   test("DEPLOY_SHA 없으면 docker를 건드리기 전에 실패", () => {
