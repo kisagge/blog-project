@@ -85,16 +85,22 @@ jobs:
             echo "::notice::main에 이후 코드 변경이 있어 그 커밋의 배포에 맡기고 $GITHUB_SHA 배포를 건너뜀"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
-      # 서버 작업은 scripts/deploy-remote.sh(커밋 이미지 pull → 배포 전 DB 백업 → 기동 → 헬스 대기).
+      # 레포 compose.yaml을 서버에 맞추기 위해 base64로 전달(스크립트가 검증·백업·diff 후 교체).
+      - name: compose.yaml 인코딩
+        id: compose
+        if: steps.guard.outputs.skip != 'true'
+        run: echo "b64=$(base64 -w0 compose.yaml)" >> "$GITHUB_OUTPUT"
+      # 서버 작업은 scripts/deploy-remote.sh(compose 동기화 → 커밋 이미지 pull → 배포 전 DB 백업 → 기동 → 헬스 대기).
       - uses: appleboy/ssh-action@v1
         if: steps.guard.outputs.skip != 'true'
         env:
           DEPLOY_SHA: ${{ github.sha }}
+          DEPLOY_COMPOSE_B64: ${{ steps.compose.outputs.b64 }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: DEPLOY_SHA
+          envs: DEPLOY_SHA,DEPLOY_COMPOSE_B64
           command_timeout: 20m
           script_path: scripts/deploy-remote.sh
       - name: 외부 헬스 확인(nginx 경유)

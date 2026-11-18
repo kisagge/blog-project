@@ -11,6 +11,12 @@ services:
     ports:
       - "127.0.0.1:3010:3010"
     restart: unless-stopped
+    # 컨테이너 로그 회전(json-file 기본은 무제한 → 디스크 고갈 위험). 10MB × 3개 = 최대 30MB.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     # DB 핑까지 확인하는 헬스체크. 런타임 이미지에 curl/wget이 없어 node 글로벌 fetch 사용.
     # start_period로 migrate deploy + next start 기동 시간 확보.
     healthcheck:
