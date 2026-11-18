@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
+  existsSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -33,6 +35,7 @@ case "$*" in
   "compose ps --status running -q web") [ "\${FAKE_RUNNING:-0}" = 1 ] && echo cid123; exit 0 ;;
   "compose ps -q web") echo cid123; exit 0 ;;
   "compose exec -T web sh scripts/backup-db.sh") [ "\${FAKE_BACKUP_FAIL:-0}" = 1 ] && exit 1; echo "[backup] ok"; exit 0 ;;
+  "compose -f compose.yaml.new config -q") [ "\${FAKE_CONFIG_FAIL:-0}" = 1 ] && exit 1; exit 0 ;;
   "compose exec -T web node -e"*) [ "\${FAKE_PROBE:-fail}" = ok ] && exit 0; exit 1 ;;
   inspect*)
     n=$(grep -c '^inspect' "$FAKE_LOG")
@@ -171,6 +174,68 @@ describe("deploy-remote.sh", () => {
       .filter((l) => l.startsWith("inspect")).length;
     expect(inspects).toBe(2);
     expect(r.stdout).toContain("exited");
+  });
+
+  describe("compose.yaml 동기화(DEPLOY_COMPOSE_B64)", () => {
+    const OLD = "services:\n  web:\n    image: x:latest\n";
+    const NEW = OLD + "    logging:\n      driver: json-file\n";
+    const b64 = (t: string) => Buffer.from(t).toString("base64");
+    const compose = () => readFileSync(join(dir, "compose.yaml"), "utf8");
+    const backups = () =>
+      readdirSync(dir).filter((f) => f.startsWith("compose.yaml.bak-"));
+
+    test("내용이 다르면 기존 파일 백업 + diff 출력 후 교체, 그다음 배포", () => {
+      writeFileSync(join(dir, "compose.yaml"), OLD);
+      const r = deploy({
+        DEPLOY_SHA: SHA,
+        FAKE_RUNNING: "1",
+        DEPLOY_COMPOSE_B64: b64(NEW),
+      });
+      expect(r.status).toBe(0);
+      expect(compose()).toBe(NEW);
+      expect(backups()).toHaveLength(1);
+      expect(readFileSync(join(dir, backups()[0]), "utf8")).toBe(OLD);
+      expect(r.stdout).toContain("+    logging:");
+      expect(existsSync(join(dir, "compose.yaml.new"))).toBe(false);
+      // 검증이 pull·백업보다 먼저
+      expect(indexOf("compose -f compose.yaml.new config -q")).toBeLessThan(
+        indexOf(`pull ${IMAGE}:${SHA}`),
+      );
+    });
+
+    test("같으면 백업·교체 없이 배포", () => {
+      writeFileSync(join(dir, "compose.yaml"), NEW);
+      const r = deploy({
+        DEPLOY_SHA: SHA,
+        FAKE_RUNNING: "1",
+        DEPLOY_COMPOSE_B64: b64(NEW),
+      });
+      expect(r.status).toBe(0);
+      expect(backups()).toHaveLength(0);
+      expect(r.stdout).toContain("compose.yaml 변경 없음");
+    });
+
+    test("새 compose가 유효하지 않으면 아무것도 바꾸지 않고 중단", () => {
+      writeFileSync(join(dir, "compose.yaml"), OLD);
+      const r = deploy({
+        DEPLOY_SHA: SHA,
+        FAKE_RUNNING: "1",
+        FAKE_CONFIG_FAIL: "1",
+        DEPLOY_COMPOSE_B64: b64("broken: [\n"),
+      });
+      expect(r.status).not.toBe(0);
+      expect(compose()).toBe(OLD);
+      expect(backups()).toHaveLength(0);
+      expect(indexOf(`pull ${IMAGE}:${SHA}`)).toBe(-1);
+      expect(existsSync(join(dir, "compose.yaml.new"))).toBe(false);
+    });
+
+    test("DEPLOY_COMPOSE_B64가 없으면 서버 파일 그대로(수동 실행 호환)", () => {
+      writeFileSync(join(dir, "compose.yaml"), OLD);
+      const r = deploy({ DEPLOY_SHA: SHA, FAKE_RUNNING: "1" });
+      expect(r.status).toBe(0);
+      expect(compose()).toBe(OLD);
+    });
   });
 
   test("DEPLOY_SHA 없으면 docker를 건드리기 전에 실패", () => {

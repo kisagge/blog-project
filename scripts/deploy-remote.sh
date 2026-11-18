@@ -14,6 +14,31 @@ TRIES="${DEPLOY_HEALTH_TRIES:-36}"
 INTERVAL="${DEPLOY_HEALTH_INTERVAL:-5}"
 cd "${DEPLOY_DIR:-/srv/byjang}"
 
+# compose.yaml 동기화: 워크플로가 레포의 compose.yaml을 base64로 넘긴다(DEPLOY_COMPOSE_B64).
+# 서버 사본이 손으로 복사한 옛 파일이라 healthcheck·UPLOAD_DIR·로그 제한이 빠져 있었다 → 레포를 기준으로 맞춘다.
+# 먼저 문법 검증 후, 다르면 기존 파일을 백업하고 diff를 남긴 뒤 교체. 값이 없으면(수동 실행) 서버 파일 그대로.
+if [ -n "${DEPLOY_COMPOSE_B64:-}" ]; then
+  printf '%s' "$DEPLOY_COMPOSE_B64" | base64 -d > compose.yaml.new
+  if ! docker compose -f compose.yaml.new config -q; then
+    rm -f compose.yaml.new
+    echo "::error::레포 compose.yaml 검증 실패 — 배포 중단(서버 파일 변경 없음)"
+    exit 1
+  fi
+  if [ -f compose.yaml ] && cmp -s compose.yaml compose.yaml.new; then
+    rm -f compose.yaml.new
+    echo "== compose.yaml 변경 없음 =="
+  else
+    backup=/dev/null
+    if [ -f compose.yaml ]; then
+      backup="compose.yaml.bak-$(date +%Y%m%d-%H%M%S)"
+      cp compose.yaml "$backup"
+    fi
+    echo "== compose.yaml 갱신(이전 파일: $backup) =="
+    diff -u "$backup" compose.yaml.new || true
+    mv compose.yaml.new compose.yaml
+  fi
+fi
+
 echo "== disk before =="
 df -h / || true
 # 미사용 이미지 정리(디스크 확보). 실행 중 컨테이너의 이미지는 남는다. 롤백은 레지스트리의 :sha로.

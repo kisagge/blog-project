@@ -2,6 +2,13 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.111.6] - 2026-11-18
+
+### Changed
+
+- 배포 시 서버 compose.yaml을 레포 버전으로 자동 동기화(검증·백업·diff 기록) — 컨테이너 로그 회전(10MB×3), healthcheck, 업로드 저장 위치(/data/uploads)가 운영에 적용
+- 서버 오류 발생 시 요청 경로·라우트·digest를 로그에 한 줄로 기록(오류 화면의 digest로 바로 추적) ([#231](https://github.com/kisagge/blog-project/pull/231))
+
 ## [0.111.5] - 2026-11-18
 
 ### Fixed
