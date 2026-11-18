@@ -7,7 +7,7 @@
 ### Changed
 
 - 배포 시 서버 compose.yaml을 레포 버전으로 자동 동기화(검증·백업·diff 기록) — 컨테이너 로그 회전(10MB×3), healthcheck, 업로드 저장 위치(/data/uploads)가 운영에 적용
-- 서버 오류 발생 시 요청 경로·라우트·digest를 로그에 한 줄로 기록(오류 화면의 digest로 바로 추적)
+- 서버 오류 발생 시 요청 경로·라우트·digest를 로그에 한 줄로 기록(오류 화면의 digest로 바로 추적) ([#231](https://github.com/kisagge/blog-project/pull/231))
 
 ## [0.111.5] - 2026-11-18
 
