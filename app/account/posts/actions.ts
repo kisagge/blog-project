@@ -29,8 +29,8 @@ export async function submitPost(
   if (intent === "draft") {
     const r = await saveDraft(session.userId, { id, ...parsed.data });
     if (!r.ok) return { error: r.error };
-    revalidatePath("/account");
-    redirect("/account");
+    revalidatePath("/account/posts");
+    redirect("/account/posts"); // 임시저장 목록이 있는 '내 글' 탭(프로필 탭 /account가 아니라)
   }
   if (intent === "publish") {
     const r = await publishPost(session.userId, { id, ...parsed.data });
