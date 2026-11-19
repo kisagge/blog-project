@@ -66,6 +66,8 @@ export async function generateMetadata({
     // 명시적 canonical로 ?c=·?sort= 쿼리 중복 인덱싱 방지(metadataBase가 절대화).
     alternates: { canonical: `/feed/${slug}` },
     openGraph: { type: "article", title: feed.title, description },
+    // 회원공개 글을 비회원(=크롤러)이 보면 가입 안내 게이트뿐 — 색인 제외.
+    ...(access === "members-only" && { robots: { index: false } }),
   };
 }
 
