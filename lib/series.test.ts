@@ -176,3 +176,26 @@ describe("멤버십·순서 변경", () => {
     expect(p?.seriesId).toBeNull(); // 글은 보존
   });
 });
+
+describe("hasVisibleSeries(내비 시리즈 링크 노출 여부)", () => {
+  test("뷰어가 볼 수 있는 시리즈 글이 있으면 true", async () => {
+    expect(await m.hasVisibleSeries("anon")).toBe(true);
+  });
+
+  test("가시 글이 모두 숨겨지면 비회원은 false, 관리자는 여전히 true", async () => {
+    await prisma.feed.updateMany({
+      where: { id: { in: ["a", "b", "c"] } },
+      data: { hiddenAt: new Date() },
+    });
+    try {
+      expect(await m.hasVisibleSeries("anon")).toBe(false);
+      expect(await m.hasVisibleSeries("member")).toBe(false);
+      expect(await m.hasVisibleSeries("admin")).toBe(true);
+    } finally {
+      await prisma.feed.updateMany({
+        where: { id: { in: ["a", "b", "c"] } },
+        data: { hiddenAt: null },
+      });
+    }
+  });
+});

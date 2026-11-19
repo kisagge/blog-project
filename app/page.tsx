@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { guardPublicAccess } from "@/lib/site-config";
 import { searchFeeds } from "@/lib/feeds";
+import { hasVisibleSeries } from "@/lib/series";
 import { getViewerRole } from "@/lib/dal";
 import { kstDate, isoInstant } from "@/lib/kst";
 import { buildSiteJsonLd, jsonLdHtml } from "@/lib/structured-data";
@@ -12,11 +13,10 @@ export default async function Home() {
   await guardPublicAccess();
   const role = await getViewerRole();
   // 최근 피드 글(뷰어가 볼 수 있는 관리자 글) 미리보기.
-  const { items: recent } = await searchFeeds({
-    role,
-    take: 5,
-    author: "admin",
-  });
+  const [{ items: recent }, showSeries] = await Promise.all([
+    searchFeeds({ role, take: 5, author: "admin" }),
+    hasVisibleSeries(role),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-14 px-6 py-16">
@@ -103,6 +103,9 @@ export default async function Home() {
             desc="조회수 높은 글"
           />
           <SectionCard href="/feed/tags" title="태그" desc="주제별 모아보기" />
+          {showSeries && (
+            <SectionCard href="/series" title="시리즈" desc="이어 읽는 연재" />
+          )}
         </ul>
       </section>
     </main>
