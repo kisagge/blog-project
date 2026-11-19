@@ -1,7 +1,6 @@
 import { readFile } from "fs/promises";
-import { join } from "path";
+import { uploadPath } from "@/lib/save-image";
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "data/uploads";
 const MIME: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -18,7 +17,7 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
   try {
-    const buf = await readFile(join(UPLOAD_DIR, name));
+    const buf = await readFile(uploadPath(name));
     const ext = name.split(".").pop()!.toLowerCase();
     return new Response(new Uint8Array(buf), {
       headers: {

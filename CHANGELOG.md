@@ -2,6 +2,12 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.112.1] - 2026-11-19
+
+### Fixed
+
+- 빌드마다 나던 "동적 파일 접근으로 프로젝트 전체가 서버 트레이스에 포함" 경고 4건 제거 — 업로드 경로를 공용 `uploadPath()`로 모으고 런타임 경로임을 표시(`turbopackIgnore`). 업로드 라우트 트레이스 642 → 113 파일(README·docs 등 제외). 배포 이미지는 standalone이 아니라 산출물 변화는 없음 ([#238](https://github.com/kisagge/blog-project/pull/238))
+
 ## [0.112.0] - 2026-11-19
 
 ### Added
