@@ -38,7 +38,7 @@ const SCHEMA = [
   )`,
   `CREATE UNIQUE INDEX "Series_slug_key" ON "Series"("slug")`,
   `CREATE UNIQUE INDEX "Feed_slug_key" ON "Feed"("slug")`,
-  `CREATE INDEX "Feed_status_visibility_createdAt_idx" ON "Feed"("status", "visibility", "createdAt")`,
+  `CREATE INDEX "Feed_status_visibility_publishedAt_idx" ON "Feed"("status", "visibility", "publishedAt")`,
   `CREATE INDEX "Feed_authorId_status_publishedAt_idx" ON "Feed"("authorId", "status", "publishedAt")`,
   `CREATE INDEX "Feed_seriesId_seriesOrder_idx" ON "Feed"("seriesId", "seriesOrder")`,
   `CREATE INDEX "Feed_status_scheduledAt_idx" ON "Feed"("status", "scheduledAt")`,
@@ -262,6 +262,17 @@ const SCHEMA = [
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt")`,
+  // 게시 글 publishedAt 불변식 — prisma/migrations/*_feed_published_at_invariant/migration.sql과 동기화 필수.
+  `CREATE TRIGGER "feed_published_at_ai" AFTER INSERT ON "Feed"
+WHEN NEW."status" = 'published' AND NEW."publishedAt" IS NULL
+BEGIN
+  UPDATE "Feed" SET "publishedAt" = NEW."createdAt" WHERE "id" = NEW."id";
+END`,
+  `CREATE TRIGGER "feed_published_at_au" AFTER UPDATE OF "status" ON "Feed"
+WHEN NEW."status" = 'published' AND NEW."publishedAt" IS NULL
+BEGIN
+  UPDATE "Feed" SET "publishedAt" = strftime('%Y-%m-%dT%H:%M:%f+00:00', 'now') WHERE "id" = NEW."id";
+END`,
   // 전문 검색(FTS5) — prisma/migrations/*_add_feed_fts/migration.sql과 동기화 필수.
   // external content + trigram. 트리거가 Feed 변경을 색인하므로 백필 INSERT는 불필요(빈 테이블).
   `CREATE VIRTUAL TABLE "feed_fts" USING fts5(

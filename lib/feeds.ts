@@ -4,8 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 import { makeSnippet } from "@/lib/content";
 import { tagSlugVariants } from "@/lib/tags";
+import { postedAt } from "@/lib/feed-dates";
 
 export const FEED_PAGE_SIZE = 10;
+
+// 공개 표면의 최신순 = 게시일(publishedAt) 기준. 작성일은 예약 발행 글에서 실제 게시보다 이르다.
+// 게시 글의 publishedAt은 트리거로 항상 채워지고, 같은 시각이면 작성일로 정렬을 고정한다.
+const LATEST = [
+  { publishedAt: "desc" as const },
+  { createdAt: "desc" as const },
+];
 
 // 목록 카드(toFeedCard) 호환 select — searchFeeds·저장 목록 등 공용.
 export const FEED_LIST_SELECT = {
@@ -14,6 +22,7 @@ export const FEED_LIST_SELECT = {
   title: true,
   summary: true,
   createdAt: true,
+  publishedAt: true, // 카드 표시·정렬용 게시일(postedAt)
   viewCount: true,
   visibility: true,
   author: { select: { id: true, nickname: true } },
@@ -44,7 +53,7 @@ async function ftsRankedIds(tokens: string[]): Promise<string[]> {
        FROM feed_fts
        JOIN "Feed" f ON f.rowid = feed_fts.rowid
       WHERE feed_fts MATCH ?
-      ORDER BY bm25(feed_fts, 10.0, 5.0, 1.0) ASC, f."createdAt" DESC
+      ORDER BY bm25(feed_fts, 10.0, 5.0, 1.0) ASC, COALESCE(f."publishedAt", f."createdAt") DESC
       LIMIT ${FTS_CANDIDATE_CAP}`,
     ftsMatchExpr(tokens),
   );
@@ -116,12 +125,10 @@ export async function searchFeeds({
     });
     if (sort === "popular") {
       rows.sort(
-        (a, b) =>
-          b.viewCount - a.viewCount ||
-          b.createdAt.getTime() - a.createdAt.getTime(),
+        (a, b) => b.viewCount - a.viewCount || +postedAt(b) - +postedAt(a),
       );
     } else if (sort === "latest") {
-      rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      rows.sort((a, b) => +postedAt(b) - +postedAt(a));
     } else {
       const order = new Map(rankedIds.map((id, i) => [id, i] as const));
       rows.sort((a, b) => order.get(a.id)! - order.get(b.id)!); // 관련도순(현행)
@@ -145,9 +152,7 @@ export async function searchFeeds({
       }),
     },
     orderBy:
-      sort === "popular"
-        ? [{ viewCount: "desc" as const }, { createdAt: "desc" as const }]
-        : { createdAt: "desc" as const },
+      sort === "popular" ? [{ viewCount: "desc" as const }, ...LATEST] : LATEST,
     select: FEED_LIST_SELECT,
     skip,
     take: take + 1,
@@ -166,7 +171,7 @@ export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
       hiddenAt: null,
       visibility: { in: listableVisibilities(role) },
     },
-    orderBy: [{ viewCount: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ viewCount: "desc" }, ...LATEST],
     take,
     select: FEED_LIST_SELECT,
   });
@@ -182,8 +187,8 @@ export async function getArchiveFeeds(role: ViewerRole) {
       authorId: null,
       visibility: { in: listableVisibilities(role) },
     },
-    orderBy: { createdAt: "desc" },
-    select: { slug: true, title: true, createdAt: true },
+    orderBy: LATEST,
+    select: { slug: true, title: true, createdAt: true, publishedAt: true },
   });
 }
 
@@ -199,7 +204,7 @@ export async function getFeedsByTag(slug: string, role: ViewerRole) {
       visibility: { in: listableVisibilities(role) },
       feedTags: { some: { tag: { slug: { in: tagSlugVariants(slug) } } } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: LATEST,
     select: FEED_LIST_SELECT,
   });
 }
@@ -221,10 +226,15 @@ export async function countFeedsByTag(
 
 export type AdjacentFeed = { slug: string; title: string };
 
-// 글 상세 이전/다음 내비: 현재 글 기준 시간순 인접 1건씩(이전=더 오래된, 다음=더 최신).
+// 글 상세 이전/다음 내비: 현재 글 기준 게시일순 인접 1건씩(이전=더 오래된, 다음=더 최신).
 // 뷰어 가시 범위 + 같은 작성자 분류(관리자 글↔관리자 글, 회원 글↔회원 글)로 한정.
 export async function getAdjacentFeeds(
-  feed: { id: string; createdAt: Date; authorId: string | null },
+  feed: {
+    id: string;
+    createdAt: Date;
+    publishedAt?: Date | null;
+    authorId: string | null;
+  },
   role: ViewerRole,
 ): Promise<{ prev: AdjacentFeed | null; next: AdjacentFeed | null }> {
   const base = {
@@ -237,15 +247,16 @@ export async function getAdjacentFeeds(
     id: { not: feed.id },
   } as const;
   const select = { slug: true, title: true } as const;
+  const at = postedAt(feed);
   const [prev, next] = await Promise.all([
     prisma.feed.findFirst({
-      where: { ...base, createdAt: { lt: feed.createdAt } },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      where: { ...base, publishedAt: { lt: at } },
+      orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
       select,
     }),
     prisma.feed.findFirst({
-      where: { ...base, createdAt: { gt: feed.createdAt } },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      where: { ...base, publishedAt: { gt: at } },
+      orderBy: [{ publishedAt: "asc" }, { id: "asc" }],
       select,
     }),
   ]);
@@ -271,13 +282,14 @@ export async function getRelatedFeeds(
       visibility: { in: listableVisibilities(role) },
       feedTags: { some: { tag: { slug: { in: tagSlugs } } } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: LATEST,
     take: Math.max(take * 4, 20), // 공유 태그 수로 재정렬할 후보 여유
     select: {
       slug: true,
       title: true,
       viewCount: true,
       createdAt: true,
+      publishedAt: true,
       feedTags: { select: { tag: { select: { slug: true } } } },
     },
   });
@@ -287,10 +299,10 @@ export async function getRelatedFeeds(
       slug: f.slug,
       title: f.title,
       viewCount: f.viewCount,
-      createdAt: f.createdAt,
+      postedAt: postedAt(f),
       shared: f.feedTags.filter((ft) => wanted.has(ft.tag.slug)).length,
     }))
-    .sort((a, b) => b.shared - a.shared || +b.createdAt - +a.createdAt)
+    .sort((a, b) => b.shared - a.shared || +b.postedAt - +a.postedAt)
     .slice(0, take)
     .map(({ slug, title, viewCount }) => ({ slug, title, viewCount }));
 }

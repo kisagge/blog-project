@@ -166,7 +166,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 829 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 838 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -275,6 +275,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **발행 트리거(앱 내부 스케줄러)**: 컨테이너(`next start`)가 항상 떠 있으므로 **Next `instrumentation.ts`**가 부팅 시 `startPublishScheduler`를 1회 시작 → **2분 간격**으로 `publishDueFeeds`(`updateMany`로 `status="draft" ∧ scheduledAt≤now` 일괄 게시·`scheduledAt` 비움)를 직접 호출. **외부 cron·시크릿 불필요**(GitHub Actions schedule은 저활동 레포에서 수 시간 지연돼 신뢰 불가 → 제거). 단일 프로세스라 인터벌 1개(globalThis 가드로 중복 방지), `updateMany`라 멱등. **수동 백업**: 같은 로직을 `/api/cron/publish-scheduled`(헤더 `CRON_SECRET` **상수시간 비교**, 미설정 401)로 노출하고 `publish-scheduled.yml`(`workflow_dispatch`)로 즉시 트리거 가능.
 - **시각**: 입력은 **react-day-picker**(날짜) + time 입력 → `"YYYY-MM-DDTHH:MM"`(KST 벽시계)를 hidden input으로 제출, `kstWallClockToUtc`로 UTC 변환(브라우저 TZ 무관·달력 오버플로 거부). 과거/무효는 폼 에러. 작성 폼에 **사람이 읽는 미리보기**(`formatKstWallClock` → "6월 23일 (화) 오전 7:23 발행 예정") + **과거 시각 클라 경고**(`server-only`인 `decideSchedule` 대신 `lib/kst`로 판정). **수정 화면엔 예약 컨트롤 미노출**(생성 전용 보장: `updateFeed`는 `scheduledAt` 무시).
 - **관리자 운영**: 목록에 "🕒 예약: {시각}" 배지 + **"지금 게시"**(예약 초안 즉시 발행) 안전밸브. 회원 임시저장(`scheduledAt` null)은 영향 없음.
+- **게시일 기준 정렬(`publishedAt` 불변식)**: 공개 목록·검색·태그·아카이브·RSS·llms.txt·이전/다음·상세 날짜가 모두 **작성일(`createdAt`)** 기준이라, 9월에 써 둔 글을 11월에 예약 발행하면 9월 위치에 **묻히고** RSS `pubDate`도 9월이 됐다(관리자 즉시 게시 글엔 `publishedAt`이 아예 없었음). 공개 "게시일"을 `publishedAt` 하나로 통일 — 마이그레이션이 기존 게시 글을 작성 시각으로 백필하고, **SQLite 트리거**(FTS와 같은 방식, `lib/test-db.ts` 동기화)가 "게시 상태인 글은 `publishedAt`이 항상 있다"를 보장(삽입 시 비면 작성 시각, 게시로 바뀔 때 비면 현재 시각, 명시 값은 유지). 어느 코드 경로·테스트 픽스처도 놓치지 않는다. 정렬은 `[publishedAt desc, createdAt desc]`(FTS 원시 SQL은 `COALESCE`), 표시는 `postedAt()` 헬퍼, 목록 인덱스를 `(status, visibility, publishedAt)`으로 교체, 목록 카드의 날짜 필드는 `date`(게시일)로 이름 변경.
 
 ### 4.24 발견성·구독 보강 (수정일·RSS 전문·아카이브·소개·llms.txt)
 
@@ -310,5 +311,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 829), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 838), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

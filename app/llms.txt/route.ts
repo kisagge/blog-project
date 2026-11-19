@@ -16,7 +16,7 @@ export async function GET() {
   const [posts, about] = await Promise.all([
     prisma.feed.findMany({
       where: { status: "published", visibility: "public", hiddenAt: null },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }], // 게시일순
       take: 50,
       select: { slug: true, title: true, summary: true },
     }),

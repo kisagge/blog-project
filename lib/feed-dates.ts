@@ -18,6 +18,15 @@ export function bodyChanged(prev: Body, next: Body): boolean {
   return normalizeEol(prev.summary ?? "") !== normalizeEol(next.summary ?? "");
 }
 
+// 공개 "게시일": 게시(공개 전환) 시각, 없으면 작성 시각. 목록·상세·RSS·아카이브 공용.
+// 게시 글은 트리거로 publishedAt이 항상 채워지지만, 타입상 null 가능이라 작성일로 폴백.
+export function postedAt(feed: {
+  publishedAt?: Date | null;
+  createdAt: Date;
+}): Date {
+  return feed.publishedAt ?? feed.createdAt;
+}
+
 // 글 상단에 "수정" 날짜를 보일지. 표시 날짜보다 KST 날짜가 뒤인 수정만 노출
 // (같은 날의 오타 정정은 생략, 예약 글의 게시 전 편집처럼 더 이른 시각도 생략).
 export function visibleEditedAt(

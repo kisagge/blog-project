@@ -39,8 +39,9 @@ model Feed {
   feedTags  FeedTag[]
   revisions FeedRevision[]
 
-  // 목록 쿼리(searchFeeds): status=published + visibility IN + createdAt 정렬.
-  @@index([status, visibility, createdAt])
+  // 목록 쿼리(searchFeeds): status=published + visibility IN + publishedAt(게시일) 정렬.
+  // 게시 글의 publishedAt 비어 있지 않음은 마이그레이션의 트리거(feed_published_at_*)가 보장.
+  @@index([status, visibility, publishedAt])
   // 내 글/하루 게시(listMyPosts·countPublishedToday): authorId + status + publishedAt.
   @@index([authorId, status, publishedAt])
   // 시리즈 글 순서 조회(getSeriesPosts): seriesId + seriesOrder.

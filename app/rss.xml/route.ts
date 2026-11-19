@@ -3,6 +3,7 @@ import { SITE_ORIGIN } from "@/lib/share";
 import { renderRssFeed } from "@/lib/rss";
 import { markdownToFeedHtml } from "@/lib/rss-content";
 import { getPublicEnabled, maintenanceResponse } from "@/lib/site-config";
+import { postedAt } from "@/lib/feed-dates";
 
 // 전체공개 글 RSS 2.0 피드(본문 전문 포함). 요청 시 생성(빌드 타임 DB 접근 방지).
 export const dynamic = "force-dynamic";
@@ -12,7 +13,8 @@ export async function GET() {
   const feeds = await prisma.feed.findMany({
     // 신고로 가려진 글 제외(모더레이션 일관성).
     where: { status: "published", visibility: "public", hiddenAt: null },
-    orderBy: { createdAt: "desc" },
+    // 게시일순(예약 발행 글이 작성일로 과거에 묻히지 않게). 게시 글 publishedAt은 트리거로 보장.
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
     take: 20,
     select: {
       slug: true,
@@ -20,6 +22,7 @@ export async function GET() {
       summary: true,
       content: true,
       createdAt: true,
+      publishedAt: true,
     },
   });
 
@@ -32,7 +35,7 @@ export async function GET() {
       feeds.map(async (f) => ({
         title: f.title,
         url: `${SITE_ORIGIN}/feed/${f.slug}`,
-        pubDate: f.createdAt,
+        pubDate: postedAt(f),
         description: f.summary ?? undefined,
         contentHtml: await markdownToFeedHtml(f.content, SITE_ORIGIN),
       })),

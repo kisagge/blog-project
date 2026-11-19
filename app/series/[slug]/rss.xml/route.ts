@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { renderRssFeed } from "@/lib/rss";
 import { markdownToFeedHtml } from "@/lib/rss-content";
 import { getPublicEnabled, maintenanceResponse } from "@/lib/site-config";
+import { postedAt } from "@/lib/feed-dates";
 
 // 시리즈별 RSS 2.0 피드(본문 전문 포함). 공개 글만(피드 리더는 비로그인 → anon 범위), 시리즈 순서대로.
 export const dynamic = "force-dynamic";
@@ -40,7 +41,7 @@ export async function GET(
       posts.map(async (p) => ({
         title: p.title,
         url: `${SITE_ORIGIN}/feed/${p.slug}`,
-        pubDate: p.createdAt,
+        pubDate: postedAt(p),
         description: p.summary ?? undefined,
         contentHtml: await markdownToFeedHtml(
           bodies.get(p.id) ?? "",
