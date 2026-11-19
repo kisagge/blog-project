@@ -7,6 +7,13 @@ import { imageDimensions } from "@/lib/image-size";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "data/uploads";
 
+// 업로드 파일의 디스크 경로(업로드 서빙 라우트와 공용). 런타임 경로(env)라 빌드 시 정적 분석 대상이 아니다 —
+// turbopackIgnore가 없으면 Turbopack이 "동적 파일 접근"으로 보고 프로젝트 전체를 서버 트레이스에 넣는다
+// (빌드마다 경고 4건. 이미지는 standalone이 아니라 산출물엔 영향 없지만 경고가 진짜 문제를 가린다).
+export function uploadPath(name: string): string {
+  return join(/* turbopackIgnore: true */ UPLOAD_DIR, name);
+}
+
 export type UploadResult = { url: string } | { error: string };
 
 // 버퍼 헤더(매직바이트)로 실제 이미지 타입을 판별. 클라이언트 MIME 위장을 차단하기 위한 서버측 검증.
@@ -51,8 +58,8 @@ export async function saveImage(file: unknown): Promise<UploadResult> {
 
   const name = `${randomUUID()}.${check.ext}`;
   const dim = imageDimensions(buf);
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(join(UPLOAD_DIR, name), buf);
+  await mkdir(/* turbopackIgnore: true */ UPLOAD_DIR, { recursive: true });
+  await writeFile(uploadPath(name), buf);
   const q = dim ? `?w=${dim.width}&h=${dim.height}` : "";
   return { url: `/uploads/${name}${q}` };
 }
@@ -71,7 +78,7 @@ export async function deleteUpload(url: string): Promise<void> {
   const name = uploadNameFromUrl(url);
   if (!name) return;
   try {
-    await unlink(join(UPLOAD_DIR, name));
+    await unlink(uploadPath(name));
   } catch {
     /* 이미 없음·권한 등 무시(정리는 비차단) */
   }
