@@ -6,7 +6,7 @@
 
 ### Fixed
 
-- 빌드마다 나던 "동적 파일 접근으로 프로젝트 전체가 서버 트레이스에 포함" 경고 4건 제거 — 업로드 경로를 공용 `uploadPath()`로 모으고 런타임 경로임을 표시(`turbopackIgnore`). 업로드 라우트 트레이스 642 → 113 파일(README·docs 등 제외). 배포 이미지는 standalone이 아니라 산출물 변화는 없음
+- 빌드마다 나던 "동적 파일 접근으로 프로젝트 전체가 서버 트레이스에 포함" 경고 4건 제거 — 업로드 경로를 공용 `uploadPath()`로 모으고 런타임 경로임을 표시(`turbopackIgnore`). 업로드 라우트 트레이스 642 → 113 파일(README·docs 등 제외). 배포 이미지는 standalone이 아니라 산출물 변화는 없음 ([#238](https://github.com/kisagge/blog-project/pull/238))
 
 ## [0.112.0] - 2026-11-19
 
