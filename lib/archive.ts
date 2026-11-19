@@ -1,5 +1,7 @@
 // 아카이브(/archive)용 KST 연·월 그룹핑. 순수 함수 — 입력은 최신순 정렬된 글 목록이라 가정하고 순서를 유지.
 
+import { postedAt } from "@/lib/feed-dates";
+
 export type ArchiveMonth<T> = { month: number; items: T[] };
 export type ArchiveYear<T> = {
   year: number;
@@ -9,12 +11,13 @@ export type ArchiveYear<T> = {
 
 const KST_OFFSET = 9 * 3600 * 1000;
 
-export function groupByYearMonth<T extends { createdAt: Date }>(
-  items: T[],
-): ArchiveYear<T>[] {
+// 기준 날짜는 게시일(postedAt — 예약 발행 글은 작성일이 아니라 실제 게시 시각).
+export function groupByYearMonth<
+  T extends { createdAt: Date; publishedAt?: Date | null },
+>(items: T[]): ArchiveYear<T>[] {
   const years: ArchiveYear<T>[] = [];
   for (const item of items) {
-    const kst = new Date(item.createdAt.getTime() + KST_OFFSET);
+    const kst = new Date(postedAt(item).getTime() + KST_OFFSET);
     const year = kst.getUTCFullYear();
     const month = kst.getUTCMonth() + 1;
     let y = years.find((g) => g.year === year);

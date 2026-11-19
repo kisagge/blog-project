@@ -4,6 +4,7 @@ import { getViewerRole } from "@/lib/dal";
 import { groupByYearMonth, kstDayOfMonth } from "@/lib/archive";
 import { isoInstant } from "@/lib/kst";
 import { guardPublicAccess } from "@/lib/site-config";
+import { postedAt } from "@/lib/feed-dates";
 
 export const metadata = {
   title: "아카이브",
@@ -56,10 +57,10 @@ export default async function ArchivePage() {
                     {m.items.map((f) => (
                       <li key={f.slug} className="flex gap-3">
                         <time
-                          dateTime={isoInstant(f.createdAt)}
+                          dateTime={isoInstant(postedAt(f))}
                           className="w-10 shrink-0 text-sm text-zinc-500 tabular-nums dark:text-zinc-400"
                         >
-                          {kstDayOfMonth(f.createdAt)}일
+                          {kstDayOfMonth(postedAt(f))}일
                         </time>
                         <Link
                           href={`/feed/${f.slug}`}

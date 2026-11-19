@@ -1,4 +1,5 @@
 import type { Visibility } from "@/lib/visibility";
+import { postedAt } from "@/lib/feed-dates";
 
 // 목록 카드: 클라이언트로 넘기는 직렬화 형태(Date → ISO 문자열).
 export type FeedCard = {
@@ -6,7 +7,7 @@ export type FeedCard = {
   title: string;
   summary: string | null;
   snippet: string | null; // 검색 시 매치 중심 본문 발췌(비검색이면 null → summary 표시)
-  createdAt: string;
+  date: string; // 게시일(postedAt) ISO
   viewCount: number;
   visibility: Visibility;
   authorName: string | null; // 회원 글이면 작성자 닉네임(관리자 글은 null)
@@ -21,6 +22,7 @@ export function toFeedCard(f: {
   summary: string | null;
   snippet?: string;
   createdAt: Date;
+  publishedAt?: Date | null;
   viewCount: number;
   visibility: string;
   author: { id: string; nickname: string } | null;
@@ -31,7 +33,7 @@ export function toFeedCard(f: {
     title: f.title,
     summary: f.summary,
     snippet: f.snippet ?? null,
-    createdAt: f.createdAt.toISOString(),
+    date: postedAt(f).toISOString(),
     viewCount: f.viewCount,
     visibility: f.visibility as Visibility,
     authorName: f.author?.nickname ?? null,

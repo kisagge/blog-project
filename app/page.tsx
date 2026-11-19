@@ -4,6 +4,7 @@ import { searchFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
 import { kstDate, isoInstant } from "@/lib/kst";
 import { buildSiteJsonLd, jsonLdHtml } from "@/lib/structured-data";
+import { postedAt } from "@/lib/feed-dates";
 
 export const dynamic = "force-dynamic";
 
@@ -73,10 +74,10 @@ export default async function Home() {
                     </p>
                   )}
                   <time
-                    dateTime={isoInstant(f.createdAt)}
+                    dateTime={isoInstant(postedAt(f))}
                     className="mt-1.5 block text-xs text-zinc-500"
                   >
-                    {kstDate(f.createdAt)}
+                    {kstDate(postedAt(f))}
                   </time>
                 </Link>
               </li>

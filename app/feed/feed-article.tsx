@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { readingTimeMinutes, extractToc } from "@/lib/content";
 import { kstDate, isoInstant } from "@/lib/kst";
-import { visibleEditedAt } from "@/lib/feed-dates";
+import { postedAt, visibleEditedAt } from "@/lib/feed-dates";
 import Toc from "@/app/feed/toc";
 import MarkdownContent from "@/app/markdown-content";
 
-// 공개 상세와 미리보기가 공유하는 글 렌더(제목·작성일·마크다운 본문).
+// 공개 상세와 미리보기가 공유하는 글 렌더(제목·게시일·마크다운 본문).
 export default function FeedArticle({
   feed,
   authorName,
@@ -16,6 +16,7 @@ export default function FeedArticle({
   feed: {
     title: string;
     createdAt: Date;
+    publishedAt?: Date | null; // 게시 시각(예약 발행 글은 작성일보다 늦음) — 표시는 이 날짜
     editedAt?: Date | null; // 게시 후 본문 수정 시각(날짜가 바뀐 수정만 표시)
     content: string;
     viewCount?: number;
@@ -27,7 +28,8 @@ export default function FeedArticle({
 }) {
   const minutes = readingTimeMinutes(feed.content);
   const toc = extractToc(feed.content);
-  const editedAt = visibleEditedAt(feed.editedAt, feed.createdAt);
+  const shown = postedAt(feed);
+  const editedAt = visibleEditedAt(feed.editedAt, shown);
   return (
     <article>
       <header className="mb-8 border-b border-black/[.06] pb-6 dark:border-white/[.1]">
@@ -44,9 +46,7 @@ export default function FeedArticle({
             ) : (
               <span>{authorName} · </span>
             ))}
-          <time dateTime={isoInstant(feed.createdAt)}>
-            {kstDate(feed.createdAt)}
-          </time>
+          <time dateTime={isoInstant(shown)}>{kstDate(shown)}</time>
           {editedAt && (
             <span>
               {" "}

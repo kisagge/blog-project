@@ -17,11 +17,13 @@ describe("ArchivePage", () => {
         slug: "b",
         title: "11월 글",
         createdAt: new Date("2026-11-05T00:00:00Z"),
+        publishedAt: null,
       },
       {
         slug: "a",
         title: "작년 글",
         createdAt: new Date("2025-03-01T00:00:00Z"),
+        publishedAt: null,
       },
     ]);
     render(await ArchivePage());
