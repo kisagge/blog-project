@@ -60,6 +60,11 @@ describe("PostEditor 이미지 업로드", () => {
     await waitFor(() =>
       expect(ta.value).toBe("앞![](/uploads/x.png?w=4&h=2)\n"),
     );
+    // 대체 텍스트 입력 유도: 캐럿이 [ ] 안에 놓이고, 상태 영역이 안내
+    await waitFor(() => expect(ta.selectionStart).toBe("앞![".length));
+    expect(ta.selectionEnd).toBe(ta.selectionStart);
+    expect(document.activeElement).toBe(ta);
+    expect(screen.getByRole("status")).toHaveTextContent("대체 텍스트");
   });
 
   test("비이미지 파일은 업로드 호출 없이 오류 표시", async () => {

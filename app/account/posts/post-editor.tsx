@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { submitPost, type PostFormState } from "./actions";
 import { uploadPostImage } from "./image-action";
 import { checkImage } from "@/lib/upload";
-import { spliceText } from "@/lib/textarea";
+import { spliceText, imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
 import MarkdownContent from "@/app/markdown-content";
 import MarkdownHelp from "./markdown-help";
 import DraftRestoreBanner from "@/app/draft-restore-banner";
@@ -46,6 +46,7 @@ export default function PostEditor({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [notice, setNotice] = useState(""); // 업로드 후 대체 텍스트 입력 안내(상태 영역)
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -66,14 +67,16 @@ export default function PostEditor({
       setUploadError(res.error);
       return;
     }
-    // 커서 위치에 마크다운 이미지 삽입 + 캐럿 복원(제어 상태라 setContent로 자동저장도 갱신).
+    // 커서 위치에 마크다운 이미지 삽입 + 캐럿을 대체 텍스트 자리로(제어 상태라 setContent로 자동저장도 갱신).
     const ta = taRef.current;
     const start = ta?.selectionStart ?? content.length;
     const end = ta?.selectionEnd ?? content.length;
-    const insert = `![](${res.url})\n`;
+    const { text: insert, caret } = imageMarkdown(res.url);
     setContent(spliceText(content, start, end, insert));
+    setNotice(IMAGE_ALT_HINT);
     requestAnimationFrame(() => {
-      const pos = start + insert.length;
+      const pos = start + caret; // 대체 텍스트 자리([ ] 안)로
+
       if (ta) {
         ta.selectionStart = ta.selectionEnd = pos;
         ta.focus();
@@ -242,11 +245,10 @@ export default function PostEditor({
               onChange={handleImage}
               className="sr-only"
             />
-            {uploading && (
-              <span role="status" className="text-zinc-500">
-                업로드 중…
-              </span>
-            )}
+            {/* 상태 영역은 항상 마운트(도중에 생긴 live region은 읽히지 않을 수 있음) */}
+            <span role="status" className="text-zinc-500">
+              {uploading ? "업로드 중…" : notice}
+            </span>
           </div>
           {uploadError && (
             <p

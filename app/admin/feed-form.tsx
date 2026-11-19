@@ -14,6 +14,7 @@ import {
   clearDraft,
   pruneDrafts,
 } from "@/lib/draft-store";
+import { imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
 
 type FeedDraft = {
   title: string;
@@ -137,13 +138,14 @@ export default function FeedForm({
     setRestorable(null);
   }
 
-  function insertAtCursor(text: string) {
+  // caret: 삽입 후 캐럿을 둘 text 안의 위치(기본 = 끝).
+  function insertAtCursor(text: string, caret = text.length) {
     const ta = contentRef.current;
     if (!ta) return;
     const start = ta.selectionStart ?? ta.value.length;
     const end = ta.selectionEnd ?? ta.value.length;
     ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
-    const pos = start + text.length;
+    const pos = start + caret;
     ta.selectionStart = ta.selectionEnd = pos;
     ta.focus();
     // .value 직접 변경은 input 이벤트가 안 나므로, 자동저장이 잡도록 수동 디스패치.
@@ -171,8 +173,9 @@ export default function FeedForm({
         show(res.error);
         return;
       }
-      insertAtCursor(`![](${res.url})\n`);
-      show("이미지를 본문에 삽입했습니다.", "success");
+      const { text, caret } = imageMarkdown(res.url);
+      insertAtCursor(text, caret); // 캐럿을 대체 텍스트 자리([ ] 안)로
+      show(IMAGE_ALT_HINT, "success");
     } catch {
       show("업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
