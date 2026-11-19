@@ -19,10 +19,13 @@ export async function generateMetadata({
 }) {
   const { id } = await params;
   // 회원공개 프로필이라 비회원에겐 닉네임을 제목으로도 노출하지 않음.
-  if ((await getViewerRole()) === "anon") return { title: "회원 전용" };
+  // 크롤러는 항상 비회원(안내만 보임) → 색인 제외.
+  const robots = { index: false };
+  if ((await getViewerRole()) === "anon") return { title: "회원 전용", robots };
   const profile = await getMemberProfile(id);
   return {
     title: profile ? `${profile.nickname} 님의 프로필` : "찾을 수 없음",
+    robots,
   };
 }
 

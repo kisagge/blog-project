@@ -2,6 +2,13 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.111.11] - 2026-11-19
+
+### Fixed
+
+- 회원 전용 페이지(프로필·팔로잉·커뮤니티·회원공개 글)가 검색엔진엔 "회원만 볼 수 있습니다" 안내만 보이는 얇은 페이지로 색인될 수 있던 문제 — `noindex` 메타데이터 추가(robots.txt로 막으면 noindex를 못 읽어 URL만 색인될 수 있어 메타데이터로 처리)
+- robots.txt에 /me·/maintenance·/offline.html·/api/ 크롤링 제외 추가
+
 ## [0.111.10] - 2026-11-19
 
 ### Fixed

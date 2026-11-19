@@ -7,9 +7,11 @@ import FeedList from "@/app/feed/(list)/feed-list";
 import { toFeedCard } from "@/app/feed/(list)/feed-card";
 import MemberGate from "@/app/member-gate";
 
+// 회원 전용(비회원·크롤러에겐 안내만) — 색인 제외.
 export const metadata = {
   title: "커뮤니티",
   description: "회원들이 작성한 글",
+  robots: { index: false },
 };
 
 export const dynamic = "force-dynamic";

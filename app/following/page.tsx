@@ -6,7 +6,8 @@ import FeedCardItem from "@/app/feed/(list)/feed-card-item";
 import MemberGate from "@/app/member-gate";
 import { guardPublicAccess } from "@/lib/site-config";
 
-export const metadata = { title: "팔로잉" };
+// 회원 전용(비회원·크롤러에겐 안내만) — 색인 제외.
+export const metadata = { title: "팔로잉", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 export default async function FollowingPage() {
