@@ -2,6 +2,17 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.111.9] - 2026-11-19
+
+### Fixed
+
+- 회원 글·임시저장 삭제가 확인 없이 바로 실행되던 문제 — 확인 창(게시 글은 댓글·좋아요도 함께 삭제됨을 안내), 삭제 버튼 이름에 글 제목 포함
+- 임시저장 후 '내 글' 대신 프로필 탭으로 이동하던 문제
+
+### Added
+
+- 내가 쓴 게시 글 상세에서 바로 수정·삭제 ([#234](https://github.com/kisagge/blog-project/pull/234))
+
 ## [0.111.8] - 2026-11-19
 
 ### Fixed

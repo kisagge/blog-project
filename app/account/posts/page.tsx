@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/dal";
 import { listMyDrafts, listMyPosts, DRAFT_LIMIT } from "@/lib/member-posts";
 import AccountTabs from "../account-tabs";
-import { deleteMyPostAction } from "./actions";
+import DeletePostButton from "./delete-post-button";
 
 export const metadata = { title: "내 글" };
 
@@ -53,7 +53,7 @@ export default async function MyPostsPage() {
                   >
                     수정
                   </Link>
-                  <DeleteButton id={d.id} label="임시저장 삭제" />
+                  <DeletePostButton id={d.id} title={d.title} kind="draft" />
                 </span>
               </li>
             ))}
@@ -84,7 +84,7 @@ export default async function MyPostsPage() {
                   >
                     수정
                   </Link>
-                  <DeleteButton id={p.id} label="글 삭제" />
+                  <DeletePostButton id={p.id} title={p.title} kind="post" />
                 </span>
               </li>
             ))}
@@ -92,20 +92,5 @@ export default async function MyPostsPage() {
         )}
       </section>
     </main>
-  );
-}
-
-function DeleteButton({ id, label }: { id: string; label: string }) {
-  return (
-    <form action={deleteMyPostAction}>
-      <input type="hidden" name="id" value={id} />
-      <button
-        type="submit"
-        aria-label={label}
-        className="text-red-600 hover:underline dark:text-red-400"
-      >
-        삭제
-      </button>
-    </form>
   );
 }

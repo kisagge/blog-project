@@ -7,6 +7,7 @@ import { DIALOG_PANEL } from "@/lib/ui";
 // 뒤바뀌지 않도록 — block 토글 버그 학습 반영). 사유 입력 등 폼형 모달엔 부적합(별도 구현).
 export default function ConfirmDialog({
   triggerLabel,
+  triggerAriaLabel,
   triggerClassName,
   pendingLabel = "처리 중…",
   title,
@@ -16,6 +17,7 @@ export default function ConfirmDialog({
   onConfirm,
 }: {
   triggerLabel: string;
+  triggerAriaLabel?: string; // 목록처럼 같은 트리거가 여럿일 때 항목을 구별하는 이름(예: "‘제목’ 삭제")
   triggerClassName: string;
   pendingLabel?: string;
   title: string;
@@ -32,6 +34,7 @@ export default function ConfirmDialog({
         type="button"
         disabled={pending}
         onClick={() => ref.current?.showModal()}
+        aria-label={triggerAriaLabel}
         className={triggerClassName}
       >
         {pending ? pendingLabel : triggerLabel}

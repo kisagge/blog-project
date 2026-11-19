@@ -22,6 +22,7 @@ import ViewTracker from "@/app/view-tracker";
 import ReadTracker from "@/app/feed/read-tracker";
 import ShareBar from "@/app/share-bar";
 import ReportButton from "@/app/report/report-button";
+import DeletePostButton from "@/app/account/posts/delete-post-button";
 import { absoluteUrl, firstContentImage, toAbsolute } from "@/lib/share";
 import { buildFeedJsonLd, jsonLdHtml } from "@/lib/structured-data";
 import { guardPublicAccess } from "@/lib/site-config";
@@ -142,6 +143,11 @@ export default async function FeedDetailPage({
   const authorName = feed.author?.nickname ?? (await getAdminNickname());
   const blocked = await isBlockedMember(); // 차단 회원은 공유 버튼 비노출
   // 신고: 회원이 본인 아닌 회원 글에만(관리자 글·본인 글 제외).
+  // 작성자 본인: 게시 글에서도 바로 수정·삭제(이전엔 '내 글' 탭에서만 가능).
+  const isAuthor =
+    session?.role === "member" &&
+    !!feed.authorId &&
+    session.userId === feed.authorId;
   const canReportFeed =
     session?.role === "member" &&
     !!feed.authorId &&
@@ -183,6 +189,22 @@ export default async function FeedDetailPage({
               const i = firstContentImage(feed.content);
               return i ? toAbsolute(i) : undefined;
             })()}
+          />
+        </div>
+      )}
+      {isAuthor && (
+        <div className="mt-4 flex justify-end gap-3 text-sm">
+          <Link
+            href={`/account/posts/${feed.id}/edit`}
+            className="text-zinc-600 hover:underline dark:text-zinc-300"
+          >
+            수정
+          </Link>
+          <DeletePostButton
+            id={feed.id}
+            title={feed.title}
+            kind="post"
+            redirectTo="/account/posts"
           />
         </div>
       )}
