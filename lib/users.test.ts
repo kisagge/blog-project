@@ -113,6 +113,19 @@ describe("users", () => {
     expect(pending.some((x) => x.email === "rej@x.com")).toBe(false);
   });
 
+  test("거절된 회원 로그인: '승인 대기'가 아니라 거절 안내(사유는 비노출) + 재신청 가능", async () => {
+    expect(await m.authenticateMember("rej@x.com", "password1")).toEqual({
+      ok: false,
+      error: m.REJECTED_SIGNIN_MESSAGE,
+    });
+    expect(m.REJECTED_SIGNIN_MESSAGE).not.toContain("부적절한 닉네임");
+    // 비밀번호가 틀리면 상태를 드러내지 않음
+    expect(await m.authenticateMember("rej@x.com", "wrong-pass")).toEqual({
+      ok: false,
+      error: "이메일 또는 비밀번호가 올바르지 않습니다.",
+    });
+  });
+
   test("거절된 이메일 재신청은 같은 행을 pending으로 되돌리고 이전 사유 보존", async () => {
     const r = await m.createPendingUser({
       email: "rej@x.com",

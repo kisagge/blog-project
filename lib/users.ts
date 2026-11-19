@@ -119,6 +119,11 @@ export type AuthedMember = {
   sessionVersion: number;
 };
 
+// 거절된 신청의 로그인 안내. 거절 사유는 관리자 참고용이라 신청자에게 보이지 않는다(스키마 주석 정책).
+// 같은 이메일 재신청은 허용(createPendingUser) — 다시 신청할 수 있음을 알려 막다른 길을 없앤다.
+export const REJECTED_SIGNIN_MESSAGE =
+  "가입 신청이 승인되지 않았습니다. 같은 이메일로 다시 신청할 수 있습니다.";
+
 export async function authenticateMember(
   email: string,
   password: string,
@@ -130,6 +135,8 @@ export async function authenticateMember(
     return { ok: false, error: generic };
   if (user.status === "blocked")
     return { ok: false, error: "이용이 제한된 계정입니다." };
+  if (user.status === "rejected")
+    return { ok: false, error: REJECTED_SIGNIN_MESSAGE };
   if (user.status !== "approved")
     return { ok: false, error: "관리자 승인 대기 중입니다." };
   return {
