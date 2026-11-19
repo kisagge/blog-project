@@ -71,6 +71,17 @@ describe("NavDrawer", () => {
     expect(screen.queryByRole("link", { name: "글쓰기" })).toBeNull();
   });
 
+  test("시리즈 링크는 볼 수 있는 시리즈가 있을 때(hasSeries)만", () => {
+    const { rerender } = render(<NavDrawer session={null} />);
+    fireEvent.click(toggle());
+    expect(screen.queryByRole("link", { name: "시리즈" })).toBeNull();
+    rerender(<NavDrawer session={null} hasSeries />);
+    expect(screen.getByRole("link", { name: "시리즈" })).toHaveAttribute(
+      "href",
+      "/series",
+    );
+  });
+
   test("소개 링크는 소개 본문이 있을 때(hasAbout)만", () => {
     const { rerender } = render(<NavDrawer session={null} />);
     fireEvent.click(toggle());

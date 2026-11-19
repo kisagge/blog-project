@@ -12,10 +12,12 @@ export default function NavDrawer({
   session,
   vapidKey,
   hasAbout = false,
+  hasSeries = false,
 }: {
   session: NavSession;
   vapidKey?: string;
   hasAbout?: boolean; // 소개 본문이 있을 때만 "소개" 링크(빈 페이지로 보내지 않게)
+  hasSeries?: boolean; // 볼 수 있는 시리즈가 있을 때만 "시리즈" 링크
 }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
@@ -130,6 +132,11 @@ export default function NavDrawer({
           <DrawerLink href="/feed/tags" onClick={close}>
             태그
           </DrawerLink>
+          {hasSeries && (
+            <DrawerLink href="/series" onClick={close}>
+              시리즈
+            </DrawerLink>
+          )}
           <DrawerLink href="/archive" onClick={close}>
             아카이브
           </DrawerLink>

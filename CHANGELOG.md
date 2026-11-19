@@ -2,6 +2,16 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.112.0] - 2026-11-19
+
+### Added
+
+- 메뉴와 홈 "둘러보기"에 시리즈 링크 — 볼 수 있는 시리즈가 있을 때만 표시(이전엔 /series로 가는 링크가 사이트 어디에도 없었음)
+
+### Changed
+
+- 커뮤니티에 글이 없을 때 피드용 문구 대신 "아직 회원이 쓴 글이 없습니다." ([#237](https://github.com/kisagge/blog-project/pull/237))
+
 ## [0.111.11] - 2026-11-19
 
 ### Fixed

@@ -182,7 +182,9 @@ export default function FeedList({
         <p className="text-zinc-500">
           {query.trim()
             ? `‘${query.trim()}’에 대한 결과가 없습니다.`
-            : "아직 공개된 글이 없습니다."}
+            : author === "member"
+              ? "아직 회원이 쓴 글이 없습니다."
+              : "아직 공개된 글이 없습니다."}
         </p>
       ) : (
         <ul className="flex flex-col gap-6">
