@@ -7,7 +7,7 @@
 ### Fixed
 
 - 회원 전용 페이지(프로필·팔로잉·커뮤니티·회원공개 글)가 검색엔진엔 "회원만 볼 수 있습니다" 안내만 보이는 얇은 페이지로 색인될 수 있던 문제 — `noindex` 메타데이터 추가(robots.txt로 막으면 noindex를 못 읽어 URL만 색인될 수 있어 메타데이터로 처리)
-- robots.txt에 /me·/maintenance·/offline.html·/api/ 크롤링 제외 추가
+- robots.txt에 /me·/maintenance·/offline.html·/api/ 크롤링 제외 추가 ([#236](https://github.com/kisagge/blog-project/pull/236))
 
 ## [0.111.10] - 2026-11-19
 
