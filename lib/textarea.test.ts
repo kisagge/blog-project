@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { spliceText } from "@/lib/textarea";
+import { spliceText, imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
 
 describe("spliceText", () => {
   test("커서 위치(빈 선택)에 삽입", () => {
@@ -24,5 +24,18 @@ describe("spliceText", () => {
     expect(spliceText("", 0, 0, "![](/uploads/a.png)")).toBe(
       "![](/uploads/a.png)",
     );
+  });
+});
+
+describe("imageMarkdown", () => {
+  test("업로드 이미지 마크다운 + 대체 텍스트 자리([ ] 안)의 캐럿 오프셋", () => {
+    const { text, caret } = imageMarkdown("/uploads/a.png?w=4&h=2");
+    expect(text).toBe("![](/uploads/a.png?w=4&h=2)\n");
+    expect(text.slice(0, caret)).toBe("![");
+    expect(text.slice(caret, caret + 1)).toBe("]");
+  });
+
+  test("안내 문구는 대체 텍스트 입력을 요청", () => {
+    expect(IMAGE_ALT_HINT).toContain("대체 텍스트");
   });
 });

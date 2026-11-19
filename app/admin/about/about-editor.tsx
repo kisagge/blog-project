@@ -8,6 +8,7 @@ import { uploadImage } from "@/app/admin/upload-action";
 import { saveAboutAction, type AboutFormState } from "@/app/admin/actions";
 import { checkImage } from "@/lib/upload";
 import { ABOUT_MAX_LENGTH } from "@/lib/validation";
+import { imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
 
 const inputCls =
   "rounded border border-black/15 bg-transparent px-3 py-2 text-sm dark:border-white/20";
@@ -23,15 +24,22 @@ export default function AboutEditor({ initial }: { initial: string }) {
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [notice, setNotice] = useState(""); // 업로드 후 대체 텍스트 입력 안내(상태 영역)
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const tooLong = content.length > ABOUT_MAX_LENGTH;
 
-  function insertAtCursor(text: string) {
+  // caret: 삽입 후 캐럿을 둘 text 안의 위치(기본 = 끝). 제어 상태라 렌더 후 캐럿 이동.
+  function insertAtCursor(text: string, caret = text.length) {
     const ta = taRef.current;
     const start = ta?.selectionStart ?? content.length;
     const end = ta?.selectionEnd ?? content.length;
     setContent(content.slice(0, start) + text + content.slice(end));
+    requestAnimationFrame(() => {
+      if (!ta) return;
+      ta.selectionStart = ta.selectionEnd = start + caret;
+      ta.focus();
+    });
   }
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -47,7 +55,11 @@ export default function AboutEditor({ initial }: { initial: string }) {
     try {
       const res = await uploadImage(fd);
       if ("error" in res) setUploadError(res.error);
-      else insertAtCursor(`![](${res.url})\n`);
+      else {
+        const { text, caret } = imageMarkdown(res.url);
+        insertAtCursor(text, caret); // 캐럿을 대체 텍스트 자리([ ] 안)로
+        setNotice(IMAGE_ALT_HINT);
+      }
     } catch {
       setUploadError("업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
@@ -120,11 +132,10 @@ export default function AboutEditor({ initial }: { initial: string }) {
             onChange={handleImage}
             className="sr-only"
           />
-          {uploading && (
-            <span role="status" className="text-zinc-500 dark:text-zinc-400">
-              업로드 중…
-            </span>
-          )}
+          {/* 상태 영역은 항상 마운트(도중에 생긴 live region은 읽히지 않을 수 있음) */}
+          <span role="status" className="text-zinc-500 dark:text-zinc-400">
+            {uploading ? "업로드 중…" : notice}
+          </span>
         </div>
         {uploadError && (
           <p role="alert" className="text-xs text-red-600 dark:text-red-400">
