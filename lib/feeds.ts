@@ -1,16 +1,18 @@
 import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
-import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
+import type { ViewerRole } from "@/lib/visibility";
 import { makeSnippet } from "@/lib/content";
 import { tagSlugVariants } from "@/lib/tags";
 import { postedAt } from "@/lib/feed-dates";
+import { authorScopeWhere, visibleFeedWhere } from "@/lib/feed-access";
+import { ADMIN_PAGE_SIZE, pageWindow, sliceHasMore } from "@/lib/pagination";
 
 const FEED_PAGE_SIZE = 10;
 
 // 공개 표면의 최신순 = 게시일(publishedAt) 기준. 작성일은 예약 발행 글에서 실제 게시보다 이르다.
 // 게시 글의 publishedAt은 트리거로 항상 채워지고, 같은 시각이면 작성일로 정렬을 고정한다.
-const LATEST = [
+export const FEED_LATEST_ORDER = [
   { publishedAt: "desc" as const },
   { createdAt: "desc" as const },
 ];
@@ -100,14 +102,8 @@ export async function searchFeeds({
 }) {
   const term = q.trim();
   const baseWhere = {
-    status: "published", // 임시저장(draft)은 공개 목록에서 제외
-    hiddenAt: null, // 신고로 가려진 글 제외
-    visibility: { in: listableVisibilities(role) },
-    ...(author === "admin"
-      ? { authorId: null }
-      : author === "member"
-        ? { authorId: { not: null } }
-        : {}),
+    ...visibleFeedWhere(role), // 게시·미숨김·뷰어 가시 범위
+    ...authorScopeWhere(author),
     ...(tag && { feedTags: { some: { tag: { slug: tag } } } }),
   };
 
@@ -133,9 +129,10 @@ export async function searchFeeds({
       const order = new Map(rankedIds.map((id, i) => [id, i] as const));
       rows.sort((a, b) => order.get(a.id)! - order.get(b.id)!); // 관련도순(현행)
     }
-    const page = rows.slice(skip, skip + take + 1);
-    const hasMore = page.length > take;
-    const items = hasMore ? page.slice(0, take) : page;
+    const { items, hasMore } = sliceHasMore(
+      rows.slice(skip, skip + take + 1),
+      take,
+    );
     return { items: await withSnippets(items, terms), hasMore };
   }
 
@@ -152,26 +149,25 @@ export async function searchFeeds({
       }),
     },
     orderBy:
-      sort === "popular" ? [{ viewCount: "desc" as const }, ...LATEST] : LATEST,
+      sort === "popular"
+        ? [{ viewCount: "desc" as const }, ...FEED_LATEST_ORDER]
+        : FEED_LATEST_ORDER,
     select: FEED_LIST_SELECT,
     skip,
     take: take + 1,
   });
-  const hasMore = rows.length > take;
-  const items = hasMore ? rows.slice(0, take) : rows;
+  const { items, hasMore } = sliceHasMore(rows, take);
   return { items: await withSnippets(items, terms), hasMore };
 }
 
 // 공개 인기 글: 뷰어가 볼 수 있는 게시·미숨김 글을 누적 조회수순(관리자+회원 글 모두).
 // /admin/stats의 getTopFeeds와 달리 visibility를 필터해 공개 발견성 페이지에 안전하게 노출.
-export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
+export async function getVisibleTopFeeds(role: ViewerRole, take = 20) {
   return prisma.feed.findMany({
     where: {
-      status: "published",
-      hiddenAt: null,
-      visibility: { in: listableVisibilities(role) },
+      ...visibleFeedWhere(role),
     },
-    orderBy: [{ viewCount: "desc" }, ...LATEST],
+    orderBy: [{ viewCount: "desc" }, ...FEED_LATEST_ORDER],
     take,
     select: FEED_LIST_SELECT,
   });
@@ -182,12 +178,10 @@ export async function getPublicTopFeeds(role: ViewerRole, take = 20) {
 export async function getArchiveFeeds(role: ViewerRole) {
   return prisma.feed.findMany({
     where: {
-      status: "published",
-      hiddenAt: null,
+      ...visibleFeedWhere(role),
       authorId: null,
-      visibility: { in: listableVisibilities(role) },
     },
-    orderBy: LATEST,
+    orderBy: FEED_LATEST_ORDER,
     select: { slug: true, title: true, createdAt: true, publishedAt: true },
   });
 }
@@ -199,12 +193,10 @@ export async function getArchiveFeeds(role: ViewerRole) {
 export async function getFeedsByTag(slug: string, role: ViewerRole) {
   return prisma.feed.findMany({
     where: {
-      status: "published",
-      hiddenAt: null,
-      visibility: { in: listableVisibilities(role) },
+      ...visibleFeedWhere(role),
       feedTags: { some: { tag: { slug: { in: tagSlugVariants(slug) } } } },
     },
-    orderBy: LATEST,
+    orderBy: FEED_LATEST_ORDER,
     select: FEED_LIST_SELECT,
   });
 }
@@ -216,9 +208,7 @@ export async function countFeedsByTag(
 ): Promise<number> {
   return prisma.feed.count({
     where: {
-      status: "published",
-      hiddenAt: null,
-      visibility: { in: listableVisibilities(role) },
+      ...visibleFeedWhere(role),
       feedTags: { some: { tag: { slug: { in: tagSlugVariants(slug) } } } },
     },
   });
@@ -238,9 +228,7 @@ export async function getAdjacentFeeds(
   role: ViewerRole,
 ): Promise<{ prev: AdjacentFeed | null; next: AdjacentFeed | null }> {
   const base = {
-    status: "published",
-    hiddenAt: null,
-    visibility: { in: listableVisibilities(role) },
+    ...visibleFeedWhere(role),
     ...(feed.authorId === null
       ? { authorId: null }
       : { authorId: { not: null } }),
@@ -277,12 +265,10 @@ export async function getRelatedFeeds(
   const candidates = await prisma.feed.findMany({
     where: {
       id: { not: feedId },
-      status: "published",
-      hiddenAt: null,
-      visibility: { in: listableVisibilities(role) },
+      ...visibleFeedWhere(role),
       feedTags: { some: { tag: { slug: { in: tagSlugs } } } },
     },
-    orderBy: LATEST,
+    orderBy: FEED_LATEST_ORDER,
     take: Math.max(take * 4, 20), // 공유 태그 수로 재정렬할 후보 여유
     select: {
       slug: true,
@@ -319,8 +305,6 @@ export const getFeedBySlug = cache(async (slug: string) => {
   });
 });
 
-export const ADMIN_PAGE_SIZE = 20;
-
 // 관리자용: 초안 포함, 최신순, 페이지 단위(기본 20). 목록 + 전체 개수 반환.
 // q가 있으면 제목·슬러그 부분일치로 필터(관리자 CMS 탐색용 — 초안 포함 유지).
 export async function getAdminFeedsPage(
@@ -328,8 +312,7 @@ export async function getAdminFeedsPage(
   pageSize = ADMIN_PAGE_SIZE,
   q = "",
 ) {
-  const take = pageSize;
-  const skip = (Math.max(1, page) - 1) * take;
+  const { skip, take } = pageWindow(page, pageSize);
   const term = q.trim();
   const where = {
     authorId: null, // 관리자 CMS는 관리자 글만(회원 글 제외)

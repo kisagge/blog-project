@@ -1,7 +1,7 @@
 import "server-only";
 import { uploadNameFromUrl } from "@/lib/save-image";
 import { prisma } from "@/lib/prisma";
-import { ADMIN_PAGE_SIZE } from "@/lib/feeds";
+import { ADMIN_PAGE_SIZE, pageWindow } from "@/lib/pagination";
 import { getAdminNickname } from "@/lib/comment-actor";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import type { Result } from "@/lib/result";
@@ -241,8 +241,7 @@ export async function listUsersPage(
   page: number,
   pageSize = ADMIN_PAGE_SIZE,
 ) {
-  const take = pageSize;
-  const skip = (Math.max(1, page) - 1) * take;
+  const { skip, take } = pageWindow(page, pageSize);
   const where = {
     status: Array.isArray(status) ? { in: status } : status,
     role: "member" as const,

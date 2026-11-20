@@ -6,6 +6,8 @@ import {
   maintenanceResponse,
   readHasAbout,
 } from "@/lib/site-config";
+import { visibleFeedWhere } from "@/lib/feed-access";
+import { FEED_LATEST_ORDER } from "@/lib/feeds";
 
 // /llms.txt — AI 검색·에이전트용 사이트 안내(llmstxt.org). 요청 시 생성(빌드 타임 DB 접근 방지).
 export const dynamic = "force-dynamic";
@@ -15,8 +17,8 @@ export async function GET() {
   // RSS·sitemap과 같은 공개 범위: 전체공개·게시·미숨김 글만.
   const [posts, about] = await Promise.all([
     prisma.feed.findMany({
-      where: { status: "published", visibility: "public", hiddenAt: null },
-      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }], // 게시일순
+      where: visibleFeedWhere("anon"),
+      orderBy: FEED_LATEST_ORDER,
       take: 50,
       select: { slug: true, title: true, summary: true },
     }),

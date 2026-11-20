@@ -2,9 +2,27 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import {
   checkAccess,
+  listableVisibilities,
   type ViewerRole,
   type Visibility,
 } from "@/lib/visibility";
+
+// 목록 질의의 "볼 수 있는 글" 조건(Prisma where 조각). canReadFeed(아래)는 단건 판정, 이건 목록용 —
+// 두 기준을 한 파일에 둔다. 관리자도 목록에선 게시·미숨김 글만(초안·숨김 검토는 관리자 화면에서).
+// 작성자 범위: 관리자 글(블로그 본편, authorId null) / 회원 글(커뮤니티) / 미지정 = 전체.
+export function authorScopeWhere(author?: "admin" | "member") {
+  if (author === "admin") return { authorId: null };
+  if (author === "member") return { authorId: { not: null } };
+  return {};
+}
+
+export function visibleFeedWhere(role: ViewerRole) {
+  return {
+    status: "published",
+    hiddenAt: null,
+    visibility: { in: listableVisibilities(role) },
+  } as const;
+}
 
 type GateFields = {
   visibility: string;

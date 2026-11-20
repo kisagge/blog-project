@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
+import type { ViewerRole } from "@/lib/visibility";
+import { authorScopeWhere, visibleFeedWhere } from "@/lib/feed-access";
 
 const MAX_TAGS = 5; // 글당 최대 태그 수
 const MAX_TAG_LEN = 20; // 태그 1개 최대 길이
@@ -59,15 +60,9 @@ export async function getTagsWithCounts(
     by: ["tagId"],
     where: {
       feed: {
-        status: "published",
-        hiddenAt: null,
-        visibility: { in: listableVisibilities(role) },
+        ...visibleFeedWhere(role),
         // 커뮤니티(회원 글) 등 작성자 스코프 한정용. 미전달이면 전체.
-        ...(opts?.author === "member"
-          ? { authorId: { not: null } }
-          : opts?.author === "admin"
-            ? { authorId: null }
-            : {}),
+        ...authorScopeWhere(opts?.author),
       },
     },
     _count: { _all: true },
@@ -105,7 +100,7 @@ export async function getPublicTagSlugs(): Promise<string[]> {
   const grouped = await prisma.feedTag.groupBy({
     by: ["tagId"],
     where: {
-      feed: { status: "published", hiddenAt: null, visibility: "public" },
+      feed: visibleFeedWhere("anon"),
     },
   });
   if (grouped.length === 0) return [];

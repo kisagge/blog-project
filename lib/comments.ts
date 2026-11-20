@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { CommentSchema } from "@/lib/validation";
 import { getReactionSummaries } from "@/lib/comment-reactions";
 import type { ReactionSummary } from "@/lib/reactions";
+import { visibleFeedWhere } from "@/lib/feed-access";
 
 type AddInput = {
   feedId: string;
@@ -269,17 +270,12 @@ export async function getCommentsByUser(
   take = 20,
 ): Promise<UserCommentItem[]> {
   const rows = await prisma.comment.findMany({
-    // 피드가 게시·비공개아님일 때만(비공개/초안 피드 제목·slug 노출 방지).
+    // 피드가 회원에게 보이는 글일 때만(비공개·초안·숨김 글의 제목·slug 노출 방지).
     where: {
       userId,
       deletedAt: null,
       hiddenAt: null,
-      // 신고로 숨김 처리된 글도 제외(관리자 외엔 404인 글의 제목 노출 방지).
-      feed: {
-        status: "published",
-        visibility: { not: "private" },
-        hiddenAt: null,
-      },
+      feed: visibleFeedWhere("member"),
     },
     orderBy: { createdAt: "desc" },
     take,

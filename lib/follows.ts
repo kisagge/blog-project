@@ -1,9 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
-import { FEED_LIST_SELECT } from "@/lib/feeds";
+import type { ViewerRole } from "@/lib/visibility";
+import { FEED_LIST_SELECT, FEED_LATEST_ORDER } from "@/lib/feeds";
 import { notifyFollow } from "@/lib/notifications";
 import { swallow } from "@/lib/log";
+import { visibleFeedWhere } from "@/lib/feed-access";
+import { sliceHasMore } from "@/lib/pagination";
 
 export type FollowResult = { ok: true } | { error: string };
 
@@ -95,15 +97,12 @@ export async function getFollowingFeed(
   const rows = await prisma.feed.findMany({
     where: {
       authorId: { in: ids },
-      status: "published",
-      hiddenAt: null,
-      visibility: { in: listableVisibilities(role) },
+      ...visibleFeedWhere(role),
     },
-    orderBy: { publishedAt: "desc" },
+    orderBy: FEED_LATEST_ORDER,
     skip,
     take: take + 1,
     select: FEED_LIST_SELECT,
   });
-  const hasMore = rows.length > take;
-  return { items: hasMore ? rows.slice(0, take) : rows, hasMore };
+  return sliceHasMore(rows, take);
 }

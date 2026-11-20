@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { pageWindow } from "@/lib/pagination";
 
 export type AuditTargetType =
   "feed" | "member" | "report" | "series" | "site" | "admin";
@@ -31,8 +32,7 @@ const AUDIT_PAGE_SIZE = 30;
 
 // 관리자 감사 로그 목록(최신순, 페이지 단위). getAdminFeedsPage와 동형 반환.
 export async function getAuditPage(page: number, pageSize = AUDIT_PAGE_SIZE) {
-  const take = pageSize;
-  const skip = (Math.max(1, page) - 1) * take;
+  const { skip, take } = pageWindow(page, pageSize);
   const [items, total] = await Promise.all([
     prisma.auditLog.findMany({
       orderBy: { createdAt: "desc" },
