@@ -12,3 +12,6 @@ overrides:
   # (trust 우회) 해소 + 화면 CSS와 렌더 버전 일치를 위해 트리 전체를 0.18로(mermaid도 0.18 사용).
   # 두 패키지는 공개 API(renderToString)만 사용, 0.17/0.18 breaking은 내부 API·CSS 클래스. 상위가 0.18+를 받으면 제거.
   katex: ^0.18.10
+  # @prisma/config가 effect를 3.20.0으로 고정 → ReDoS 권고(GHSA-7589-6fvf-x4pw, <=3.22.0). 패치(3.22.1+)도 3.x
+  # 같은 메이저라 해당 경로만 올림. prisma CLI(generate·migrate deploy·validate) 동작 확인. 상위가 3.22.1+를 받으면 제거.
+  "@prisma/config>effect": ^3.22.1
