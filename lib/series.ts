@@ -1,16 +1,14 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
+import type { ViewerRole } from "@/lib/visibility";
 import { FEED_LIST_SELECT } from "@/lib/feeds";
+import { visibleFeedWhere } from "@/lib/feed-access";
 
-// 시리즈 쿼리 공용: 게시·미숨김 + 뷰어 가시 범위(태그·검색과 동일 게이트).
-function visibleFeedWhere(role: ViewerRole) {
-  return {
-    status: "published",
-    hiddenAt: null,
-    visibility: { in: listableVisibilities(role) },
-  } as const;
-}
+// 시리즈 안 글 순서(관리자가 정한 seriesOrder, 같으면 먼저 쓴 글부터).
+const SERIES_ORDER = [
+  { seriesOrder: "asc" as const },
+  { createdAt: "asc" as const },
+];
 
 export type SeriesSummary = {
   id: string;
@@ -89,7 +87,7 @@ export async function getSeriesWithCounts(
 export async function getSeriesPosts(seriesId: string, role: ViewerRole) {
   return prisma.feed.findMany({
     where: { ...visibleFeedWhere(role), seriesId },
-    orderBy: [{ seriesOrder: "asc" }, { createdAt: "asc" }],
+    orderBy: SERIES_ORDER,
     select: FEED_LIST_SELECT,
   });
 }
@@ -98,7 +96,7 @@ export async function getSeriesPosts(seriesId: string, role: ViewerRole) {
 export async function listSeriesPostsAdmin(seriesId: string) {
   return prisma.feed.findMany({
     where: { seriesId },
-    orderBy: [{ seriesOrder: "asc" }, { createdAt: "asc" }],
+    orderBy: SERIES_ORDER,
     select: { id: true, slug: true, title: true, visibility: true },
   });
 }
@@ -124,7 +122,7 @@ export async function getSeriesContext(
   if (!series) return null;
   const posts = await prisma.feed.findMany({
     where: { ...visibleFeedWhere(role), seriesId: feed.seriesId },
-    orderBy: [{ seriesOrder: "asc" }, { createdAt: "asc" }],
+    orderBy: SERIES_ORDER,
     select: { id: true, slug: true, title: true },
   });
   const index = posts.findIndex((p) => p.id === feed.id);

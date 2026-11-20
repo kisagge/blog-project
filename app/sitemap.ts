@@ -4,6 +4,7 @@ import { SITE_ORIGIN } from "@/lib/share";
 import { getPublicTagSlugs } from "@/lib/tags";
 import { feedLastModified } from "@/lib/feed-dates";
 import { getPublicEnabled, readAboutRaw } from "@/lib/site-config";
+import { visibleFeedWhere } from "@/lib/feed-access";
 
 // DB를 조회하므로 요청 시 생성(빌드 타임 prerender 방지).
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 비로그인도 볼 수 있는 전체공개 콘텐츠만 색인 대상(회원공개·비공개 제외).
   const [feeds, dfs, publicSeries, tagSlugs, about] = await Promise.all([
     prisma.feed.findMany({
-      where: { status: "published", visibility: "public", hiddenAt: null },
+      where: visibleFeedWhere("anon"),
       // updatedAt은 조회수 증가에도 갱신되므로 본문 기준 시각(feedLastModified)을 쓴다.
       select: {
         slug: true,
@@ -31,11 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     prisma.series.findMany({
       where: {
         feeds: {
-          some: {
-            status: "published",
-            visibility: "public",
-            hiddenAt: null,
-          },
+          some: visibleFeedWhere("anon"),
         },
       },
       select: { slug: true, updatedAt: true },

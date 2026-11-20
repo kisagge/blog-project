@@ -1,7 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { FEED_LIST_SELECT } from "@/lib/feeds";
-import { listableVisibilities } from "@/lib/visibility";
+import { visibleFeedWhere } from "@/lib/feed-access";
+import { sliceHasMore } from "@/lib/pagination";
 
 // 북마크 토글. 결과 저장 여부 반환(좋아요와 달리 공개 카운트 없음 — 개인용).
 export async function toggleBookmark(
@@ -50,9 +51,7 @@ export async function listSavedFeeds(
     where: {
       userId,
       feed: {
-        status: "published",
-        hiddenAt: null,
-        visibility: { in: listableVisibilities("member") },
+        ...visibleFeedWhere("member"),
       },
     },
     orderBy: { createdAt: "desc" },
@@ -60,7 +59,8 @@ export async function listSavedFeeds(
     skip,
     take: take + 1,
   });
-  const feeds = rows.map((r) => r.feed);
-  const hasMore = feeds.length > take;
-  return { items: hasMore ? feeds.slice(0, take) : feeds, hasMore };
+  return sliceHasMore(
+    rows.map((r) => r.feed),
+    take,
+  );
 }

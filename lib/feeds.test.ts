@@ -6,7 +6,7 @@ let searchFeeds: Feeds["searchFeeds"];
 let countFeeds: Feeds["countFeeds"];
 let getAdminFeedsPage: Feeds["getAdminFeedsPage"];
 let getRelatedFeeds: Feeds["getRelatedFeeds"];
-let getPublicTopFeeds: Feeds["getPublicTopFeeds"];
+let getVisibleTopFeeds: Feeds["getVisibleTopFeeds"];
 let getAdjacentFeeds: Feeds["getAdjacentFeeds"];
 let getFeedsByTag: Feeds["getFeedsByTag"];
 let countFeedsByTag: Feeds["countFeedsByTag"];
@@ -113,7 +113,7 @@ beforeAll(async () => {
     countFeeds,
     getAdminFeedsPage,
     getRelatedFeeds,
-    getPublicTopFeeds,
+    getVisibleTopFeeds,
     getAdjacentFeeds,
     getFeedsByTag,
     countFeedsByTag,
@@ -634,7 +634,7 @@ describe("searchFeeds 정렬(sort)", () => {
   });
 });
 
-describe("getPublicTopFeeds", () => {
+describe("getVisibleTopFeeds", () => {
   test("조회수 내림차순 + 가시성 필터(anon/member) + 숨김·초안 제외", async () => {
     const mk = (id: string, over: Record<string, unknown>) =>
       prisma.feed.create({
@@ -657,13 +657,13 @@ describe("getPublicTopFeeds", () => {
       hiddenAt: new Date(),
     });
 
-    const anon = (await getPublicTopFeeds("anon")).map((f) => f.slug);
+    const anon = (await getVisibleTopFeeds("anon")).map((f) => f.slug);
     expect(anon).not.toContain("top-hidden"); // 신고 숨김 제외
     expect(anon).not.toContain("top-mem"); // 회원공개는 anon 제외
     expect(anon[0]).toBe("top-a"); // 최고 조회수(500)
     expect(anon.indexOf("top-a")).toBeLessThan(anon.indexOf("top-b")); // 500 > 300
 
-    const member = (await getPublicTopFeeds("member")).map((f) => f.slug);
+    const member = (await getVisibleTopFeeds("member")).map((f) => f.slug);
     expect(member[0]).toBe("top-mem"); // 999, 회원에겐 보임
 
     for (const id of ["top-a", "top-b", "top-mem", "top-hidden"])

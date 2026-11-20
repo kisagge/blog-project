@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { kstStartOfTodayUtc } from "@/lib/kst";
 import { parseTags, setFeedTags } from "@/lib/tags";
 import { bodyChanged } from "@/lib/feed-dates";
+import { FEED_LATEST_ORDER } from "@/lib/feeds";
 
 // 회원 글 가드.
 export const DRAFT_LIMIT = 3; // 회원당 동시 임시저장 최대 개수
@@ -48,7 +49,7 @@ export async function listMyDrafts(userId: string) {
 export async function listMyPosts(userId: string) {
   return prisma.feed.findMany({
     where: { authorId: userId, status: "published" },
-    orderBy: { publishedAt: "desc" },
+    orderBy: FEED_LATEST_ORDER,
     select: {
       id: true,
       slug: true,
@@ -68,7 +69,7 @@ export async function listMemberPosts(authorId: string) {
       visibility: "members",
       hiddenAt: null, // 신고로 가려진 글 제외
     },
-    orderBy: { publishedAt: "desc" },
+    orderBy: FEED_LATEST_ORDER,
     select: {
       id: true,
       slug: true,
