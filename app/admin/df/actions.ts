@@ -8,6 +8,7 @@ import {
   reorderFeatured,
   setFeaturedVisibility,
 } from "@/lib/df-characters";
+import { isVisibility, type Visibility } from "@/lib/visibility";
 
 export type DfSearchState =
   { rows?: DfCharacterRow[]; error?: string } | undefined;
@@ -57,9 +58,11 @@ export async function reorderDfCharactersAction(orderedIds: string[]) {
 
 export async function setDfVisibilityAction(
   id: string,
-  visibility: "public" | "members" | "private",
+  visibility: Visibility,
 ) {
   await verifySession();
+  // 서버 액션 인자는 클라이언트가 임의로 보낼 수 있다 — 허용값 외는 무시.
+  if (!isVisibility(visibility)) return;
   await setFeaturedVisibility(id, visibility);
   revalidatePath("/admin/df");
   revalidatePath("/df");

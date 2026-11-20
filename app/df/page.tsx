@@ -2,10 +2,13 @@ import Link from "next/link";
 import { listFeaturedVisible } from "@/lib/df-characters";
 import { getViewerRole } from "@/lib/dal";
 import { getCharacterInfo, characterImageUrl } from "@/lib/neople";
+import { guardPublicAccess } from "@/lib/site-config";
 
 export const metadata = { title: "던파 캐릭터" };
 
 export default async function DfPage() {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const role = await getViewerRole();
   const featured = await listFeaturedVisible(role);
   // 각 캐릭터 기본정보를 병렬 조회. 실패해도 카드가 깨지지 않게 개별 처리.

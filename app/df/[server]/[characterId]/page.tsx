@@ -38,6 +38,7 @@ import ViewTracker from "@/app/view-tracker";
 import ShareBar from "@/app/share-bar";
 import { absoluteUrl } from "@/lib/share";
 import Tabs, { type TabItem } from "./tabs";
+import { guardPublicAccess } from "@/lib/site-config";
 
 // 캐릭터 레벨/직업/명성 요약(공유 description·og 공용).
 function dfDescription(d: {
@@ -56,7 +57,20 @@ export async function generateMetadata({
 }: {
   params: Promise<{ server: string; characterId: string }>;
 }) {
+  // 점검 중엔 레이아웃 가드보다 먼저 메타데이터가 만들어져 리다이렉트 응답에 제목·OG가 실렸다 → 여기서도 가드.
+  await guardPublicAccess();
   const { server, characterId } = await params;
+  // 본문과 같은 게이트: 미등록·비공개(비관리자)는 이름·이미지를 <head>로 내보내지 않고,
+  // 회원공개는 비회원(=크롤러)에게 이름 없이 noindex. 공개 캐릭터만 Neople 조회.
+  const [featured, role] = await Promise.all([
+    getFeaturedByCharacter(server, characterId).catch(() => null),
+    getViewerRole(),
+  ]);
+  if (!featured) return { title: "찾을 수 없음" };
+  const access = checkAccess(featured.visibility as Visibility, role);
+  if (access === "not-found") return { title: "찾을 수 없음" };
+  if (access === "members-only")
+    return { title: "회원 전용 · 던파", robots: { index: false } };
   const info = await getCharacterInfo(server, characterId).catch(() => null);
   const title = info ? `${info.characterName} · 던파` : "캐릭터 상세 · 던파";
   const description = info ? dfDescription(info) : undefined;
@@ -77,6 +91,8 @@ export default async function DfDetailPage({
 }: {
   params: Promise<{ server: string; characterId: string }>;
 }) {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const { server, characterId } = await params;
   // 등록된 쇼케이스 캐릭터만 상세 노출 + 공개 범위 접근 제어.
   const [featured, role, blocked] = await Promise.all([

@@ -9,6 +9,7 @@ import { kstDate, isoInstant } from "@/lib/kst";
 import MemberGate from "@/app/member-gate";
 import Avatar from "@/app/avatar";
 import FollowButton from "@/app/u/follow-button";
+import { guardPublicAccess } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // 점검 중엔 레이아웃 가드보다 먼저 메타데이터가 만들어져 리다이렉트 응답에 제목·OG가 실렸다 → 여기서도 가드.
+  await guardPublicAccess();
   const { id } = await params;
   // 회원공개 프로필이라 비회원에겐 닉네임을 제목으로도 노출하지 않음.
   // 크롤러는 항상 비회원(안내만 보임) → 색인 제외.
@@ -34,6 +37,8 @@ export default async function MemberProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // 레이아웃 가드는 페이지 렌더를 막지 못한다(레이아웃·페이지 병렬 렌더 — 리다이렉트 응답에 본문이 실림) → 페이지에서도 가드.
+  await guardPublicAccess();
   const { id } = await params;
   const role = await getViewerRole();
 
