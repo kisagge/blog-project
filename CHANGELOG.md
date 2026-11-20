@@ -4,6 +4,10 @@
 
 ## [0.113.0] - 2026-11-20
 
+### Security
+
+- prisma가 고정한 `effect` 3.20.0의 ReDoS 권고(GHSA-7589-6fvf-x4pw, high) — 해당 경로만 3.22.5로 강제(pnpm overrides). CI 감사 게이트 복구
+
 ### Added
 
 - 오래된 기록 자동 정리(하루 1회, 배포 10분 뒤 첫 실행) — 조회 기록 180일, 읽은 알림 90일·안 읽은 알림 1년, 감사 로그 1년, 비밀번호 재설정 코드 1일. 정리 후 SQLite `PRAGMA optimize`. 통계·조회수 표시는 영향 없음 ([#239](https://github.com/kisagge/blog-project/pull/239))
