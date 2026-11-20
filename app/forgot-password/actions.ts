@@ -19,6 +19,7 @@ import {
   clearResetCookie,
 } from "@/lib/reset-token";
 import type { FormState, SimpleFormState } from "@/lib/form-state";
+import { normalizeEmail } from "@/lib/email";
 
 export type RequestState = SimpleFormState;
 export type VerifyState = SimpleFormState;
@@ -44,8 +45,8 @@ export async function requestCode(
     email: String(formData.get("email") ?? ""),
   });
   if (!parsed.success) return { error: "올바른 이메일을 입력하세요." };
-  // 이메일당 발급 한도 — 존재 여부와 무관하게 적용해 계정 존재를 드러내지 않는다.
-  if (!allowAction("resetIssue", parsed.data.email.trim().toLowerCase()))
+  // 이메일당 발급 한도 — 존재 여부와 무관하게 적용해 계정 존재를 드러내지 않는다(스키마가 이미 정규화).
+  if (!allowAction("resetIssue", parsed.data.email))
     return { error: TOO_MANY_REQUESTS };
   // 백엔드 오류(DB 락 등)가 화면을 깨지 않도록 흡수 — redirect는 try 밖(NEXT_REDIRECT 보존).
   try {
@@ -69,7 +70,7 @@ export async function requestCode(
 export async function resendCode() {
   const cookie = await getResetCookie();
   if (!cookie) redirect("/forgot-password");
-  if (!allowAction("resetIssue", cookie.email.trim().toLowerCase()))
+  if (!allowAction("resetIssue", normalizeEmail(cookie.email)))
     redirect("/forgot-password/verify");
   try {
     const { expiresAt } = await requestPasswordReset(cookie.email);
@@ -99,7 +100,7 @@ export async function verifyCode(
   const ip = (await getClientIp()) ?? "unknown";
   if (
     !allowAction("resetVerifyIp", ip) ||
-    !allowAction("resetVerifyEmail", cookie.email.trim().toLowerCase())
+    !allowAction("resetVerifyEmail", normalizeEmail(cookie.email))
   )
     return { error: TOO_MANY_REQUESTS };
   try {

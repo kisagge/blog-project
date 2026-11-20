@@ -4,6 +4,9 @@ import {
   isoInstant,
   kstWallClockToUtc,
   formatKstWallClock,
+  kstDayOf,
+  kstRecentDays,
+  kstYearMonth,
 } from "@/lib/kst";
 
 // 포맷 문자열의 구두점은 ICU 버전 의존이라 단정하지 않고, KST(UTC+9) 경계 동작을 검증.
@@ -80,5 +83,25 @@ describe("isoInstant", () => {
   test("Date 입력과 문자열 입력이 같은 결과", () => {
     const iso = "2026-06-18T15:00:00.000Z";
     expect(isoInstant(new Date(iso))).toBe(isoInstant(iso));
+  });
+});
+
+describe("kstDayOf·kstRecentDays·kstYearMonth", () => {
+  test("UTC 15시가 KST 자정 경계", () => {
+    expect(kstDayOf(new Date("2026-11-09T14:59:59Z"))).toBe("2026-11-09");
+    expect(kstDayOf(new Date("2026-11-09T15:00:00Z"))).toBe("2026-11-10");
+  });
+  test("최근 n일: 오래된 → 오늘(KST), 연말 경계", () => {
+    expect(kstRecentDays(3, new Date("2026-12-31T16:00:00Z"))).toEqual([
+      "2026-12-30",
+      "2026-12-31",
+      "2027-01-01",
+    ]);
+  });
+  test("연·월은 KST 기준(UTC 12/31 15:00 = KST 새해)", () => {
+    expect(kstYearMonth(new Date("2026-12-31T15:00:00Z"))).toEqual({
+      year: 2027,
+      month: 1,
+    });
   });
 });

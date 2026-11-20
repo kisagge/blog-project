@@ -30,3 +30,9 @@ export function xIntentUrl(url: string, text: string): string {
   const t = encodeURIComponent(text);
   return `https://twitter.com/intent/tweet?url=${u}&text=${t}`;
 }
+
+// 글 상세의 특정 댓글로 바로 가는 사이트 내부 링크(알림·신고 큐·프로필 최근 댓글 공용).
+// 상세 페이지가 ?c=로 해당 댓글을 스크롤·강조한다.
+export function commentPermalink(slug: string, commentId: string): string {
+  return `/feed/${slug}?c=${commentId}`;
+}

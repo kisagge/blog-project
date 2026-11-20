@@ -45,6 +45,15 @@ describe("관리자 login", () => {
     expect(cas).not.toHaveBeenCalled();
   });
 
+  test("ADMIN_PASSWORD 미설정이면 빈 비밀번호로도 로그인 불가", async () => {
+    vi.stubEnv("ADMIN_PASSWORD", "");
+    gci.mockResolvedValue("admin-empty");
+    expect(await login(undefined, formData({ password: "" }))).toEqual({
+      error: "비밀번호가 올바르지 않습니다.",
+    });
+    expect(cas).not.toHaveBeenCalled();
+  });
+
   test("레이트리밋: IP당 한도 초과 시 정답이어도 차단", async () => {
     gci.mockResolvedValue("admin-brute");
     const { limit } = ACTION_LIMITS.adminLogin;

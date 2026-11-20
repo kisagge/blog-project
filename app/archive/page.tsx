@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getArchiveFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
-import { groupByYearMonth, kstDayOfMonth } from "@/lib/archive";
+import { groupByYearMonth } from "@/lib/archive";
+import { kstDayOfMonth } from "@/lib/kst";
 import { isoInstant } from "@/lib/kst";
 import { guardPublicAccess } from "@/lib/site-config";
 import { postedAt } from "@/lib/feed-dates";

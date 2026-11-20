@@ -3,15 +3,23 @@ import { isAllowedPushEndpoint } from "@/lib/push-endpoint";
 import { UPLOAD_URL_RE } from "@/lib/upload";
 import { COMMENT_MAX_LENGTH } from "@/lib/limits";
 
+// 폼 공용 필드.
+const titleField = z.string().trim().min(1, "제목을 입력하세요.");
+// slug: 글·시리즈 공용 규칙(URL 식별자).
+const slugField = z
+  .string()
+  .trim()
+  .regex(/^[a-z0-9-]+$/, "slug는 소문자·숫자·하이픈(-)만 사용할 수 있습니다.");
+// 이메일: lib/email의 normalizeEmail과 같은 정규화(공백 제거 + 소문자).
+const emailField = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("올바른 이메일을 입력하세요.");
+
 export const FeedFormSchema = z.object({
-  title: z.string().trim().min(1, "제목을 입력하세요."),
-  slug: z
-    .string()
-    .trim()
-    .regex(
-      /^[a-z0-9-]+$/,
-      "slug는 소문자·숫자·하이픈(-)만 사용할 수 있습니다.",
-    ),
+  title: titleField,
+  slug: slugField,
   summary: z.string().trim().optional(),
   content: z.string().min(1, "본문을 입력하세요."),
   visibility: z.enum(["public", "members", "private"]),
@@ -37,14 +45,8 @@ export function feedFormToObject(formData: FormData) {
 
 // 시리즈 생성·수정 입력(관리자). slug는 글 slug와 동일 규칙.
 export const SeriesSchema = z.object({
-  title: z.string().trim().min(1, "제목을 입력하세요."),
-  slug: z
-    .string()
-    .trim()
-    .regex(
-      /^[a-z0-9-]+$/,
-      "slug는 소문자·숫자·하이픈(-)만 사용할 수 있습니다.",
-    ),
+  title: titleField,
+  slug: slugField,
   description: z.string().trim().optional(),
 });
 
@@ -119,14 +121,14 @@ export const MemberPostSchema = z.object({
 });
 
 export const SignupSchema = z.object({
-  email: z.string().trim().toLowerCase().email("올바른 이메일을 입력하세요."),
+  email: emailField,
   nickname: nicknameField,
   password: passwordField,
 });
 
 // 비밀번호 재설정 단계별 스키마.
 export const ResetEmailSchema = z.object({
-  email: z.string().trim().toLowerCase().email("올바른 이메일을 입력하세요."),
+  email: emailField,
 });
 
 export const ResetCodeSchema = z.object({

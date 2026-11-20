@@ -5,6 +5,7 @@ import { ADMIN_PAGE_SIZE, pageWindow } from "@/lib/pagination";
 import { getAdminNickname } from "@/lib/comment-actor";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import type { Result } from "@/lib/result";
+import { normalizeEmail } from "@/lib/email";
 
 export type UserStatus = "pending" | "approved" | "rejected" | "blocked";
 
@@ -36,7 +37,7 @@ export async function createPendingUser(input: {
   nickname: string;
   password: string;
 }): Promise<Result> {
-  const email = input.email.trim().toLowerCase();
+  const email = normalizeEmail(input.email);
   const existing = await prisma.user.findUnique({
     where: { email },
     select: { id: true, status: true },
@@ -81,7 +82,7 @@ export async function createPendingUser(input: {
 
 export async function findUserByEmail(email: string) {
   return prisma.user.findUnique({
-    where: { email: email.trim().toLowerCase() },
+    where: { email: normalizeEmail(email) },
   });
 }
 

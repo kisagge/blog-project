@@ -4,11 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { sendPasswordResetCode } from "@/lib/mailer";
 import type { Result } from "@/lib/result";
+import { normalizeEmail } from "@/lib/email";
+import {
+  RESET_CODE_TTL_MS,
+  RESET_RESEND_COOLDOWN_MS,
+  RESET_VERIFY_GRACE_MS,
+} from "@/lib/reset-policy";
 
-const CODE_TTL_MS = 3 * 60 * 1000; // 코드 유효시간 3분
 const MAX_ATTEMPTS = 5; // 검증 시도 제한
-const VERIFY_GRACE_MS = 15 * 60 * 1000; // 검증 후 새 비번 입력 허용 시간
-const RESEND_COOLDOWN_MS = 60 * 1000; // 같은 이메일 재발송 최소 간격(메일 폭탄 방지)
 
 function generateCode(): string {
   return String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -19,8 +22,8 @@ function generateCode(): string {
 export async function requestPasswordReset(
   email: string,
 ): Promise<{ expiresAt: Date }> {
-  const normalized = email.trim().toLowerCase();
-  const expiresAt = new Date(Date.now() + CODE_TTL_MS);
+  const normalized = normalizeEmail(email);
+  const expiresAt = new Date(Date.now() + RESET_CODE_TTL_MS);
   const user = await prisma.user.findUnique({
     where: { email: normalized },
     select: { role: true, status: true },
@@ -35,7 +38,7 @@ export async function requestPasswordReset(
     });
     if (
       recent &&
-      Date.now() - recent.createdAt.getTime() < RESEND_COOLDOWN_MS
+      Date.now() - recent.createdAt.getTime() < RESET_RESEND_COOLDOWN_MS
     ) {
       return { expiresAt: recent.expiresAt };
     }
@@ -66,7 +69,7 @@ export async function verifyResetCode(
   email: string,
   code: string,
 ): Promise<Result> {
-  const normalized = email.trim().toLowerCase();
+  const normalized = normalizeEmail(email);
   const rec = await prisma.passwordResetCode.findFirst({
     where: { email: normalized, consumedAt: null },
     orderBy: { createdAt: "desc" },
@@ -96,14 +99,14 @@ export async function resetPassword(
   email: string,
   newPassword: string,
 ): Promise<Result> {
-  const normalized = email.trim().toLowerCase();
+  const normalized = normalizeEmail(email);
   const rec = await prisma.passwordResetCode.findFirst({
     where: { email: normalized, consumedAt: null, verifiedAt: { not: null } },
     orderBy: { createdAt: "desc" },
   });
   if (!rec)
     return { ok: false, error: "인증이 필요합니다. 다시 시도해 주세요." };
-  if (Date.now() - rec.verifiedAt!.getTime() > VERIFY_GRACE_MS)
+  if (Date.now() - rec.verifiedAt!.getTime() > RESET_VERIFY_GRACE_MS)
     return { ok: false, error: "시간이 만료되었습니다. 다시 시도해 주세요." };
   const user = await prisma.user.findUnique({
     where: { email: normalized },

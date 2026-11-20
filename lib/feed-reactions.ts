@@ -1,8 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import {
-  REACTION_EMOJIS,
   isReactionEmoji,
+  toReactionSummaries,
   type ReactionSummary,
 } from "@/lib/reactions";
 
@@ -50,14 +50,8 @@ export async function getFeedReactionSummary(
       : Promise.resolve([] as { emoji: string }[]),
   ]);
 
-  const counts = new Map(grouped.map((g) => [g.emoji, g._count._all]));
-  const mineSet = new Set(mine.map((r) => r.emoji));
-
-  const summaries: ReactionSummary[] = [];
-  for (const emoji of REACTION_EMOJIS) {
-    const count = counts.get(emoji) ?? 0;
-    if (count > 0)
-      summaries.push({ emoji, count, reacted: mineSet.has(emoji) });
-  }
-  return summaries;
+  return toReactionSummaries(
+    new Map(grouped.map((g) => [g.emoji, g._count._all])),
+    new Set(mine.map((r) => r.emoji)),
+  );
 }

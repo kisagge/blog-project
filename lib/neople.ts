@@ -24,6 +24,10 @@ function apiKey(): string {
 
 type Params = Record<string, string | number | undefined>;
 
+// 캐릭터 API 경로(`/df/servers/{s}/characters/{c}` + 하위 경로).
+const charPath = (serverId: string, characterId: string, sub = "") =>
+  `/df/servers/${serverId}/characters/${characterId}${sub}`;
+
 // revalidate: Next 데이터 캐시 TTL(초). 레이트리밋 회피용. 0이면 매번 새로 조회.
 async function df<T>(
   path: string,
@@ -88,11 +92,7 @@ export async function getCharacterInfo(
   serverId: string,
   characterId: string,
 ): Promise<DfCharacterInfo> {
-  return df<DfCharacterInfo>(
-    `/df/servers/${serverId}/characters/${characterId}`,
-    {},
-    600,
-  );
+  return df<DfCharacterInfo>(charPath(serverId, characterId));
 }
 
 // 이미지(apikey 불필요 — 클라이언트에서 직접 사용 가능). zoom 1~3.
@@ -101,7 +101,7 @@ export function characterImageUrl(
   characterId: string,
   zoom = 2,
 ): string {
-  return `${IMG}/df/servers/${serverId}/characters/${characterId}?zoom=${zoom}`;
+  return `${IMG}${charPath(serverId, characterId)}?zoom=${zoom}`;
 }
 
 export function itemImageUrl(itemId: string): string {
@@ -177,39 +177,27 @@ export type DfActiveSet = {
 };
 
 export function getCharacterStatus(serverId: string, characterId: string) {
-  return df<DfStatusResponse>(
-    `/df/servers/${serverId}/characters/${characterId}/status`,
-    {},
-    600,
-  );
+  return df<DfStatusResponse>(charPath(serverId, characterId, "/status"));
 }
 
 export async function getEquipment(serverId: string, characterId: string) {
   const r = await df<{
     equipment?: DfEquipItem[];
     setItemInfo?: DfActiveSet[];
-  }>(
-    `/df/servers/${serverId}/characters/${characterId}/equip/equipment`,
-    {},
-    600,
-  );
+  }>(charPath(serverId, characterId, "/equip/equipment"));
   return { items: r.equipment ?? [], sets: r.setItemInfo ?? [] };
 }
 
 export async function getAvatar(serverId: string, characterId: string) {
   const r = await df<{ avatar: DfAvatarItem[] }>(
-    `/df/servers/${serverId}/characters/${characterId}/equip/avatar`,
-    {},
-    600,
+    charPath(serverId, characterId, "/equip/avatar"),
   );
   return r.avatar ?? [];
 }
 
 export async function getCreature(serverId: string, characterId: string) {
   const r = await df<{ creature: DfCreature | null }>(
-    `/df/servers/${serverId}/characters/${characterId}/equip/creature`,
-    {},
-    600,
+    charPath(serverId, characterId, "/equip/creature"),
   );
   return r.creature ?? null;
 }
@@ -220,7 +208,7 @@ export async function getTimeline(
   limit = 15,
 ) {
   const r = await df<{ timeline?: { rows?: DfTimelineRow[] } }>(
-    `/df/servers/${serverId}/characters/${characterId}/timeline`,
+    charPath(serverId, characterId, "/timeline"),
     { limit },
     300,
   );
@@ -243,9 +231,7 @@ export type DfSkillStyle = {
 
 export async function getSkillStyle(serverId: string, characterId: string) {
   const r = await df<{ skill?: { style?: DfSkillStyle } }>(
-    `/df/servers/${serverId}/characters/${characterId}/skill/style`,
-    {},
-    600,
+    charPath(serverId, characterId, "/skill/style"),
   );
   return r.skill?.style ?? null;
 }
@@ -278,9 +264,7 @@ export type DfOath = {
 
 export async function getOath(serverId: string, characterId: string) {
   const r = await df<{ oath: DfOath | null }>(
-    `/df/servers/${serverId}/characters/${characterId}/equip/oath`,
-    {},
-    600,
+    charPath(serverId, characterId, "/equip/oath"),
   );
   return r.oath ?? null;
 }
@@ -296,9 +280,7 @@ export async function getMistAssimilation(
   characterId: string,
 ) {
   const r = await df<{ mistAssimilation: DfMistAssimilation | null }>(
-    `/df/servers/${serverId}/characters/${characterId}/equip/mist-assimilation`,
-    {},
-    600,
+    charPath(serverId, characterId, "/equip/mist-assimilation"),
   );
   return r.mistAssimilation ?? null;
 }
@@ -315,9 +297,7 @@ export type DfBuffSwitching = {
 
 export async function getBuffEquipment(serverId: string, characterId: string) {
   const r = await df<{ skill?: { buff?: DfBuffSwitching | null } }>(
-    `/df/servers/${serverId}/characters/${characterId}/skill/buff/equip/equipment`,
-    {},
-    600,
+    charPath(serverId, characterId, "/skill/buff/equip/equipment"),
   );
   return r.skill?.buff ?? null;
 }
