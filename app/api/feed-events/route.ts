@@ -3,7 +3,7 @@ import { getViewerRole } from "@/lib/dal";
 import { canReadFeed } from "@/lib/feed-access";
 import { subscribeFeed } from "@/lib/events";
 
-// SSE: 특정 글의 피드 이벤트(댓글 생성·수정·삭제 + 글 좋아요 수)를 실시간 전달.
+// SSE: 특정 글의 피드 이벤트(댓글 생성·수정·삭제·좋아요·리액션 + 글 좋아요·리액션)를 실시간 전달.
 // 접근은 글 상세와 동일하게 게이트.
 export const dynamic = "force-dynamic";
 

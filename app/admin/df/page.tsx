@@ -2,6 +2,7 @@ import { getServers } from "@/lib/neople";
 import { listFeatured } from "@/lib/df-characters";
 import DfManager from "./df-manager";
 import DfCharacterList from "./df-character-list";
+import type { Visibility } from "@/lib/visibility";
 
 export const metadata = { title: "던파 캐릭터 · 관리자" };
 
@@ -33,7 +34,7 @@ export default async function AdminDfPage() {
           id: c.id,
           serverId: c.serverId,
           characterName: c.characterName,
-          visibility: c.visibility as "public" | "members" | "private",
+          visibility: c.visibility as Visibility,
         }))}
       />
     </section>

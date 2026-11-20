@@ -27,7 +27,7 @@ export async function logAudit(entry: AuditEntry): Promise<void> {
   }
 }
 
-export const AUDIT_PAGE_SIZE = 30;
+const AUDIT_PAGE_SIZE = 30;
 
 // 관리자 감사 로그 목록(최신순, 페이지 단위). getAdminFeedsPage와 동형 반환.
 export async function getAuditPage(page: number, pageSize = AUDIT_PAGE_SIZE) {

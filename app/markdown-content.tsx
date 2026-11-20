@@ -125,7 +125,7 @@ function anchored(Tag: "h2" | "h3") {
         <a
           href={`#${id}`}
           aria-label={`${node ? hastText(node) : id} 섹션 링크`}
-          className="text-zinc-500 no-underline! opacity-0 group-hover:opacity-100 focus-visible:opacity-100 dark:text-zinc-400 [@media(hover:none)]:opacity-100"
+          className="text-zinc-500 no-underline! opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
         >
           #
         </a>

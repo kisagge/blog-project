@@ -2,7 +2,7 @@ import GithubSlugger from "github-slugger";
 
 // 마크다운 본문에서 읽는 시간·목차를 뽑는 순수 유틸(클라/서버 공용 — server-only 아님).
 
-export const KOREAN_CHARS_PER_MINUTE = 500;
+const KOREAN_CHARS_PER_MINUTE = 500;
 
 // 인라인 마크다운 제거(코드·이미지·링크·강조). 제목 텍스트/슬러그 입력에 사용.
 function stripInline(s: string): string {

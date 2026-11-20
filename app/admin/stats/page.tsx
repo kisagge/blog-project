@@ -86,20 +86,20 @@ export default async function StatsPage() {
         <h2 id="read-stats" className="mb-1 text-sm font-semibold">
           읽기 지표 (최근 30일, 조회 상위 10)
         </h2>
-        <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mb-3 text-xs text-zinc-500">
           완독 = 본문의 {COMPLETE_DEPTH}% 이상까지 읽음. 완독률·평균 시간은 읽기
           신호가 들어온 조회(측정)만 기준이며, 시간은 탭이 보이고 상호작용
           중이던 시간만 셉니다.
         </p>
         {readStats.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-zinc-500">
             최근 30일 조회 기록이 없습니다.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-black/[.08] text-left text-xs text-zinc-500 dark:border-white/[.145] dark:text-zinc-400">
+                <tr className="border-b border-black/[.08] text-left text-xs text-zinc-500 dark:border-white/[.145]">
                   <th scope="col" className="py-2 pr-3 font-medium">
                     글
                   </th>

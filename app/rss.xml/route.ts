@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { SITE_ORIGIN } from "@/lib/share";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "@/lib/share";
 import { renderRssFeed } from "@/lib/rss";
 import { markdownToFeedHtml } from "@/lib/rss-content";
 import { getPublicEnabled, maintenanceResponse } from "@/lib/site-config";
@@ -27,9 +27,9 @@ export async function GET() {
   });
 
   const xml = renderRssFeed({
-    title: "BY Playground",
+    title: SITE_NAME,
     link: SITE_ORIGIN,
-    description: "생각과 기록을 남기는 개인 공간",
+    description: SITE_DESCRIPTION,
     selfUrl: `${SITE_ORIGIN}/rss.xml`,
     items: await Promise.all(
       feeds.map(async (f) => ({

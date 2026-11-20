@@ -5,6 +5,7 @@ import { updateFeed } from "@/app/admin/actions";
 import { getFeedById } from "@/lib/feeds";
 import { listSeries } from "@/lib/series";
 import { countRevisions } from "@/lib/revisions";
+import type { Visibility } from "@/lib/visibility";
 
 export default async function EditFeedPage({
   params,
@@ -48,7 +49,7 @@ export default async function EditFeedPage({
           slug: feed.slug,
           summary: feed.summary,
           content: feed.content,
-          visibility: feed.visibility as "public" | "members" | "private",
+          visibility: feed.visibility as Visibility,
           tags: feed.feedTags.map((ft) => ft.tag.name).join(", "),
           seriesId: feed.seriesId,
         }}

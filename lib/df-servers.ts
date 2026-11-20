@@ -1,5 +1,5 @@
 // 던파 서버 ID → 한글 이름(서버/클라이언트 공용 정적 매핑).
-export const DF_SERVER_NAMES: Record<string, string> = {
+const DF_SERVER_NAMES: Record<string, string> = {
   cain: "카인",
   diregie: "디레지에",
   siroco: "시로코",

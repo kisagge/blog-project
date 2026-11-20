@@ -13,7 +13,7 @@ export default async function AdminAboutPage() {
   return (
     <section>
       <h1 className="text-xl font-semibold tracking-tight">소개 페이지</h1>
-      <p className="mt-1 mb-6 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-1 mb-6 text-sm text-zinc-500">
         {about.updatedAt
           ? `공개 중 · 마지막 저장 ${kstDateTime(about.updatedAt)}`
           : "비공개 — 본문을 저장하면 /about 페이지와 메뉴 링크가 열립니다."}

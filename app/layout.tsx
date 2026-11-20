@@ -10,9 +10,11 @@ import NotificationBell from "@/app/notification-bell";
 import SiteVisitTracker from "@/app/site-visit-tracker";
 import ServiceWorkerRegister from "@/app/service-worker-register";
 import "./globals.css";
+import { DEFAULT_THEME, THEME_ORDER, THEME_STORAGE_KEY } from "@/lib/theme";
 
-// 페인트 전에 data-theme를 확정해 깜빡임 방지 (localStorage 선택 + system은 OS 추종).
-const THEME_SCRIPT = `(function(){try{var c=localStorage.getItem('theme');if(c!=='light'&&c!=='dark'&&c!=='brand')c='brand';document.documentElement.setAttribute('data-theme',c);}catch(e){}})();`;
+// 페인트 전에 data-theme를 확정해 깜빡임 방지(저장된 선택, 없거나 무효면 기본 테마). lib/theme 상수로 생성해
+// 토글(theme-toggle)과 저장 키·허용값·기본값이 어긋나지 않게 한다.
+const THEME_SCRIPT = `(function(){try{var c=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});if(${JSON.stringify(THEME_ORDER)}.indexOf(c)<0)c=${JSON.stringify(DEFAULT_THEME)};document.documentElement.setAttribute('data-theme',c);}catch(e){}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

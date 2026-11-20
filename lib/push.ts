@@ -3,6 +3,7 @@ import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 import { swallow } from "@/lib/log";
 import { isAllowedPushEndpoint } from "@/lib/push-endpoint";
+import { SITE_ORIGIN } from "@/lib/share";
 
 // 회원당 보관할 구독 수(기기·브라우저별 1개). 넘치면 오래된 것부터 정리 — 무한 누적·발송 폭증 방지.
 export const MAX_SUBSCRIPTIONS = 10;
@@ -12,15 +13,11 @@ function configure(): boolean {
   if (configured) return true;
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "https://by-jang-blog.xyz";
+  const subject = process.env.VAPID_SUBJECT || SITE_ORIGIN;
   if (!pub || !priv) return false;
   webpush.setVapidDetails(subject, pub, priv);
   configured = true;
   return true;
-}
-
-export function pushPublicKey(): string | undefined {
-  return process.env.VAPID_PUBLIC_KEY || undefined;
 }
 
 type Sub = { endpoint: string; keys: { p256dh: string; auth: string } };

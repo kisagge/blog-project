@@ -4,7 +4,7 @@ import { kstWallClockToUtc } from "@/lib/kst";
 import { swallow } from "@/lib/log";
 
 // 예약 발행 도래분 일괄 게시. status="draft" + scheduledAt<=now(=null 제외 → 회원 임시저장 무관)을
-// published로 전환하고 publishedAt 기록·scheduledAt 비움. 발행 건수 반환(절대 throw 안 함 가정 호출부).
+// published로 전환하고 publishedAt 기록·scheduledAt 비움. 발행 건수 반환(DB 오류는 throw — 스케줄러가 swallow로 흡수).
 export async function publishDueFeeds(now: Date = new Date()): Promise<number> {
   const res = await prisma.feed.updateMany({
     where: { status: "draft", scheduledAt: { lte: now } },

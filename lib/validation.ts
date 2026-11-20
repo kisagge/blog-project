@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { isAllowedPushEndpoint } from "@/lib/push-endpoint";
+import { UPLOAD_URL_RE } from "@/lib/upload";
+import { COMMENT_MAX_LENGTH } from "@/lib/limits";
 
 export const FeedFormSchema = z.object({
   title: z.string().trim().min(1, "제목을 입력하세요."),
@@ -17,8 +19,6 @@ export const FeedFormSchema = z.object({
   seriesId: z.string().trim().optional(), // "" = 미배정(시리즈 select 값)
   scheduledAt: z.string().trim().optional(), // KST 벽시계 "YYYY-MM-DDTHH:MM" 또는 ""(생성 시에만, 즉시=빈값)
 });
-
-export type FeedFormValues = z.infer<typeof FeedFormSchema>;
 
 // FormData → 파싱 입력 객체. visibility는 select 값(없으면 비공개).
 export function feedFormToObject(formData: FormData) {
@@ -53,7 +53,7 @@ export const CommentSchema = z.object({
     .string()
     .trim()
     .min(1, "내용을 입력하세요.")
-    .max(2000, "댓글은 2000자 이하여야 합니다."),
+    .max(COMMENT_MAX_LENGTH, `댓글은 ${COMMENT_MAX_LENGTH}자 이하여야 합니다.`),
 });
 
 // 콘텐츠 신고: 사유(필수) + 상세(선택, 500자).
@@ -84,8 +84,6 @@ const nicknameField = z
   .min(1, "닉네임을 입력하세요.")
   .max(20, "닉네임은 20자 이하.");
 
-export const NicknameSchema = z.object({ nickname: nicknameField });
-
 // 자기소개: 선택, 최대 160자.
 const bioField = z.string().trim().max(160, "자기소개는 160자 이하.");
 
@@ -94,8 +92,7 @@ const avatarUrlField = z
   .string()
   .trim()
   .refine(
-    (v) =>
-      v === "" || /^\/uploads\/[a-f0-9-]+\.(jpg|jpeg|png|webp)(\?.*)?$/.test(v),
+    (v) => v === "" || UPLOAD_URL_RE.test(v),
     "올바른 아바타 이미지가 아닙니다.",
   );
 
@@ -126,7 +123,6 @@ export const SignupSchema = z.object({
   nickname: nicknameField,
   password: passwordField,
 });
-export type SignupValues = z.infer<typeof SignupSchema>;
 
 // 비밀번호 재설정 단계별 스키마.
 export const ResetEmailSchema = z.object({

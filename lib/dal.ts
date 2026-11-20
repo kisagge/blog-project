@@ -33,7 +33,7 @@ export const getViewerRole = cache(async (): Promise<ViewerRole> => {
     : "anon";
 });
 
-// 보호용: 세션 없으면 /login로 redirect
+// 관리자 전용 가드: 관리자 세션이 아니면(비로그인·회원 모두) /login으로 redirect
 export const verifySession = cache(async () => {
   const session = await getSession();
   if (session?.role !== "admin") redirect("/login");

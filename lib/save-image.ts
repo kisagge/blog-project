@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "crypto";
 import { mkdir, writeFile, unlink } from "fs/promises";
 import { join } from "path";
-import { checkImage } from "@/lib/upload";
+import { checkImage, UPLOAD_URL_RE } from "@/lib/upload";
 import { imageDimensions } from "@/lib/image-size";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "data/uploads";
@@ -51,10 +51,9 @@ export async function saveImage(file: unknown): Promise<UploadResult> {
   if (!check.ok) return { error: check.error };
 
   const buf = Buffer.from(await file.arrayBuffer());
-  // 선언 확장자와 실제 매직바이트가 일치해야 저장(jpeg↔jpg 동일시).
-  const sniffed = sniffImageType(buf);
-  const want = check.ext === "jpeg" ? "jpg" : check.ext;
-  if (sniffed !== want) return { error: "이미지 형식이 올바르지 않습니다." };
+  // 선언 확장자와 실제 매직바이트가 일치해야 저장(checkImage가 image/jpeg를 "jpg"로 정규화).
+  if (sniffImageType(buf) !== check.ext)
+    return { error: "이미지 형식이 올바르지 않습니다." };
 
   const name = `${randomUUID()}.${check.ext}`;
   const dim = imageDimensions(buf);
@@ -66,10 +65,7 @@ export async function saveImage(file: unknown): Promise<UploadResult> {
 
 // `/uploads/<uuid>.<ext>[?…]` → 디스크 파일명(<uuid>.<ext>). 그 외 형태는 null(경로 조작 차단).
 export function uploadNameFromUrl(url: string): string | null {
-  const m = /^\/uploads\/([a-f0-9-]+\.(?:jpg|jpeg|png|webp))(?:\?.*)?$/.exec(
-    url,
-  );
-  return m ? m[1] : null;
+  return UPLOAD_URL_RE.exec(url)?.[1] ?? null;
 }
 
 // 업로드 파일 삭제(아바타 교체·제거 시 이전 파일 정리). best-effort — 미존재 등 에러는 무시.

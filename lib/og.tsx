@@ -1,6 +1,9 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { SITE_NAME, SITE_ORIGIN } from "@/lib/share";
+
+const SITE_HOST = new URL(SITE_ORIGIN).host;
 
 // 동적 OG 이미지 공용 렌더(1200x630, 한글 헤딩 Pretendard).
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -19,7 +22,7 @@ function loadFont(): Promise<Buffer> {
 
 export async function ogImage(
   title: string,
-  subtitle = "BY Playground",
+  subtitle = SITE_NAME,
 ): Promise<ImageResponse> {
   const font = await loadFont();
   const text = title.length > 70 ? `${title.slice(0, 70)}…` : title;
@@ -42,7 +45,7 @@ export async function ogImage(
       <div style={{ display: "flex", fontSize: 64, lineHeight: 1.25 }}>
         {text}
       </div>
-      <div style={{ fontSize: 26, color: "#64748b" }}>by-jang-blog.xyz</div>
+      <div style={{ fontSize: 26, color: "#64748b" }}>{SITE_HOST}</div>
     </div>,
     {
       ...OG_SIZE,

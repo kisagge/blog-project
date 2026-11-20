@@ -68,7 +68,7 @@ export default function AboutEditor({ initial }: { initial: string }) {
   }
 
   const tabCls = (on: boolean) =>
-    `rounded px-2 py-1 ${on ? "bg-black/[.06] font-medium dark:bg-white/[.1]" : "text-zinc-500 dark:text-zinc-400"}`;
+    `rounded px-2 py-1 ${on ? "bg-black/[.06] font-medium dark:bg-white/[.1]" : "text-zinc-500"}`;
 
   return (
     <form action={action} className="flex flex-col gap-3">
@@ -133,7 +133,7 @@ export default function AboutEditor({ initial }: { initial: string }) {
             className="sr-only"
           />
           {/* 상태 영역은 항상 마운트(도중에 생긴 live region은 읽히지 않을 수 있음) */}
-          <span role="status" className="text-zinc-500 dark:text-zinc-400">
+          <span role="status" className="text-zinc-500">
             {uploading ? "업로드 중…" : notice}
           </span>
         </div>
@@ -167,15 +167,13 @@ export default function AboutEditor({ initial }: { initial: string }) {
           (content.trim() ? (
             <MarkdownContent content={content} />
           ) : (
-            <p className="text-zinc-500 dark:text-zinc-400">
-              미리볼 내용이 없습니다.
-            </p>
+            <p className="text-zinc-500">미리볼 내용이 없습니다.</p>
           ))}
       </div>
 
       <p
         id="about-hint"
-        className={`text-xs ${tooLong ? "text-red-600 dark:text-red-400" : "text-zinc-500 dark:text-zinc-400"}`}
+        className={`text-xs ${tooLong ? "text-red-600 dark:text-red-400" : "text-zinc-500"}`}
       >
         {content.length.toLocaleString()} / {ABOUT_MAX_LENGTH.toLocaleString()}
         자 · 비워서 저장하면 소개 페이지와 메뉴 링크가 숨겨집니다.

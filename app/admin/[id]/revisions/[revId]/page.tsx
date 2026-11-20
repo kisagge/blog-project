@@ -39,7 +39,7 @@ export default async function RevisionPage({
           <RestoreButton revisionId={rev.id} />
         </div>
       </div>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-sm text-zinc-500">
         <time dateTime={isoInstant(rev.createdAt)}>
           {kstDateTime(rev.createdAt)}
         </time>
@@ -51,13 +51,13 @@ export default async function RevisionPage({
           제목·요약
         </h2>
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-          <dt className="text-zinc-500 dark:text-zinc-400">제목</dt>
+          <dt className="text-zinc-500">제목</dt>
           <dd>
             {titleChanged
               ? `${rev.title} → ${feed.title}`
               : `${feed.title} (변경 없음)`}
           </dd>
-          <dt className="text-zinc-500 dark:text-zinc-400">요약</dt>
+          <dt className="text-zinc-500">요약</dt>
           <dd>
             {summaryChanged
               ? `${rev.summary || "(없음)"} → ${feed.summary || "(없음)"}`
@@ -69,7 +69,7 @@ export default async function RevisionPage({
       <section aria-labelledby="rev-body">
         <h2 id="rev-body" className="mb-2 text-sm font-semibold">
           본문{" "}
-          <span className="font-normal text-zinc-500 dark:text-zinc-400">
+          <span className="font-normal text-zinc-500">
             (추가 {added}줄 · 삭제 {removed}줄)
           </span>
         </h2>

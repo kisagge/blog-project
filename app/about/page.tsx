@@ -38,7 +38,7 @@ export default async function AboutPage() {
         <header className="mb-8 border-b border-black/[.06] pb-6 dark:border-white/[.1]">
           <h1 className="text-3xl font-semibold tracking-tight">소개</h1>
           {about.updatedAt && (
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-zinc-500">
               마지막 수정{" "}
               <time dateTime={isoInstant(about.updatedAt)}>
                 {kstDate(about.updatedAt)}

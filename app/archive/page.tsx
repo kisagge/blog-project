@@ -26,18 +26,16 @@ export default async function ArchivePage() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">아카이브</h1>
-      <p className="mt-2 mb-8 text-sm text-zinc-500 dark:text-zinc-400">
-        글 {total}개
-      </p>
+      <p className="mt-2 mb-8 text-sm text-zinc-500">글 {total}개</p>
       {years.length === 0 ? (
-        <p className="text-zinc-500 dark:text-zinc-400">아직 글이 없습니다.</p>
+        <p className="text-zinc-500">아직 글이 없습니다.</p>
       ) : (
         <div className="flex flex-col gap-10">
           {years.map((y) => (
             <section key={y.year} aria-labelledby={`y${y.year}`}>
               <h2 id={`y${y.year}`} className="text-xl font-semibold">
                 {y.year}년{" "}
-                <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
+                <span className="text-sm font-normal text-zinc-500">
                   {y.count}개
                 </span>
               </h2>
@@ -58,7 +56,7 @@ export default async function ArchivePage() {
                       <li key={f.slug} className="flex gap-3">
                         <time
                           dateTime={isoInstant(postedAt(f))}
-                          className="w-10 shrink-0 text-sm text-zinc-500 tabular-nums dark:text-zinc-400"
+                          className="w-10 shrink-0 text-sm text-zinc-500 tabular-nums"
                         >
                           {kstDayOfMonth(postedAt(f))}일
                         </time>

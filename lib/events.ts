@@ -39,7 +39,7 @@ export function publishUnread(userId: string, unread: number): void {
   publish(`user:${userId}`, unread);
 }
 
-// ── 피드 이벤트(per-feed): 댓글 + 글 좋아요를 같은 `feed:{id}` 채널로 ──
+// ── 피드 이벤트(per-feed): 댓글·댓글 좋아요/리액션 + 글 좋아요/리액션을 같은 `feed:{id}` 채널로 ──
 // 구독은 union(FeedEvent)으로 받고(라우트가 그대로 전달), 발행은 종류별 헬퍼로.
 export function subscribeFeed(
   feedId: string,

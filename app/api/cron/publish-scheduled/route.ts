@@ -13,7 +13,8 @@ function secretMatches(provided: string | null): boolean {
   return timingSafeEqual(a, b);
 }
 
-// 예약 발행 cron 엔드포인트. GitHub Actions가 호스트에서 localhost로 POST(시크릿 헤더).
+// 예약 발행 cron 엔드포인트(보조 경로). 평소엔 앱 내부 스케줄러(instrumentation → lib/scheduled)가 발행하고,
+// 이 엔드포인트는 수동 워크플로(publish-scheduled.yml)가 호스트에서 localhost로 POST할 때 쓴다(시크릿 헤더).
 // CRON_SECRET 미설정/불일치 → 401(미설정 시 사실상 비활성).
 export async function POST(req: Request) {
   if (!secretMatches(req.headers.get("x-cron-secret"))) {

@@ -1,8 +1,8 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
 
-export type ToastKind = "error" | "success";
-export type Toast = { id: number; message: string; kind: ToastKind };
+type ToastKind = "error" | "success";
+type Toast = { id: number; message: string; kind: ToastKind };
 
 /** 화면 우하단에 잠시 떴다 자동으로 사라지는 토스트. 의존성 없는 자체 구현. */
 export function useToast() {
