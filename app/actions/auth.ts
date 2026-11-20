@@ -1,19 +1,17 @@
 "use server";
-import { timingSafeEqual } from "crypto";
 import { redirect } from "next/navigation";
 import { createAdminSession, deleteSession } from "@/lib/session";
 import { verifyTotp } from "@/lib/totp";
+import { safeEqual } from "@/lib/safe-equal";
 import { getClientIp } from "@/lib/client-ip";
 import { allowAction, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 
 export type LoginState = { error?: string } | undefined;
 
+// ADMIN_PASSWORD가 비어 있으면 항상 거부 — 빈 입력과 빈 기대값이 일치해 로그인되는 일이 없게(cron 시크릿과 동일).
 function passwordMatches(input: string): boolean {
   const expected = process.env.ADMIN_PASSWORD ?? "";
-  const a = Buffer.from(input);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
+  return expected !== "" && safeEqual(input, expected);
 }
 
 export async function login(

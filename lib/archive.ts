@@ -1,6 +1,7 @@
 // 아카이브(/archive)용 KST 연·월 그룹핑. 순수 함수 — 입력은 최신순 정렬된 글 목록이라 가정하고 순서를 유지.
 
 import { postedAt } from "@/lib/feed-dates";
+import { kstYearMonth } from "@/lib/kst";
 
 type ArchiveMonth<T> = { month: number; items: T[] };
 type ArchiveYear<T> = {
@@ -9,17 +10,13 @@ type ArchiveYear<T> = {
   months: ArchiveMonth<T>[];
 };
 
-const KST_OFFSET = 9 * 3600 * 1000;
-
 // 기준 날짜는 게시일(postedAt — 예약 발행 글은 작성일이 아니라 실제 게시 시각).
 export function groupByYearMonth<
   T extends { createdAt: Date; publishedAt?: Date | null },
 >(items: T[]): ArchiveYear<T>[] {
   const years: ArchiveYear<T>[] = [];
   for (const item of items) {
-    const kst = new Date(postedAt(item).getTime() + KST_OFFSET);
-    const year = kst.getUTCFullYear();
-    const month = kst.getUTCMonth() + 1;
+    const { year, month } = kstYearMonth(postedAt(item));
     let y = years.find((g) => g.year === year);
     if (!y) {
       y = { year, count: 0, months: [] };
@@ -37,9 +34,4 @@ export function groupByYearMonth<
   years.sort((a, b) => b.year - a.year);
   for (const y of years) y.months.sort((a, b) => b.month - a.month);
   return years;
-}
-
-// KST 기준 일(日) — 아카이브 목록의 날짜 칸 표시용.
-export function kstDayOfMonth(d: Date): number {
-  return new Date(d.getTime() + KST_OFFSET).getUTCDate();
 }

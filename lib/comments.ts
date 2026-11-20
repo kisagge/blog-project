@@ -13,13 +13,22 @@ type AddInput = {
 };
 type AddResult = { ok: true; id: string } | { ok: false; error: string };
 
-export async function addComment(input: AddInput): Promise<AddResult> {
-  const parsed = CommentSchema.safeParse({ content: input.content });
+// 댓글 본문 검증(작성·수정 공용). 실패면 첫 오류 메시지.
+function parseCommentContent(
+  content: string,
+): { ok: true; content: string } | { ok: false; error: string } {
+  const parsed = CommentSchema.safeParse({ content });
   if (!parsed.success)
     return {
       ok: false,
       error: parsed.error.issues[0]?.message ?? "내용을 확인하세요.",
     };
+  return { ok: true, content: parsed.data.content };
+}
+
+export async function addComment(input: AddInput): Promise<AddResult> {
+  const parsed = parseCommentContent(input.content);
+  if (!parsed.ok) return parsed;
 
   if (input.parentId) {
     const parent = await prisma.comment.findUnique({
@@ -36,7 +45,7 @@ export async function addComment(input: AddInput): Promise<AddResult> {
     data: {
       feedId: input.feedId,
       userId: input.userId,
-      content: parsed.data.content,
+      content: parsed.content,
       parentId: input.parentId ?? null,
     },
     select: { id: true },
@@ -235,12 +244,8 @@ export async function editComment(
   actorUserId: string,
   content: string,
 ): Promise<EditResult> {
-  const parsed = CommentSchema.safeParse({ content });
-  if (!parsed.success)
-    return {
-      ok: false,
-      error: parsed.error.issues[0]?.message ?? "내용을 확인하세요.",
-    };
+  const parsed = parseCommentContent(content);
+  if (!parsed.ok) return parsed;
   const c = await prisma.comment.findUnique({
     where: { id },
     select: { userId: true, deletedAt: true, hiddenAt: true },
@@ -252,9 +257,9 @@ export async function editComment(
     return { ok: false, error: "수정 권한이 없습니다." };
   await prisma.comment.update({
     where: { id },
-    data: { content: parsed.data.content, editedAt: new Date() },
+    data: { content: parsed.content, editedAt: new Date() },
   });
-  return { ok: true, content: parsed.data.content };
+  return { ok: true, content: parsed.content };
 }
 
 export type UserCommentItem = {

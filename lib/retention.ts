@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { swallow } from "@/lib/log";
+import { DAY_MS, kstDayOf } from "@/lib/kst";
 
 // 계속 쌓이기만 하는 기록의 보존 기간(일). 단일 SQLite·512MB 인스턴스라 무한 증가를 막는다.
 // - 조회 기록: 통계·읽기 지표는 최대 30일만 읽고 중복 판정은 당일만 본다 → 넉넉히 180일.
@@ -16,13 +17,6 @@ export const RETENTION_DAYS = {
   resetCodes: 1,
 } as const;
 
-const DAY_MS = 86_400_000;
-
-// View.day는 KST "YYYY-MM-DD" 문자열 — (entityType, day) 인덱스를 타도록 같은 형식으로 비교.
-function kstDayOf(d: Date): string {
-  return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10);
-}
-
 export type PruneResult = {
   views: number;
   notifications: number;
@@ -37,6 +31,7 @@ export async function pruneOldRecords(
   const views = await prisma.view.deleteMany({
     where: {
       entityType: { in: ["feed", "df", "site"] },
+      // View.day는 KST "YYYY-MM-DD" 문자열 — (entityType, day) 인덱스를 타도록 같은 형식으로 비교.
       day: { lt: kstDayOf(before(RETENTION_DAYS.views)) },
     },
   });
