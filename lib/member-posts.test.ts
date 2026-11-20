@@ -1,8 +1,6 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 import { makeUser } from "@/lib/test-factories";
-
-vi.mock("server-only", () => ({}));
 
 type M = typeof import("@/lib/member-posts");
 type Prisma = (typeof import("@/lib/prisma"))["prisma"];

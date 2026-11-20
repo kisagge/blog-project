@@ -7,16 +7,9 @@ const { mockUsePathname } = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ usePathname: mockUsePathname }));
 
 import NotificationBell from "@/app/notification-bell";
+import { FakeEventSource } from "@/test/helpers";
 
 // jsdom엔 EventSource가 없어 no-op 가짜 주입(벨은 addEventListener("unread")만 사용).
-class FakeEventSource {
-  url: string;
-  constructor(url: string) {
-    this.url = url;
-  }
-  addEventListener() {}
-  close() {}
-}
 
 describe("NotificationBell 종 ↔ 알림 설정 톱니바퀴", () => {
   const orig = globalThis.EventSource;

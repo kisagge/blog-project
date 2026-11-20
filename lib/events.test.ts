@@ -1,6 +1,4 @@
-import { beforeAll, describe, expect, test, vi } from "vitest";
-
-vi.mock("server-only", () => ({}));
+import { beforeAll, describe, expect, test } from "vitest";
 
 type Mod = typeof import("@/lib/events");
 let m: Mod;

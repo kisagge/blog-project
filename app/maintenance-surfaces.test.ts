@@ -1,7 +1,6 @@
 // 점검 모드에서 페이지 가드(/maintenance 리다이렉트)를 거치지 않는 공개 응답들 — RSS·시리즈 RSS·
 // llms.txt·sitemap·OG 이미지 — 이 글 목록·본문·제목을 내보내지 않는지 실제 DB로 검증.
 import { vi } from "vitest";
-vi.mock("server-only", () => ({}));
 // OG 이미지는 렌더 대신 제목만 기록
 const ogTitles: string[] = [];
 vi.mock("@/lib/og", () => ({

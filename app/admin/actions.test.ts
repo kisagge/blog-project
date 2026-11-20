@@ -1,5 +1,4 @@
 import { vi } from "vitest";
-vi.mock("server-only", () => ({}));
 vi.mock("@/lib/dal", () => ({ verifySession: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -10,6 +9,7 @@ vi.mock("next/navigation", () => ({
 }));
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
+import { formData } from "@/test/helpers";
 
 type Actions = typeof import("@/app/admin/actions");
 let updateFeed: Actions["updateFeed"];
@@ -34,17 +34,11 @@ const base = {
   visibility: "public",
 };
 
-function form(o: Record<string, string>) {
-  const f = new FormData();
-  for (const [k, v] of Object.entries(o)) f.set(k, v);
-  return f;
-}
-
 // 저장 성공 시 redirect("/admin")가 throw → 정상 경로로 간주.
 async function save(id: string, patch: Record<string, string>) {
-  await expect(updateFeed(id, {}, form({ ...base, ...patch }))).rejects.toThrow(
-    "NEXT_REDIRECT",
-  );
+  await expect(
+    updateFeed(id, {}, formData({ ...base, ...patch })),
+  ).rejects.toThrow("NEXT_REDIRECT");
   return prisma.feed.findUniqueOrThrow({ where: { id } });
 }
 

@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
-
 // vi.hoisted: 팩토리가 import보다 위로 호이스팅되므로 mock 함수도 함께 호이스팅해야 TDZ 회피.
 const { sendMail, createTransport } = vi.hoisted(() => {
   const sendMail = vi.fn();

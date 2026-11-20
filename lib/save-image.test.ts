@@ -1,14 +1,9 @@
 // @vitest-environment node
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 
-vi.mock("server-only", () => ({}));
 import { sniffImageType, deleteUpload } from "@/lib/save-image";
+import { PNG_1x1 } from "@/test/helpers";
 
-// 1×1 투명 PNG.
-const PNG_1x1 = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-  "base64",
-);
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 const WEBP = Buffer.concat([
   Buffer.from("RIFF", "ascii"),

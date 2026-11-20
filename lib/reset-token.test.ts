@@ -1,8 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
-
 let store: Map<string, string>;
 let deleted: string[];
 vi.mock("next/headers", () => ({

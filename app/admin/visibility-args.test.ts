@@ -1,6 +1,5 @@
 // 서버 액션 인자는 클라이언트가 임의로 보낼 수 있다 — 공개 범위 변경 액션이 허용값 외를 DB에 쓰지 않는지.
 import { vi } from "vitest";
-vi.mock("server-only", () => ({}));
 vi.mock("@/lib/dal", () => ({ verifySession: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

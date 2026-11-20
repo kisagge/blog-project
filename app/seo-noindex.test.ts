@@ -2,7 +2,6 @@
 // 검색 색인에서 빼야 한다. robots.txt로 막으면 noindex를 읽지 못하므로 메타데이터 noindex로 처리.
 import { describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
 vi.mock("@/lib/dal", () => ({
   getViewerRole: vi.fn(async () => "anon"),
   getMemberSession: vi.fn(async () => null),

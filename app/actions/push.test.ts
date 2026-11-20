@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
 vi.mock("@/lib/dal", () => ({ getMemberSession: vi.fn() }));
 vi.mock("@/lib/push", () => ({
   saveSubscription: vi.fn(),

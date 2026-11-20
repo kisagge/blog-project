@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 
-vi.mock("server-only", () => ({}));
 // 실제 SMTP 발송 대신 mock으로 코드를 가로채 검증에 사용.
 vi.mock("@/lib/mailer", () => ({ sendPasswordResetCode: vi.fn() }));
 

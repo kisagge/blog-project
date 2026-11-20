@@ -1,8 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
-
 // 옵션까지 캡처하는 인메모리 쿠키 저장소.
 let store: Map<string, { value: string; options?: Record<string, unknown> }>;
 let deleted: string[];

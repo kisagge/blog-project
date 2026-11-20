@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
 vi.mock("@/lib/views", () => ({
   trackFeedView: vi.fn(),
   trackDfView: vi.fn(),

@@ -1,7 +1,5 @@
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
-
 type Mod = typeof import("@/lib/turnstile");
 let m: Mod;
 

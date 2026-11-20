@@ -2,7 +2,6 @@
 // <head>(제목·OG)로 새지 않고, 회원공개 캐릭터는 비회원(=크롤러)에게 이름 없이 noindex.
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
 vi.mock("@/lib/neople", () => ({
   getCharacterInfo: vi.fn(async () => ({
     characterName: "비밀캐릭",

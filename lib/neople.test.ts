@@ -1,7 +1,5 @@
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
-
 type Neople = typeof import("@/lib/neople");
 let neople: Neople;
 

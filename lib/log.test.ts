@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from "vitest";
-vi.mock("server-only", () => ({}));
 import { swallow } from "@/lib/log";
 
 describe("swallow", () => {

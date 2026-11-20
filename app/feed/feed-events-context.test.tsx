@@ -5,22 +5,9 @@ import {
   useFeedEvent,
   type ProviderEvent,
 } from "@/app/feed/feed-events-context";
+import { FakeEventSource } from "@/test/helpers";
 
 // jsdom엔 EventSource가 없어 인스턴스를 캡처하는 가짜를 주입해 onopen/onmessage를 흉내낸다.
-class FakeEventSource {
-  static instances: FakeEventSource[] = [];
-  url: string;
-  onopen: (() => void) | null = null;
-  onmessage: ((e: { data: string }) => void) | null = null;
-  closed = false;
-  constructor(url: string) {
-    this.url = url;
-    FakeEventSource.instances.push(this);
-  }
-  close() {
-    this.closed = true;
-  }
-}
 
 function Probe({ sink }: { sink: ProviderEvent[] }) {
   useFeedEvent((ev) => sink.push(ev));

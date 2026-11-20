@@ -1,9 +1,8 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { PrismaClient } from "@/app/generated/prisma/client";
 import { setupTestDb } from "@/lib/test-db";
 
 // site-config/dal은 "server-only"를 import 하는데, 테스트(non-server) 환경에선 throw하므로 no-op 처리.
-vi.mock("server-only", () => ({}));
 
 type SiteConfig = typeof import("@/lib/site-config");
 let getPublicEnabled: SiteConfig["getPublicEnabled"];
