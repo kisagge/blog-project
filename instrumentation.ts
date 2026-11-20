@@ -1,11 +1,13 @@
 import type { Instrumentation } from "next";
 
-// Next 서버 부팅 시 1회 실행(런타임별). 예약 발행을 앱 내부 인터벌로 돌려
-// 외부 cron(GitHub/호스트)·CRON_SECRET 없이 정시 발행하게 한다.
+// Next 서버 부팅 시 1회 실행(런타임별). 예약 발행·보존 정리를 앱 내부 인터벌로 돌려
+// 외부 cron(GitHub/호스트)·CRON_SECRET 없이 동작하게 한다.
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return; // edge 런타임 제외
   const { startPublishScheduler } = await import("@/lib/scheduled");
   startPublishScheduler();
+  const { startRetentionScheduler } = await import("@/lib/retention");
+  startRetentionScheduler();
 }
 
 // 서버 오류 요청 맥락. next start는 오류 스택·digest를 이미 컨테이너 로그에 찍지만 어느 요청에서

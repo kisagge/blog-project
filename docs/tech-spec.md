@@ -166,7 +166,7 @@ Prisma 7이 내장 쿼리 엔진을 제거함에 따라 `@prisma/adapter-better-
 
 ### 4.11 테스트 전략
 
-DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 838 테스트**로 확장.
+DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQLite에 실제 쿼리를 돌려** 검증하는 통합 테스트 헬퍼(`lib/test-db.ts`)를 만들어 페이지네이션·검색·접근 제어·승인 흐름·댓글 깊이·좋아요·알림·속도 제한·신고까지 커버. 인증 계층도 가드: **JWT 위조 거부**(다른 시크릿·변조 토큰), **세션/리셋 쿠키**(`next/headers` 모킹), **DAL 인가**(역할·승인·`verifySession` 리다이렉트 — `React cache()`는 시나리오별 `resetModules`+재import로 우회), **인증 서버액션**(signin·signup·forgot-password 3단계 — 의존성 모킹, `redirect()`의 `NEXT_REDIRECT` throw 단언). **핵심 클라이언트 컴포넌트는 RTL(jsdom)**로도 검증 — 댓글 트리 병합 순수 로직(`merge`: 생성·수정·삭제·좋아요·dedup), 댓글 항목(작성자 링크·수정/삭제 권한·편집 흐름), 공유 바(클립보드·기기공유·X 인텐트), 내비 드로어(역할별 메뉴·`aria-expanded`·`inert`·Esc), 댓글 섹션 SSE 배선(가짜 이벤트 emit → 트리 갱신). 서버 액션·EventSource·toast는 `vi.mock`/주입으로 격리. 전체 **17 → 859 테스트**로 확장.
 
 ### 4.12 콘텐츠 신고·모더레이션
 
@@ -224,6 +224,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **스크립트**(`scripts/backup-db.sh`): sqlite **온라인 `.backup`**(쓰기 중에도 일관된 스냅샷, WAL 반영) → gzip → `find -mtime`으로 N일(`BACKUP_KEEP_DAYS`, 기본 14) 회전. 런타임 이미지에 `sqlite3` CLI를 추가하고 스크립트를 베이크(앱 의존성 그래프 무변경 — `next.config`의 lib import가 일으킨 502 교훈 반영해 self-contained 셸만).
 - **스케줄**(`.github/workflows/backup.yml`): 매일 04:00 KST + 수동(`workflow_dispatch`). 기존 배포와 **동일 SSH 시크릿**으로 호스트에 접속해 `docker compose exec -T web sh scripts/backup-db.sh` 실행 — 상시 사이드카 없이(512MB 인스턴스 RAM 절약) 정확한 일정.
 - 복원 가능성은 테스트로 가드(백업본 gunzip 후 `PRAGMA integrity_check`=ok·행 보존, 회전 동작).
+- **보존 정리(`lib/retention.ts`)**: 조회 기록·알림·감사 로그·재설정 코드가 지워지지 않고 쌓이기만 했다(단일 SQLite·512MB). 읽는 쪽 범위를 기준으로 보존 기간을 정해 하루 1회 삭제 — 조회 기록 180일(통계·읽기 지표는 최대 30일, 중복 판정은 당일만, 글 누적 조회수는 `Feed.viewCount`라 무관), 읽은 알림 90일·안 읽은 알림 1년(벨은 최근 30개), 감사 로그 1년, 재설정 코드 1일. 삭제 후 `PRAGMA optimize`. 예약 발행과 같은 앱 내부 스케줄러(`instrumentation.ts`)로 돌되, 배포마다 재기동되므로 **부팅 10분 뒤** 첫 실행(기동·마이그레이션과 경합 회피). 결과는 `[retention] views=… notifications=…` 한 줄로 로그.
 - **오프사이트 사본(암호화 아티팩트)**: 같은 워크플로가 최신 백업을 SSH로 runner에 가져와 `gzip -t`로 손상을 검사한 뒤 **age 공개키**(`BACKUP_AGE_RECIPIENT`)로 암호화해 아티팩트로 **90일** 보관(인스턴스 유실 대비). 저장소가 공개라 아티팩트는 누구나 받을 수 있으므로 암호화는 필수이며, CI엔 공개키만 두어 **복호화 키가 GitHub에 존재하지 않음**(개인키는 운영자 보관). runner의 평문·SSH 키는 즉시 삭제. 시크릿 미설정 시 경고만 남기고 로컬 백업은 그대로 성공(점진 도입). 새 외부 계정·자격증명 없이 기존 SSH 시크릿만 재사용. 복원·검증 절차는 `docs/deploy/lightsail.md` 7-1.
 
 ### 4.19 읽기 경험 (이전/다음 글·진행바·맨 위로)
@@ -311,5 +312,5 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - 운영 장애(디스크 고갈·OOM) 원인 규명 및 해소 → 배포 성공률·안정성 확보
 - Prisma 7 드라이버 어댑터 도입으로 런타임 엔진 바이너리 제거
 - 단일 관리자 → 가입·승인 회원 + 댓글·좋아요·알림·신고·모더레이션·PWA로 커뮤니티 기능 확장(역할 유니온 세션·공용 접근 제어)
-- 통합 테스트 도입(17 → 838), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
+- 통합 테스트 도입(17 → 859), CI에서 타입체크·린트·테스트·이미지 빌드 게이트
 - 기능 단위 PR + 자동 배포 + pre-1.0 semver 버전 관리로 변경 이력 정리

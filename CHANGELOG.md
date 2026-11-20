@@ -2,6 +2,12 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.113.0] - 2026-11-20
+
+### Added
+
+- 오래된 기록 자동 정리(하루 1회, 배포 10분 뒤 첫 실행) — 조회 기록 180일, 읽은 알림 90일·안 읽은 알림 1년, 감사 로그 1년, 비밀번호 재설정 코드 1일. 정리 후 SQLite `PRAGMA optimize`. 통계·조회수 표시는 영향 없음
+
 ## [0.112.1] - 2026-11-19
 
 ### Fixed

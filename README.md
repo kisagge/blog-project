@@ -95,7 +95,7 @@ Docker 이미지를 GHCR에 푸시하고 Lightsail에서 `docker compose`로 기
 GitHub Actions: test → build-and-push(GHCR, :sha) → deploy(SSH: scripts/deploy-remote.sh — 커밋 이미지 pull → 배포 전 DB 백업 → up(+migrate) → 헬스 대기)
 ```
 
-DB는 매일 04:00 KST `DB Backup` 워크플로가 서버에 백업(14일 회전)하고, **age 공개키로 암호화한 사본을 GitHub 아티팩트로 90일 보관**한다(공개키 시크릿 `BACKUP_AGE_RECIPIENT`, 복원 절차는 배포 문서 7-1).
+DB는 매일 04:00 KST `DB Backup` 워크플로가 서버에 백업(14일 회전)하고, **age 공개키로 암호화한 사본을 GitHub 아티팩트로 90일 보관**한다(공개키 시크릿 `BACKUP_AGE_RECIPIENT`, 복원 절차는 배포 문서 7-1). 계속 쌓이는 기록(조회 180일·알림·감사 로그 1년·재설정 코드 1일)은 앱이 하루 1회 정리한다(`lib/retention.ts`).
 
 ## 프로젝트 구조
 

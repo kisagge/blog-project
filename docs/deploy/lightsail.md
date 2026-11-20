@@ -155,6 +155,7 @@ curl -sI --http2 https://your-domain.com -o /dev/null -w '%{http_version}\n'   #
 - **수동 업데이트(특정 커밋)**: `cd /srv/byjang && DEPLOY_SHA=<sha> sh -c "$(curl -fsSL https://raw.githubusercontent.com/kisagge/blog-project/main/scripts/deploy-remote.sh)"` — 또는 GitHub에서 Deploy 워크플로 수동 실행(main 최신).
 - **롤백**: 위 수동 업데이트를 이전 커밋 sha로 실행(배포 전 백업도 함께 남음). 스키마를 되돌려야 하면 배포 직전 백업(`data/backups/prod-<시각>.db.gz`)으로 7-1 복원 절차의 서버 교체 단계를 따른다.
 - **DB 백업**: 매일 04:00 KST `DB Backup` 워크플로가 서버 로컬 백업(`/srv/byjang/data/backups`, 14일 회전)을 만들고, **암호화한 사본을 GitHub 아티팩트로 90일 보관**(오프사이트 — 아래 7-1). 즉석 수동 백업: `cp /srv/byjang/data/prod.db /srv/byjang/data/prod.db.$(date +%F)`.
+- **보존 정리**: 앱이 하루 1회(배포 후 10분 뒤 첫 실행) 오래된 조회 기록(180일)·알림(읽음 90일·안 읽음 1년)·감사 로그(1년)·재설정 코드(1일)를 지운다. 확인: `docker compose logs web | grep retention` → `[retention] views=… notifications=… auditLogs=… resetCodes=…`. 기간은 `lib/retention.ts`의 `RETENTION_DAYS`.
 
 ### 7-1. 오프사이트 백업 (암호화 아티팩트)
 
