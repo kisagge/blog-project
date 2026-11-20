@@ -27,8 +27,8 @@
   }
 }
 
-/* 다크 테마 색상 — 페인트 전 인라인 스크립트가 data-theme를 light|dark로 확정한다
-   (system 선택 시 OS 선호를 해석해 설정). 그래서 미디어 쿼리 대신 속성 기준. */
+/* 다크 테마 색상 — 페인트 전 인라인 스크립트가 data-theme를 저장된 선택(없으면 기본 brand)으로
+   확정한다(OS 선호를 따르는 테마는 없음). 그래서 미디어 쿼리 대신 속성 기준. */
 [data-theme="dark"] {
   --background: #0a0a0a;
   --foreground: #ededed;

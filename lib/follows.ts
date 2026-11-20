@@ -1,3 +1,4 @@
+import "server-only";
 import { prisma } from "@/lib/prisma";
 import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 import { FEED_LIST_SELECT } from "@/lib/feeds";

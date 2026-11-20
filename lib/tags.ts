@@ -2,8 +2,8 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 
-export const MAX_TAGS = 5; // 글당 최대 태그 수
-export const MAX_TAG_LEN = 20; // 태그 1개 최대 길이
+const MAX_TAGS = 5; // 글당 최대 태그 수
+const MAX_TAG_LEN = 20; // 태그 1개 최대 길이
 
 // 정규화 슬러그: trim → 유니코드 NFC → 소문자 → 내부 공백을 하이픈으로 → 연속/양끝 하이픈 정리.
 // 한글 등 비ASCII는 보존(제거하지 않음). NFC 정규화로 자모 분해형(NFD, 예: macOS 입력)도

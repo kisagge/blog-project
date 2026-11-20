@@ -11,11 +11,9 @@ import {
 export default function ReportButton({
   targetType,
   targetId,
-  triggerClassName = "hover:text-red-600 dark:hover:text-red-400",
 }: {
   targetType: ReportTargetType;
   targetId: string;
-  triggerClassName?: string;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [pending, startTransition] = useTransition();
@@ -53,7 +51,7 @@ export default function ReportButton({
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className={triggerClassName}
+        className="hover:text-red-600 dark:hover:text-red-400"
       >
         신고
       </button>

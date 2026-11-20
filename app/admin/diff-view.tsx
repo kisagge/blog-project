@@ -4,9 +4,7 @@ import type { DiffRow } from "@/lib/text-diff";
 // 색에 의존하지 않는 +/− 기호. 접힌 동일 구간은 줄 수만.
 export default function DiffView({ rows }: { rows: DiffRow[] }) {
   if (rows.length === 1 && rows[0].type === "skip") {
-    return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">본문 변경 없음</p>
-    );
+    return <p className="text-sm text-zinc-500">본문 변경 없음</p>;
   }
   return (
     <ol className="overflow-x-auto rounded border border-black/[.08] font-mono text-xs leading-6 dark:border-white/[.145]">
@@ -14,7 +12,7 @@ export default function DiffView({ rows }: { rows: DiffRow[] }) {
         r.type === "skip" ? (
           <li
             key={i}
-            className="bg-black/[.03] px-3 text-zinc-500 dark:bg-white/[.04] dark:text-zinc-400"
+            className="bg-black/[.03] px-3 text-zinc-500 dark:bg-white/[.04]"
           >
             … 동일한 {r.count}줄 생략
           </li>

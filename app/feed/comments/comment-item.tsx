@@ -9,6 +9,7 @@ import CommentReactions from "./comment-reactions";
 import { editCommentAction } from "./comment-actions";
 import { kstDateTime, isoInstant } from "@/lib/kst";
 import type { CommentNode } from "@/lib/comments";
+import { COMMENT_MAX_LENGTH } from "@/lib/limits";
 
 export default function CommentItem({
   node,
@@ -123,7 +124,7 @@ export default function CommentItem({
             aria-label="댓글 수정"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
-            maxLength={2000}
+            maxLength={COMMENT_MAX_LENGTH}
             rows={3}
             className="w-full resize-none rounded-lg border border-black/15 bg-transparent p-2 text-sm outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/50"
           />

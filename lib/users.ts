@@ -7,7 +7,6 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import type { Result } from "@/lib/result";
 
 export type UserStatus = "pending" | "approved" | "rejected" | "blocked";
-export type UserRole = "member" | "admin";
 
 export const NICKNAME_TAKEN_MESSAGE = "이미 사용 중인 닉네임입니다.";
 

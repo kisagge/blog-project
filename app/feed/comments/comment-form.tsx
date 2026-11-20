@@ -10,8 +10,9 @@ import {
   clearDraft,
   pruneDrafts,
 } from "@/lib/draft-store";
+import { COMMENT_MAX_LENGTH } from "@/lib/limits";
 
-const MAX = 2000;
+const MAX = COMMENT_MAX_LENGTH;
 
 export default function CommentForm({
   feedId,

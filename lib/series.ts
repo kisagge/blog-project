@@ -1,3 +1,4 @@
+import "server-only";
 import { prisma } from "@/lib/prisma";
 import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
 import { FEED_LIST_SELECT } from "@/lib/feeds";
@@ -48,7 +49,6 @@ export async function getSeriesBySlug(
   });
 }
 
-// 공개 인덱스용: 뷰어가 볼 수 있는 글이 1개 이상인 시리즈만 글 수와 함께(글 수·제목순).
 // 내비·홈의 "시리즈" 진입 링크 노출 여부: 뷰어가 볼 수 있는 시리즈 글이 하나라도 있는지(빈 페이지로 보내지 않게).
 export async function hasVisibleSeries(role: ViewerRole): Promise<boolean> {
   const one = await prisma.feed.findFirst({
@@ -58,6 +58,7 @@ export async function hasVisibleSeries(role: ViewerRole): Promise<boolean> {
   return one !== null;
 }
 
+// 공개 인덱스용: 뷰어가 볼 수 있는 글이 1개 이상인 시리즈만 글 수와 함께(글 수·제목순).
 export async function getSeriesWithCounts(
   role: ViewerRole,
 ): Promise<{ slug: string; title: string; count: number }[]> {

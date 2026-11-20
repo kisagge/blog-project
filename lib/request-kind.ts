@@ -17,7 +17,7 @@ export function requestKind(
   return "other";
 }
 
-const WINDOW_MS = 10_000;
+export const WINDOW_MS = 10_000;
 
 // 버킷별 한도(10초당). 문서·액션·API 120(기존), RSC 300 — 페이지당 프리페치 ~30건 기준 10쪽 이상 여유.
 export const RATE_LIMITS: Record<

@@ -23,9 +23,6 @@ let log: string;
 
 // 가짜 docker: 호출 인자를 log에 한 줄씩 기록. 시나리오는 env로.
 //  FAKE_RUNNING=1 → compose ps가 컨테이너 id 출력 / FAKE_BACKUP_FAIL=1 → 백업 exec 실패
-//  FAKE_HEALTH="starting healthy" → inspect 호출마다 순서대로 상태 반환(마지막 값 유지)
-// 가짜 docker: 호출 인자를 log에 한 줄씩 기록. 시나리오는 env로.
-//  FAKE_RUNNING=1 → compose ps가 컨테이너 id 출력 / FAKE_BACKUP_FAIL=1 → 백업 exec 실패
 //  FAKE_HEALTH="starting healthy" → inspect 호출마다 순서대로 헬스 상태(마지막 값 유지).
 //    "none"은 healthcheck 없는 컨테이너(손으로 복사한 옛 compose.yaml), "exited"는 컨테이너 종료
 //  FAKE_PROBE=ok|fail → healthcheck 없을 때 컨테이너 안 /api/health 직접 확인 결과

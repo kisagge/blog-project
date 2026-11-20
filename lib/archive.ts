@@ -2,8 +2,8 @@
 
 import { postedAt } from "@/lib/feed-dates";
 
-export type ArchiveMonth<T> = { month: number; items: T[] };
-export type ArchiveYear<T> = {
+type ArchiveMonth<T> = { month: number; items: T[] };
+type ArchiveYear<T> = {
   year: number;
   count: number;
   months: ArchiveMonth<T>[];

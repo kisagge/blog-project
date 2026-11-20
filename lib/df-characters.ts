@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { listableVisibilities, type ViewerRole } from "@/lib/visibility";
+import type { Visibility } from "@/lib/visibility";
 
 // 관리자용: 전체(공개 범위 무관).
 export async function listFeatured() {
@@ -19,7 +20,7 @@ export async function listFeaturedVisible(role: ViewerRole) {
 
 export async function setFeaturedVisibility(
   id: string,
-  visibility: "public" | "members" | "private",
+  visibility: Visibility,
 ) {
   await prisma.dfCharacter.update({ where: { id }, data: { visibility } });
 }

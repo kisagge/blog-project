@@ -4,7 +4,7 @@ import { SITE_NAME, SITE_ORIGIN, SITE_DESCRIPTION } from "@/lib/share";
 // 테이블 레이아웃 + 인라인 스타일 only + 외부 이미지/웹폰트/JS 0(차단·의존 회피).
 // 순수 함수(server-only 아님) — 단위 테스트 용이.
 
-const SUBJECT = "[BY Playground] 비밀번호 재설정 코드";
+const SUBJECT = `[${SITE_NAME}] 비밀번호 재설정 코드`;
 const FONT =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";
 

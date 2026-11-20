@@ -4,7 +4,7 @@ import { getMemberSession } from "@/lib/dal";
 import { followUser, unfollowUser } from "@/lib/follows";
 import { allowAction, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 
-export type FollowActionResult = { following: boolean } | { error: string };
+type FollowActionResult = { following: boolean } | { error: string };
 
 export async function followAction(
   targetId: string,

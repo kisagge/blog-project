@@ -85,7 +85,7 @@ export default function CommentSection({
 
   // 실시간(SSE): 같은 글을 보는 다른 뷰어의 댓글·삭제를 트리에 병합(피드 연결 공유).
   // 본인 낙관적 삽입은 applyCreated의 id dedup으로 중복 흡수. 원격 이벤트는 스크롤 없음.
-  // feedLike(글 좋아요)는 좋아요 버튼 몫이라 무시. (끊긴 동안 생성분은 새로고침/더보기로 재동기화.)
+  // 재접속(resync) 시엔 현재 로드량만큼 다시 받아 끊긴 동안의 유실을 메운다(아래).
   useFeedEvent((ev) => {
     // 재접속: 끊긴 동안의 유실을 메우려 현재 로드량만큼 다시 받아 트리 교체(스크롤 없음).
     if (ev.kind === "resync") {

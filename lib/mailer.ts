@@ -1,8 +1,9 @@
 import "server-only";
 import nodemailer from "nodemailer";
 import { passwordResetEmail } from "@/lib/email-template";
+import { SITE_NAME } from "@/lib/share";
 
-const FROM = process.env.SMTP_FROM ?? "BY Playground <no-reply@byjang.local>";
+const FROM = process.env.SMTP_FROM ?? `${SITE_NAME} <no-reply@byjang.local>`;
 
 // SMTP 설정이 없으면 null → 콘솔 폴백(로컬/CI). 운영에선 .env에 SMTP_* 지정.
 function transport() {

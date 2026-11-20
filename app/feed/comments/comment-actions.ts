@@ -205,7 +205,7 @@ export async function deleteCommentAction(
   publishComment(feed.id, { kind: "deleted", id: commentId }); // 실시간 전파
 }
 
-export type EditCommentResult = { ok: true } | { error: string };
+type EditCommentResult = { ok: true } | { error: string };
 
 export async function editCommentAction(
   commentId: string,

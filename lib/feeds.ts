@@ -6,7 +6,7 @@ import { makeSnippet } from "@/lib/content";
 import { tagSlugVariants } from "@/lib/tags";
 import { postedAt } from "@/lib/feed-dates";
 
-export const FEED_PAGE_SIZE = 10;
+const FEED_PAGE_SIZE = 10;
 
 // 공개 표면의 최신순 = 게시일(publishedAt) 기준. 작성일은 예약 발행 글에서 실제 게시보다 이르다.
 // 게시 글의 publishedAt은 트리거로 항상 채워지고, 같은 시각이면 작성일로 정렬을 고정한다.
@@ -78,7 +78,7 @@ async function withSnippets<T extends { id: string }>(
   }));
 }
 
-// 목록: 뷰어 권한으로 볼 수 있는 글(anon=전체공개, 회원/관리자=전체공개+회원공개).
+// 목록: 뷰어 권한으로 볼 수 있는 글(anon=전체공개, 회원=전체공개+회원공개, 관리자=비공개 포함 전부).
 // 검색어(q)에 3자+ 토큰이 있으면 FTS5(trigram 부분일치 + BM25 관련도순), 그 외(빈 검색·2자)는
 // 제목/내용/요약 부분일치 최신순. take+1로 다음 페이지 존재(hasMore)를 추가 쿼리 없이 판단.
 export async function searchFeeds({

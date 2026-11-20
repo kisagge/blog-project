@@ -3,7 +3,7 @@ import { kstDate, isoInstant } from "@/lib/kst";
 import { highlightText } from "./highlight";
 import type { FeedCard } from "./feed-card";
 
-// 피드 목록 카드(제목·요약·작성자·날짜·조회수·태그). 공개 목록(FeedList)·저장 목록 공용.
+// 피드 목록 카드(제목·요약·작성자·날짜·조회수·태그). 피드·커뮤니티 목록, 인기·태그·시리즈·팔로잉·저장 목록 공용.
 // linkAuthors=false면 작성자 닉네임을 평문으로(비회원 뷰어).
 // 태그 칩: 공개 피드(/feed)는 전용 라우트 /feed/tags/[slug](관리자 글),
 // 그 외(커뮤니티 등)는 자체 ?tag= 필터 유지.

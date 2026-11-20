@@ -17,7 +17,7 @@ export default function Toc({ items }: { items: TocItem[] }) {
             <li key={item.slug} className={item.depth >= 3 ? "ml-4" : ""}>
               <a
                 href={`#${item.slug}`}
-                className="text-zinc-500 hover:underline dark:text-zinc-400"
+                className="text-zinc-500 hover:underline"
               >
                 {item.text}
               </a>

@@ -31,7 +31,7 @@ export default async function RevisionsPage({
           글 수정으로
         </Link>
       </div>
-      <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-6 text-sm text-zinc-500">
         ‘{feed.title}’ — 제목·요약·본문이 바뀐 저장 직전 버전을 최근{" "}
         {REVISION_LIMIT}개까지 보관합니다.
       </p>
@@ -46,9 +46,7 @@ export default async function RevisionsPage({
             : ""}
       </p>
       {revisions.length === 0 ? (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          아직 수정 이력이 없습니다.
-        </p>
+        <p className="text-sm text-zinc-500">아직 수정 이력이 없습니다.</p>
       ) : (
         <ol className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
           {revisions.map((r) => (
@@ -61,7 +59,7 @@ export default async function RevisionsPage({
                 <span className="block truncate font-medium group-hover:underline">
                   {r.title}
                 </span>{" "}
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                <span className="text-xs text-zinc-500">
                   <time dateTime={isoInstant(r.createdAt)}>
                     {kstDateTime(r.createdAt)}
                   </time>{" "}

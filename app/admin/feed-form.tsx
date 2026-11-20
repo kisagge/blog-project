@@ -15,6 +15,7 @@ import {
   pruneDrafts,
 } from "@/lib/draft-store";
 import { imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
+import type { Visibility } from "@/lib/visibility";
 
 type FeedDraft = {
   title: string;
@@ -32,7 +33,7 @@ type Props = {
     slug?: string;
     summary?: string | null;
     content?: string;
-    visibility?: "public" | "members" | "private";
+    visibility?: Visibility;
     tags?: string;
     seriesId?: string | null;
   };
