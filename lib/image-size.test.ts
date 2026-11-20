@@ -1,14 +1,8 @@
 // @vitest-environment node
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 
-vi.mock("server-only", () => ({}));
 import { imageDimensions } from "@/lib/image-size";
-
-// 1×1 투명 PNG.
-const PNG_1x1 = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-  "base64",
-);
+import { PNG_1x1 } from "@/test/helpers";
 
 describe("imageDimensions", () => {
   test("PNG 버퍼에서 픽셀 치수를 읽는다", () => {

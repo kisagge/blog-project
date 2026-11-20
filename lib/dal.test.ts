@@ -11,8 +11,6 @@ import {
 import { setupTestDb } from "@/lib/test-db";
 import { encrypt } from "@/lib/jwt";
 
-vi.mock("server-only", () => ({}));
-
 // 세션 쿠키를 모듈 레벨 가변 토큰으로 모킹(시나리오마다 교체).
 let token: string | undefined;
 vi.mock("next/headers", () => ({

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: vi.fn() }));
 vi.mock("@/lib/client-ip", () => ({
   getClientIp: vi.fn(async () => "1.2.3.4"),
@@ -12,16 +11,12 @@ import { verifyTurnstile } from "@/lib/turnstile";
 import { createPendingUser } from "@/lib/users";
 import { getClientIp } from "@/lib/client-ip";
 import { ACTION_LIMITS, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
+import { formData } from "@/test/helpers";
 
 const vt = vi.mocked(verifyTurnstile);
 const cpu = vi.mocked(createPendingUser);
 const gci = vi.mocked(getClientIp);
 
-function fd(o: Record<string, string>) {
-  const f = new FormData();
-  for (const [k, v] of Object.entries(o)) f.set(k, v);
-  return f;
-}
 const VALID = { email: "a@x.com", nickname: "닉", password: "Abcdef1!" };
 
 beforeEach(() => {
@@ -34,7 +29,7 @@ beforeEach(() => {
 describe("signup action", () => {
   test("turnstile 실패 → error, 검증·생성 미진행", async () => {
     vt.mockResolvedValue(false);
-    expect(await signup(undefined, fd(VALID))).toEqual({
+    expect(await signup(undefined, formData(VALID))).toEqual({
       error: "사람 확인에 실패했습니다. 다시 시도해 주세요.",
     });
     expect(cpu).not.toHaveBeenCalled();
@@ -42,7 +37,7 @@ describe("signup action", () => {
 
   test("약한 비밀번호 → zod 필드 에러, createPendingUser 미호출", async () => {
     vt.mockResolvedValue(true);
-    const r = await signup(undefined, fd({ ...VALID, password: "weak" }));
+    const r = await signup(undefined, formData({ ...VALID, password: "weak" }));
     expect(r?.errors?.password?.length).toBeGreaterThan(0);
     expect(cpu).not.toHaveBeenCalled();
   });
@@ -50,7 +45,7 @@ describe("signup action", () => {
   test("createPendingUser 실패 → error", async () => {
     vt.mockResolvedValue(true);
     cpu.mockResolvedValue({ ok: false, error: "이미 가입 신청 중입니다." });
-    expect(await signup(undefined, fd(VALID))).toEqual({
+    expect(await signup(undefined, formData(VALID))).toEqual({
       error: "이미 가입 신청 중입니다.",
     });
   });
@@ -58,7 +53,7 @@ describe("signup action", () => {
   test("성공 → { done: true }(redirect 없음)", async () => {
     vt.mockResolvedValue(true);
     cpu.mockResolvedValue({ ok: true });
-    expect(await signup(undefined, fd(VALID))).toEqual({ done: true });
+    expect(await signup(undefined, formData(VALID))).toEqual({ done: true });
     expect(cpu).toHaveBeenCalledWith({
       email: "a@x.com",
       nickname: "닉",
@@ -71,10 +66,10 @@ describe("signup action", () => {
     vt.mockResolvedValue(false); // 한도 내 호출은 turnstile 에러
     const { limit } = ACTION_LIMITS.signup;
     for (let i = 0; i < limit; i++) {
-      const r = await signup(undefined, fd(VALID));
+      const r = await signup(undefined, formData(VALID));
       expect(r?.error).not.toBe(TOO_MANY_REQUESTS);
     }
-    expect(await signup(undefined, fd(VALID))).toEqual({
+    expect(await signup(undefined, formData(VALID))).toEqual({
       error: TOO_MANY_REQUESTS,
     });
   });

@@ -1,6 +1,5 @@
 // @vitest-environment node
 import { vi } from "vitest";
-vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/session", () => ({ createMemberSession: vi.fn() }));
 vi.mock("@/lib/dal", () => ({ getMemberSession: vi.fn() }));
@@ -18,14 +17,11 @@ import { join } from "path";
 import { setupTestDb } from "@/lib/test-db";
 import { makeUser } from "@/lib/test-factories";
 import { getMemberSession } from "@/lib/dal";
+import { pngFile } from "@/test/helpers";
 
-const PNG_1x1 = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-  "base64",
-);
 const pngForm = () => {
   const f = new FormData();
-  f.set("file", new File([PNG_1x1], "a.png", { type: "image/png" }));
+  f.set("file", pngFile());
   return f;
 };
 

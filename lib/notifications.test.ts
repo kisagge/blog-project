@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 
-vi.mock("server-only", () => ({}));
 const { sendNotification } = vi.hoisted(() => ({ sendNotification: vi.fn() }));
 vi.mock("web-push", () => ({
   default: { setVapidDetails: vi.fn(), sendNotification },

@@ -1,7 +1,5 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
-
-vi.mock("server-only", () => ({}));
 
 type Mod = typeof import("@/lib/df-characters");
 let m: Mod;

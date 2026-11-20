@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/comment-actor", () => ({ getCommentActor: vi.fn() }));
 vi.mock("@/lib/feed-access", () => ({ getReadableFeed: vi.fn() }));

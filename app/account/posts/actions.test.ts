@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
   redirect: vi.fn((url: string) => {
@@ -24,12 +23,7 @@ vi.mock("@/lib/member-posts", () => ({
 
 import { submitPost } from "@/app/account/posts/actions";
 import { redirect } from "next/navigation";
-
-function fd(o: Record<string, string>) {
-  const f = new FormData();
-  for (const [k, v] of Object.entries(o)) f.set(k, v);
-  return f;
-}
+import { formData } from "@/test/helpers";
 
 beforeEach(() => {
   vi.mocked(redirect).mockClear();
@@ -40,7 +34,7 @@ describe("submitPost", () => {
     await expect(
       submitPost(
         undefined,
-        fd({ intent: "draft", title: "제목", content: "본문", tags: "" }),
+        formData({ intent: "draft", title: "제목", content: "본문", tags: "" }),
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
     expect(redirect).toHaveBeenCalledWith("/account/posts");
@@ -50,7 +44,12 @@ describe("submitPost", () => {
     await expect(
       submitPost(
         undefined,
-        fd({ intent: "publish", title: "제목", content: "본문", tags: "" }),
+        formData({
+          intent: "publish",
+          title: "제목",
+          content: "본문",
+          tags: "",
+        }),
       ),
     ).rejects.toThrow("NEXT_REDIRECT");
     expect(redirect).toHaveBeenCalledWith("/feed/s1");

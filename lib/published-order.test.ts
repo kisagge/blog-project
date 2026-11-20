@@ -1,7 +1,5 @@
 // 예약 발행 글 날짜: 작성(createdAt)은 오래전이어도 게시(publishedAt)가 최근이면 공개 목록·RSS·아카이브·
 // 이전/다음에서 게시 시각 기준으로 놓여야 한다(예전엔 작성일 기준이라 과거 날짜로 묻힘).
-import { vi } from "vitest";
-vi.mock("server-only", () => ({}));
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 

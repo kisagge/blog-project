@@ -81,7 +81,7 @@ pnpm dev                      # http://localhost:3010
 
 ## 테스트
 
-Vitest. 순수 로직과 함께 DB 로직은 임시 SQLite로 실제 쿼리를 검증한다(헬퍼: `lib/test-db.ts`).
+Vitest. 순수 로직과 함께 DB 로직은 임시 SQLite로 실제 쿼리를 검증한다(헬퍼: `lib/test-db.ts` — 스키마는 실제 마이그레이션으로 만든 템플릿을 복사). 공용 테스트 픽스처는 `test/helpers.ts`.
 
 ```bash
 pnpm test

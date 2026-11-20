@@ -1,5 +1,4 @@
 import { vi } from "vitest";
-vi.mock("server-only", () => ({}));
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 import { makeFeed, makeUser } from "@/lib/test-factories";

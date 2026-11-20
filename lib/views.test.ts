@@ -9,8 +9,6 @@ import {
 } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 
-vi.mock("server-only", () => ({}));
-
 // 방문자 쿠키 저장소를 인메모리로 모킹. beforeEach에서 비우면 "새 방문자".
 let cookieStore: Map<string, string>;
 vi.mock("next/headers", () => ({

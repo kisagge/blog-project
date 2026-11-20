@@ -11,21 +11,7 @@ vi.mock("@/app/feed/comments/comment-actions", () => ({
 
 import { FeedEventsProvider } from "@/app/feed/feed-events-context";
 import LikeButton from "@/app/feed/like-button";
-
-class FakeEventSource {
-  static instances: FakeEventSource[] = [];
-  url: string;
-  onopen: (() => void) | null = null;
-  onmessage: ((e: { data: string }) => void) | null = null;
-  closed = false;
-  constructor(url: string) {
-    this.url = url;
-    FakeEventSource.instances.push(this);
-  }
-  close() {
-    this.closed = true;
-  }
-}
+import { FakeEventSource } from "@/test/helpers";
 
 function renderButton() {
   return render(

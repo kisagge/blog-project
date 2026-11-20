@@ -2,6 +2,12 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.113.2] - 2026-11-20
+
+### Changed
+
+- (내부) 테스트 DB를 실제 마이그레이션으로 생성 — 손으로 옮겨 적던 290줄 DDL 제거(전환 전 두 스키마 일치 비교 검증). 테스트 공용 픽스처(`test/helpers.ts`)와 `server-only` 별칭으로 59개 테스트 파일의 반복 코드 정리. 앱 동작 변화 없음
+
 ## [0.113.1] - 2026-11-20
 
 ### Security

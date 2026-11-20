@@ -1,5 +1,4 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
-vi.mock("server-only", () => ({}));
 
 let xff: string | null = null;
 vi.mock("next/headers", () => ({

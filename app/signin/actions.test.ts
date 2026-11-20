@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("server-only", () => ({}));
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: vi.fn() }));
 vi.mock("@/lib/client-ip", () => ({
   getClientIp: vi.fn(async () => "1.2.3.4"),
@@ -22,18 +21,13 @@ import { createMemberSession } from "@/lib/session";
 import { getClientIp } from "@/lib/client-ip";
 import { ACTION_LIMITS, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
+import { formData } from "@/test/helpers";
 
 const vt = vi.mocked(verifyTurnstile);
 const am = vi.mocked(authenticateMember);
 const cms = vi.mocked(createMemberSession);
 const gci = vi.mocked(getClientIp);
 const rd = vi.mocked(redirect);
-
-function fd(o: Record<string, string>) {
-  const f = new FormData();
-  for (const [k, v] of Object.entries(o)) f.set(k, v);
-  return f;
-}
 
 beforeEach(() => {
   vt.mockReset();
@@ -48,7 +42,7 @@ describe("signin action", () => {
   test("turnstile 실패 → error, 인증·redirect 미호출", async () => {
     vt.mockResolvedValue(false);
     expect(
-      await signin(undefined, fd({ email: "a@x.com", password: "x" })),
+      await signin(undefined, formData({ email: "a@x.com", password: "x" })),
     ).toEqual({
       error: "사람 확인에 실패했습니다. 다시 시도해 주세요.",
     });
@@ -63,7 +57,7 @@ describe("signin action", () => {
       error: "이메일 또는 비밀번호가 올바르지 않습니다.",
     });
     expect(
-      await signin(undefined, fd({ email: "a@x.com", password: "x" })),
+      await signin(undefined, formData({ email: "a@x.com", password: "x" })),
     ).toEqual({
       error: "이메일 또는 비밀번호가 올바르지 않습니다.",
     });
@@ -77,7 +71,7 @@ describe("signin action", () => {
       user: { id: "u1", nickname: "닉", sessionVersion: 4 },
     });
     await expect(
-      signin(undefined, fd({ email: "a@x.com", password: "x" })),
+      signin(undefined, formData({ email: "a@x.com", password: "x" })),
     ).rejects.toThrow("NEXT_REDIRECT");
     expect(cms).toHaveBeenCalledWith("u1", "닉", 4);
     expect(rd).toHaveBeenCalledWith("/");
@@ -90,12 +84,12 @@ describe("signin action", () => {
     for (let i = 0; i < limit; i++) {
       const r = await signin(
         undefined,
-        fd({ email: "a@x.com", password: "x" }),
+        formData({ email: "a@x.com", password: "x" }),
       );
       expect(r?.error).not.toBe(TOO_MANY_REQUESTS); // 게이트 통과
     }
     expect(
-      await signin(undefined, fd({ email: "a@x.com", password: "x" })),
+      await signin(undefined, formData({ email: "a@x.com", password: "x" })),
     ).toEqual({
       error: TOO_MANY_REQUESTS,
     });
