@@ -17,6 +17,7 @@ import { assignFeedSeries } from "@/lib/series";
 import { logAudit } from "@/lib/audit";
 import { bodyChanged } from "@/lib/feed-dates";
 import { restoreRevision, snapshotRevision } from "@/lib/revisions";
+import { isVisibility, type Visibility } from "@/lib/visibility";
 
 // 감사 요약용: 회원 닉네임(없으면 id 일부).
 async function memberLabel(id: string): Promise<string> {
@@ -167,11 +168,10 @@ export async function deleteFeed(formData: FormData) {
   revalidateFeed();
 }
 
-export async function setFeedVisibility(
-  id: string,
-  visibility: "public" | "members" | "private",
-) {
+export async function setFeedVisibility(id: string, visibility: Visibility) {
   await verifySession();
+  // 서버 액션 인자는 클라이언트가 임의로 보낼 수 있다 — 허용값 외는 무시.
+  if (!isVisibility(visibility)) return;
   await prisma.feed.update({ where: { id }, data: { visibility } });
   const feed = await prisma.feed.findUnique({
     where: { id },
