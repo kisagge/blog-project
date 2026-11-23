@@ -7,7 +7,7 @@ import {
   searchFeeds,
 } from "@/lib/feeds";
 import { getViewerRole, getSession, isBlockedMember } from "@/lib/dal";
-import { getAdminNickname } from "@/lib/comment-actor";
+import { getAdminNickname } from "@/lib/admin-user";
 import { checkAccess, type Visibility } from "@/lib/visibility";
 import FeedArticle from "@/app/feed/feed-article";
 import FeedEngagement from "@/app/feed/feed-engagement";

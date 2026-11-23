@@ -14,7 +14,7 @@ export async function followAction(
   if (!allowAction("follow", session.userId))
     return { error: TOO_MANY_REQUESTS };
   const res = await followUser(session.userId, targetId);
-  if ("error" in res) return { error: res.error };
+  if (!res.ok) return { error: res.error };
   revalidatePath(`/u/${targetId}`);
   revalidatePath("/following");
   return { following: true };

@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { sendToUser, sendToUsers } from "@/lib/push";
 import { getSession } from "@/lib/dal";
-import { ensureAdminUser, ADMIN_EMAIL } from "@/lib/comment-actor";
+import { ensureAdminUser, findAdminUserId } from "@/lib/admin-user";
 import { publishUnread } from "@/lib/events";
 import { commentPermalink } from "@/lib/share";
 
@@ -216,12 +216,6 @@ export async function notifyAdminReport(args: {
 export async function notificationRecipientId(): Promise<string | null> {
   const s = await getSession();
   if (s?.role === "member") return s.userId;
-  if (s?.role === "admin") {
-    const admin = await prisma.user.findUnique({
-      where: { email: ADMIN_EMAIL },
-      select: { id: true },
-    });
-    return admin?.id ?? null;
-  }
+  if (s?.role === "admin") return findAdminUserId();
   return null;
 }

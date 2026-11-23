@@ -5,14 +5,11 @@ import { kstStartOfTodayUtc } from "@/lib/kst";
 import { parseTags, setFeedTags } from "@/lib/tags";
 import { bodyChanged } from "@/lib/feed-dates";
 import { FEED_LATEST_ORDER } from "@/lib/feeds";
+import type { ValueResult } from "@/lib/result";
 
 // 회원 글 가드.
 export const DRAFT_LIMIT = 3; // 회원당 동시 임시저장 최대 개수
 export const DAILY_PUBLISH_LIMIT = 5; // 회원당 하루 게시 개수
-
-// 성공 시 value를 항상 반환(슬롯 id·slug 등) — value 선택인 공용 Result와 의미가 달라 로컬 유지.
-type Result<T = undefined> =
-  { ok: true; value: T } | { ok: false; error: string };
 
 // 제목 기반 slug + 짧은 난수(충돌·악용 방지). 한글 제목은 ascii가 비어 "post-..."가 된다.
 function genSlug(title: string): string {
@@ -97,23 +94,63 @@ export async function getMyPost(userId: string, id: string) {
 
 type Input = { title: string; content: string; tags?: string };
 
+const NOT_FOUND = "글을 찾을 수 없습니다.";
+
+// 본인 글 1건(남의 글·없는 id는 null — 존재 여부를 구분해 드러내지 않음).
+function findOwnPost(userId: string, id: string) {
+  return prisma.feed.findFirst({
+    where: { id, authorId: userId },
+    select: { id: true, slug: true, status: true, title: true, content: true },
+  });
+}
+
+// 태그 입력(콤마 구분 원본)으로 글의 태그를 통째로 교체.
+function replaceTags(feedId: string, raw?: string) {
+  return setFeedTags(feedId, parseTags(raw ?? ""));
+}
+
+// 새로 게시(임시저장 → 게시 포함)할 때만 적용하는 하루 게시 제한. 초과면 안내 문구, 아니면 null.
+async function dailyQuotaError(userId: string): Promise<string | null> {
+  return (await countPublishedToday(userId)) >= DAILY_PUBLISH_LIMIT
+    ? `하루에 ${DAILY_PUBLISH_LIMIT}개까지만 게시할 수 있습니다. 내일 다시 시도해 주세요.`
+    : null;
+}
+
+// 회원 글 신규 생성(회원공개 고정, slug 자동). 게시면 publishedAt 기록.
+async function createMemberFeed(
+  userId: string,
+  input: Input,
+  status: "draft" | "published",
+) {
+  const feed = await prisma.feed.create({
+    data: {
+      slug: genSlug(input.title),
+      title: input.title,
+      content: input.content,
+      visibility: "members",
+      status,
+      authorId: userId,
+      ...(status === "published" && { publishedAt: new Date() }),
+    },
+  });
+  await replaceTags(feed.id, input.tags);
+  return feed;
+}
+
 // 임시저장 저장: id 있으면 본인 draft 갱신, 없으면 신규(한도 검사).
 export async function saveDraft(
   userId: string,
   input: Input & { id?: string },
-): Promise<Result<{ id: string }>> {
+): Promise<ValueResult<{ id: string }>> {
   if (input.id) {
-    const row = await prisma.feed.findFirst({
-      where: { id: input.id, authorId: userId },
-      select: { id: true },
-    });
-    if (!row) return { ok: false, error: "글을 찾을 수 없습니다." };
+    const row = await findOwnPost(userId, input.id);
+    if (!row) return { ok: false, error: NOT_FOUND };
     await prisma.feed.update({
-      where: { id: input.id },
+      where: { id: row.id },
       data: { title: input.title, content: input.content },
     });
-    await setFeedTags(input.id, parseTags(input.tags ?? ""));
-    return { ok: true, value: { id: input.id } };
+    await replaceTags(row.id, input.tags);
+    return { ok: true, value: { id: row.id } };
   }
   if ((await countMyDrafts(userId)) >= DRAFT_LIMIT) {
     return {
@@ -121,97 +158,51 @@ export async function saveDraft(
       error: `임시저장은 최대 ${DRAFT_LIMIT}개까지 가능합니다. 기존 임시저장을 게시하거나 삭제해 주세요.`,
     };
   }
-  const feed = await prisma.feed.create({
-    data: {
-      slug: genSlug(input.title),
-      title: input.title,
-      content: input.content,
-      visibility: "members",
-      status: "draft",
-      authorId: userId,
-    },
-  });
-  await setFeedTags(feed.id, parseTags(input.tags ?? ""));
+  const feed = await createMemberFeed(userId, input, "draft");
   return { ok: true, value: { id: feed.id } };
 }
 
-// 게시(회원공개). id 있고 이미 published면 단순 수정(하루 제한 미적용),
-// draft→published거나 신규면 하루 게시 제한 검사 + publishedAt 기록.
+// 게시(회원공개). 세 갈래:
+// - 이미 게시된 글 수정: 하루 제한 미적용, 제목·본문이 실제로 바뀐 경우에만 수정 시각 기록(태그만 변경은 제외)
+// - 임시저장 → 게시: 하루 제한 검사 + publishedAt 기록
+// - 신규 바로 게시: 하루 제한 검사 + publishedAt 기록
 export async function publishPost(
   userId: string,
   input: Input & { id?: string },
-): Promise<Result<{ slug: string }>> {
-  if (input.id) {
-    const row = await prisma.feed.findFirst({
-      where: { id: input.id, authorId: userId },
-      select: {
-        id: true,
-        slug: true,
-        status: true,
-        title: true,
-        content: true,
-      },
-    });
-    if (!row) return { ok: false, error: "글을 찾을 수 없습니다." };
-    if (row.status === "published") {
-      // 이미 게시된 글 수정. 제목·본문이 실제로 바뀐 경우에만 수정 시각 기록(태그만 변경은 제외).
-      const next = { title: input.title, content: input.content };
-      await prisma.feed.update({
-        where: { id: row.id },
-        data: bodyChanged(row, next) ? { ...next, editedAt: new Date() } : next,
-      });
-      await setFeedTags(row.id, parseTags(input.tags ?? ""));
-      return { ok: true, value: { slug: row.slug } };
-    }
-    // 임시저장 → 게시.
-    if ((await countPublishedToday(userId)) >= DAILY_PUBLISH_LIMIT) {
-      return { ok: false, error: dailyLimitMessage() };
-    }
+): Promise<ValueResult<{ slug: string }>> {
+  if (!input.id) {
+    const quota = await dailyQuotaError(userId);
+    if (quota) return { ok: false, error: quota };
+    const feed = await createMemberFeed(userId, input, "published");
+    return { ok: true, value: { slug: feed.slug } };
+  }
+  const row = await findOwnPost(userId, input.id);
+  if (!row) return { ok: false, error: NOT_FOUND };
+  const next = { title: input.title, content: input.content };
+  if (row.status === "published") {
     await prisma.feed.update({
       where: { id: row.id },
-      data: {
-        title: input.title,
-        content: input.content,
-        status: "published",
-        publishedAt: new Date(),
-      },
+      data: bodyChanged(row, next) ? { ...next, editedAt: new Date() } : next,
     });
-    await setFeedTags(row.id, parseTags(input.tags ?? ""));
-    return { ok: true, value: { slug: row.slug } };
+  } else {
+    const quota = await dailyQuotaError(userId);
+    if (quota) return { ok: false, error: quota };
+    await prisma.feed.update({
+      where: { id: row.id },
+      data: { ...next, status: "published", publishedAt: new Date() },
+    });
   }
-  // 신규 바로 게시.
-  if ((await countPublishedToday(userId)) >= DAILY_PUBLISH_LIMIT) {
-    return { ok: false, error: dailyLimitMessage() };
-  }
-  const feed = await prisma.feed.create({
-    data: {
-      slug: genSlug(input.title),
-      title: input.title,
-      content: input.content,
-      visibility: "members",
-      status: "published",
-      authorId: userId,
-      publishedAt: new Date(),
-    },
-  });
-  await setFeedTags(feed.id, parseTags(input.tags ?? ""));
-  return { ok: true, value: { slug: feed.slug } };
-}
-
-function dailyLimitMessage(): string {
-  return `하루에 ${DAILY_PUBLISH_LIMIT}개까지만 게시할 수 있습니다. 내일 다시 시도해 주세요.`;
+  await replaceTags(row.id, input.tags);
+  return { ok: true, value: { slug: row.slug } };
 }
 
 // 본인 글 삭제(draft·published 공용).
 export async function deleteMyPost(
   userId: string,
   id: string,
-): Promise<Result> {
-  const row = await prisma.feed.findFirst({
-    where: { id, authorId: userId },
-    select: { id: true },
-  });
-  if (!row) return { ok: false, error: "글을 찾을 수 없습니다." };
-  await prisma.feed.delete({ where: { id } });
+): Promise<ValueResult<undefined>> {
+  const row = await findOwnPost(userId, id);
+  if (!row) return { ok: false, error: NOT_FOUND };
+  await prisma.feed.delete({ where: { id: row.id } });
   return { ok: true, value: undefined };
 }

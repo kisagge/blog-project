@@ -6,8 +6,9 @@ import { notifyFollow } from "@/lib/notifications";
 import { swallow } from "@/lib/log";
 import { visibleFeedWhere } from "@/lib/feed-access";
 import { sliceHasMore } from "@/lib/pagination";
+import type { Result } from "@/lib/result";
 
-export type FollowResult = { ok: true } | { error: string };
+export type FollowResult = Result;
 
 // 회원이 다른 회원을 팔로우. 자기 자신·미존재·비승인·관리자 대상은 거부.
 // 중복은 무시(idempotent) — 이미 있으면 조기 반환, 동시 생성 충돌(unique)도 삼킨다.
@@ -17,13 +18,13 @@ export async function followUser(
   followingId: string,
 ): Promise<FollowResult> {
   if (followerId === followingId)
-    return { error: "자기 자신은 팔로우할 수 없습니다." };
+    return { ok: false, error: "자기 자신은 팔로우할 수 없습니다." };
   const target = await prisma.user.findUnique({
     where: { id: followingId },
     select: { role: true, status: true, nickname: true },
   });
   if (!target || target.role !== "member" || target.status !== "approved")
-    return { error: "팔로우할 수 없는 대상입니다." };
+    return { ok: false, error: "팔로우할 수 없는 대상입니다." };
 
   const existing = await prisma.follow.findUnique({
     where: { followerId_followingId: { followerId, followingId } },

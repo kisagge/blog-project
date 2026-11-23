@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { setAbout, setPublicEnabled } from "@/lib/site-config";
-import { setAdminNickname } from "@/lib/comment-actor";
+import { setAdminNickname } from "@/lib/admin-user";
 import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
 import {
   AboutSchema,

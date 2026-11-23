@@ -1,47 +1,6 @@
 import "server-only";
-import { prisma } from "@/lib/prisma";
 import { getSession, getMemberSession } from "@/lib/dal";
-
-export const ADMIN_EMAIL = "admin@byjang.local";
-const ADMIN_DEFAULT_NICKNAME = "관리자";
-
-// 관리자 작성용 예약 User(싱글톤). 로그인 불가 해시("-": salt:hash 형식 아님).
-export async function ensureAdminUser() {
-  return prisma.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    update: { role: "admin" },
-    create: {
-      email: ADMIN_EMAIL,
-      nickname: ADMIN_DEFAULT_NICKNAME,
-      passwordHash: "-",
-      role: "admin",
-      status: "approved",
-    },
-  });
-}
-
-export async function getAdminNickname() {
-  const u = await prisma.user.findUnique({
-    where: { email: ADMIN_EMAIL },
-    select: { nickname: true },
-  });
-  return u?.nickname ?? ADMIN_DEFAULT_NICKNAME;
-}
-
-export async function setAdminNickname(nickname: string) {
-  const name = nickname.trim() || ADMIN_DEFAULT_NICKNAME;
-  await prisma.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    update: { nickname: name },
-    create: {
-      email: ADMIN_EMAIL,
-      nickname: name,
-      passwordHash: "-",
-      role: "admin",
-      status: "approved",
-    },
-  });
-}
+import { ensureAdminUser } from "@/lib/admin-user";
 
 export type CommentActor = {
   userId: string;

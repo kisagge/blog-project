@@ -112,7 +112,7 @@ describe("notifications", () => {
   });
 
   test("notifyFeedComment: 최상위 댓글 → 관리자에게 알림(딥링크)", async () => {
-    const { ensureAdminUser } = await import("@/lib/comment-actor");
+    const { ensureAdminUser } = await import("@/lib/admin-user");
     const admin = await ensureAdminUser();
     const before = await prisma.notification.count({
       where: { userId: admin.id },
@@ -136,7 +136,7 @@ describe("notifications", () => {
   });
 
   test("notifyFeedComment: 관리자 본인 댓글이면 스킵", async () => {
-    const { ensureAdminUser } = await import("@/lib/comment-actor");
+    const { ensureAdminUser } = await import("@/lib/admin-user");
     const admin = await ensureAdminUser();
     const before = await prisma.notification.count({
       where: { userId: admin.id },

@@ -77,7 +77,7 @@ describe("users", () => {
   });
 
   test("예약 admin User는 회원 목록/카운트에서 제외", async () => {
-    const { ensureAdminUser } = await import("@/lib/comment-actor");
+    const { ensureAdminUser } = await import("@/lib/admin-user");
     await ensureAdminUser();
     const before = await m.countUsersByStatus("approved");
     const list = await m.listUsersByStatus("approved");
@@ -287,10 +287,45 @@ describe("users", () => {
     expect(p?.nickname).toBe("프로필회원");
     expect(p).toHaveProperty("createdAt");
     // 예약 admin(role admin)은 프로필 없음
-    const { ensureAdminUser } = await import("@/lib/comment-actor");
+    const { ensureAdminUser } = await import("@/lib/admin-user");
     const admin = await ensureAdminUser();
     expect(await m.getMemberProfile(admin.id)).toBeNull();
     // 없는 id
     expect(await m.getMemberProfile("nope")).toBeNull();
+  });
+});
+
+describe("예약 관리자 계정 보호", () => {
+  test("예약 도메인(@byjang.local) 이메일로는 가입 불가", async () => {
+    const r = await m.createPendingUser({
+      email: " Admin@ByJang.local ",
+      nickname: "선점시도",
+      password: "Aa1!aaaa",
+    });
+    expect(r).toEqual({ ok: false, error: m.RESERVED_EMAIL_MESSAGE });
+    // 같은 이메일 행이 없거나(미생성), 있다면 시스템 계정 그대로(가입 입력이 덮어쓰지 않음).
+    const row = await m.findUserByEmail("admin@byjang.local");
+    if (row) {
+      expect(row.passwordHash).toBe("-");
+      expect(row.role).toBe("admin");
+    }
+  });
+
+  test("role이 member가 아닌 행(예약 관리자)은 회원 로그인 불가 — 비밀번호가 맞아도 일반 오류", async () => {
+    const prisma = (await import("@/lib/prisma")).prisma;
+    const { hashPassword } = await import("@/lib/password");
+    await prisma.user.create({
+      data: {
+        email: "sysrole@x.com",
+        nickname: "역할검사",
+        passwordHash: await hashPassword("Aa1!aaaa"),
+        role: "admin",
+        status: "approved",
+      },
+    });
+    expect(await m.authenticateMember("sysrole@x.com", "Aa1!aaaa")).toEqual({
+      ok: false,
+      error: "이메일 또는 비밀번호가 올바르지 않습니다.",
+    });
   });
 });
