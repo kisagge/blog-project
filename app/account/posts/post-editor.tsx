@@ -16,7 +16,6 @@ import {
   pruneDrafts,
 } from "@/lib/draft-store";
 
-const inputCls = INPUT_CLASS;
 type PostDraft = { title: string; content: string; tags: string };
 
 export default function PostEditor({
@@ -157,7 +156,7 @@ export default function PostEditor({
           onChange={(e) => setTitle(e.target.value)}
           maxLength={120}
           aria-invalid={state?.errors?.title ? true : undefined}
-          className={inputCls}
+          className={INPUT_CLASS}
         />
         {state?.errors?.title && (
           <span role="alert" className="text-xs text-red-600 dark:text-red-400">
@@ -173,7 +172,7 @@ export default function PostEditor({
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="던파, 개발 후기"
-          className={inputCls}
+          className={INPUT_CLASS}
         />
       </label>
 
@@ -266,7 +265,7 @@ export default function PostEditor({
             onChange={(e) => setContent(e.target.value)}
             rows={16}
             aria-invalid={state?.errors?.content ? true : undefined}
-            className={`${inputCls} w-full resize-y font-mono`}
+            className={`${INPUT_CLASS} w-full resize-y font-mono`}
           />
         </div>
 
@@ -278,7 +277,7 @@ export default function PostEditor({
           role="tabpanel"
           aria-labelledby="tab-preview"
           hidden={tab === "write"}
-          className={`${inputCls} min-h-[24rem] overflow-auto`}
+          className={`${INPUT_CLASS} min-h-[24rem] overflow-auto`}
         >
           {tab === "preview" &&
             (contentEmpty ? (

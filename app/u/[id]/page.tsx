@@ -5,12 +5,12 @@ import { getMemberProfile } from "@/lib/users";
 import { listMemberPosts } from "@/lib/member-posts";
 import { getCommentsByUser } from "@/lib/comments";
 import { getFollowCounts, isFollowing } from "@/lib/follows";
-import { kstDate, isoInstant } from "@/lib/kst";
 import MemberGate from "@/app/member-gate";
 import Avatar from "@/app/avatar";
 import FollowButton from "@/app/u/follow-button";
 import { guardPublicAccess } from "@/lib/site-config";
 import { commentPermalink } from "@/lib/share";
+import KstTime from "@/app/ui/kst-time";
 
 export const dynamic = "force-dynamic";
 
@@ -76,10 +76,7 @@ export default async function MemberProfilePage({
             {profile.nickname}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            가입{" "}
-            <time dateTime={isoInstant(profile.createdAt)}>
-              {kstDate(profile.createdAt)}
-            </time>
+            가입 <KstTime value={profile.createdAt} />
           </p>
           <p className="mt-1 text-sm text-zinc-500">
             팔로워 {counts.followers.toLocaleString()} · 팔로잉{" "}
@@ -142,10 +139,7 @@ export default async function MemberProfilePage({
                     {c.content}
                   </span>
                   <span className="mt-0.5 block text-xs text-zinc-500">
-                    ‘{c.feed.title}’ ·{" "}
-                    <time dateTime={isoInstant(c.createdAt)}>
-                      {kstDate(c.createdAt)}
-                    </time>
+                    ‘{c.feed.title}’ · <KstTime value={c.createdAt} />
                   </span>
                 </Link>
               </li>

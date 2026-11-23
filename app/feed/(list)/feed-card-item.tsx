@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { kstDate, isoInstant } from "@/lib/kst";
 import { highlightText } from "./highlight";
 import type { FeedCard } from "./feed-card";
+import KstTime from "@/app/ui/kst-time";
+import AuthorName from "@/app/ui/author-name";
 
 // 피드 목록 카드(제목·요약·작성자·날짜·조회수·태그). 피드·커뮤니티 목록, 인기·태그·시리즈·팔로잉·저장 목록 공용.
 // linkAuthors=false면 작성자 닉네임을 평문으로(비회원 뷰어).
@@ -44,18 +45,17 @@ export default function FeedCardItem({
             비공개
           </span>
         )}
-        {card.authorName &&
-          (card.authorId && linkAuthors ? (
-            <span>
-              <Link href={`/u/${card.authorId}`} className="hover:underline">
-                {card.authorName}
-              </Link>{" "}
-              ·{" "}
-            </span>
-          ) : (
-            <span>{card.authorName} · </span>
-          ))}
-        <time dateTime={isoInstant(card.date)}>{kstDate(card.date)}</time>
+        {card.authorName && (
+          <>
+            <AuthorName
+              id={card.authorId}
+              name={card.authorName}
+              link={!!linkAuthors}
+            />
+            {" · "}
+          </>
+        )}
+        <KstTime value={card.date} />
         <span> · 조회 {card.viewCount.toLocaleString()}</span>
       </p>
       {card.tags.length > 0 && (

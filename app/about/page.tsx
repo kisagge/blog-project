@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getAbout, guardPublicAccess } from "@/lib/site-config";
 import { stripMarkdown } from "@/lib/content";
-import { isoInstant, kstDate } from "@/lib/kst";
 import { buildAboutJsonLd, jsonLdHtml } from "@/lib/structured-data";
 import MarkdownContent from "@/app/markdown-content";
+import KstTime from "@/app/ui/kst-time";
 
 // 런타임 DB 조회(관리자 편집 즉시 반영).
 export const dynamic = "force-dynamic";
@@ -39,10 +39,7 @@ export default async function AboutPage() {
           <h1 className="text-3xl font-semibold tracking-tight">소개</h1>
           {about.updatedAt && (
             <p className="mt-2 text-sm text-zinc-500">
-              마지막 수정{" "}
-              <time dateTime={isoInstant(about.updatedAt)}>
-                {kstDate(about.updatedAt)}
-              </time>
+              마지막 수정 <KstTime value={about.updatedAt} />
             </p>
           )}
         </header>

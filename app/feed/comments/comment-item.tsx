@@ -1,15 +1,15 @@
 "use client";
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import ReportButton from "@/app/report/report-button";
 import CommentBody from "./comment-body";
 import CommentForm from "./comment-form";
 import CommentLikeButton from "./comment-like-button";
 import CommentReactions from "./comment-reactions";
 import { editCommentAction } from "./comment-actions";
-import { kstDateTime, isoInstant } from "@/lib/kst";
 import type { CommentNode } from "@/lib/comments";
 import { COMMENT_MAX_LENGTH } from "@/lib/limits";
+import KstTime from "@/app/ui/kst-time";
+import AuthorName from "@/app/ui/author-name";
 
 export default function CommentItem({
   node,
@@ -94,22 +94,20 @@ export default function CommentItem({
       <div className="flex items-center gap-2 text-sm">
         {node.deleted || node.hidden ? (
           <span className="font-medium">—</span>
-        ) : node.authorRole === "member" && linkAuthors ? (
-          <Link
-            href={`/u/${node.userId}`}
-            className="font-medium hover:underline"
-          >
-            {node.nickname}
-          </Link>
         ) : (
-          <span className="font-medium">{node.nickname}</span>
+          // 관리자 작성자는 공개 프로필이 없어 링크하지 않음.
+          <AuthorName
+            id={node.authorRole === "member" ? node.userId : null}
+            name={node.nickname}
+            link={!!linkAuthors}
+            className="font-medium"
+          />
         )}
-        <time
-          dateTime={isoInstant(node.createdAt)}
+        <KstTime
+          value={node.createdAt}
+          withTime
           className="text-xs text-zinc-500"
-        >
-          {kstDateTime(node.createdAt)}
-        </time>
+        />
         {node.edited && !gone && (
           <span className="text-xs text-zinc-500">(수정됨)</span>
         )}

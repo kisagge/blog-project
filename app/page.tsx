@@ -3,9 +3,9 @@ import { guardPublicAccess } from "@/lib/site-config";
 import { searchFeeds } from "@/lib/feeds";
 import { hasVisibleSeries } from "@/lib/series";
 import { getViewerRole } from "@/lib/dal";
-import { kstDate, isoInstant } from "@/lib/kst";
 import { buildSiteJsonLd, jsonLdHtml } from "@/lib/structured-data";
 import { postedAt } from "@/lib/feed-dates";
+import KstTime from "@/app/ui/kst-time";
 
 export const dynamic = "force-dynamic";
 
@@ -73,12 +73,10 @@ export default async function Home() {
                       {f.summary}
                     </p>
                   )}
-                  <time
-                    dateTime={isoInstant(postedAt(f))}
+                  <KstTime
+                    value={postedAt(f)}
                     className="mt-1.5 block text-xs text-zinc-500"
-                  >
-                    {kstDate(postedAt(f))}
-                  </time>
+                  />
                 </Link>
               </li>
             ))}

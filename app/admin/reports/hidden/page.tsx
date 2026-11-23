@@ -3,7 +3,8 @@ import { listHiddenTargets, countPendingReportTargets } from "@/lib/reports";
 import ReportActionButtons from "../report-actions-buttons";
 import ReportTabs from "../report-tabs";
 import { targetHref } from "../helpers";
-import { kstDateTime } from "@/lib/kst";
+import KstTime from "@/app/ui/kst-time";
+import AuthorName from "@/app/ui/author-name";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export default async function AdminHiddenReportsPage() {
                 <div className="min-w-0">
                   <p className="text-xs text-zinc-500">
                     {h.targetType === "comment" ? "댓글" : "글"} · 숨김{" "}
-                    {kstDateTime(h.hiddenAt)}
+                    <KstTime value={h.hiddenAt} withTime />
                   </p>
                   <Link
                     href={targetHref(h.targetType, h.slug, h.targetId)}
@@ -46,16 +47,7 @@ export default async function AdminHiddenReportsPage() {
                   </Link>
                   <p className="mt-1 text-xs text-zinc-500">
                     작성자{" "}
-                    {h.authorId ? (
-                      <Link
-                        href={`/u/${h.authorId}`}
-                        className="hover:underline"
-                      >
-                        {h.authorNickname}
-                      </Link>
-                    ) : (
-                      h.authorNickname
-                    )}
+                    <AuthorName id={h.authorId} name={h.authorNickname} link />
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">

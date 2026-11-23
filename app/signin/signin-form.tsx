@@ -5,8 +5,6 @@ import Link from "next/link";
 import { signin, type SigninState } from "./actions";
 import TurnstileWidget from "@/app/turnstile-widget";
 
-const inputCls = INPUT_CLASS;
-
 export default function SigninForm({ siteKey }: { siteKey?: string }) {
   const [state, action, pending] = useActionState<SigninState, FormData>(
     signin,
@@ -23,7 +21,7 @@ export default function SigninForm({ siteKey }: { siteKey?: string }) {
           name="email"
           type="email"
           autoComplete="email"
-          className={inputCls}
+          className={INPUT_CLASS}
         />
       </div>
       <div className="flex flex-col gap-1">
@@ -35,7 +33,7 @@ export default function SigninForm({ siteKey }: { siteKey?: string }) {
           name="password"
           type="password"
           autoComplete="current-password"
-          className={inputCls}
+          className={INPUT_CLASS}
         />
       </div>
       {state?.error && (

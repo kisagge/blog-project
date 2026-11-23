@@ -4,7 +4,8 @@ import { REPORT_REASONS } from "@/lib/report-reasons";
 import ReportActionButtons from "./report-actions-buttons";
 import ReportTabs from "./report-tabs";
 import { targetHref } from "./helpers";
-import { kstDateTime } from "@/lib/kst";
+import KstTime from "@/app/ui/kst-time";
+import AuthorName from "@/app/ui/author-name";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,8 @@ export default async function AdminReportsPage() {
                 <div className="min-w-0">
                   <p className="text-xs text-zinc-500">
                     {q.targetType === "comment" ? "댓글" : "글"} · 신고{" "}
-                    {q.reportCount}건 · 최초 {kstDateTime(q.firstReportedAt)}
+                    {q.reportCount}건 · 최초{" "}
+                    <KstTime value={q.firstReportedAt} withTime />
                   </p>
                   <Link
                     href={targetHref(q.targetType, q.slug, q.targetId)}
@@ -45,16 +47,7 @@ export default async function AdminReportsPage() {
                   </Link>
                   <p className="mt-1 text-xs text-zinc-500">
                     작성자{" "}
-                    {q.authorId ? (
-                      <Link
-                        href={`/u/${q.authorId}`}
-                        className="hover:underline"
-                      >
-                        {q.authorNickname}
-                      </Link>
-                    ) : (
-                      q.authorNickname
-                    )}
+                    <AuthorName id={q.authorId} name={q.authorNickname} link />
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {q.reasons.map((r) => (

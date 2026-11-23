@@ -5,8 +5,6 @@ import Link from "next/link";
 import { requestCode, type RequestState } from "./actions";
 import TurnstileWidget from "@/app/turnstile-widget";
 
-const inputCls = INPUT_CLASS;
-
 export default function RequestForm({ siteKey }: { siteKey?: string }) {
   const [state, action, pending] = useActionState<RequestState, FormData>(
     requestCode,
@@ -23,7 +21,7 @@ export default function RequestForm({ siteKey }: { siteKey?: string }) {
           name="email"
           type="email"
           autoComplete="email"
-          className={inputCls}
+          className={INPUT_CLASS}
         />
       </div>
       {state?.error && (

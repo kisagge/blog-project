@@ -1,6 +1,6 @@
 import { getAuditPage } from "@/lib/audit";
 import Pager, { parsePage } from "@/app/admin/pager";
-import { kstDateTime, isoInstant } from "@/lib/kst";
+import KstTime from "@/app/ui/kst-time";
 
 export const metadata = { title: "기록 · 관리자" };
 
@@ -47,12 +47,11 @@ export default async function AdminAuditPage({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{a.summary}</span>
-                <time
-                  dateTime={isoInstant(a.createdAt)}
+                <KstTime
+                  value={a.createdAt}
+                  withTime
                   className="text-xs text-zinc-500"
-                >
-                  {kstDateTime(a.createdAt)}
-                </time>
+                />
               </span>
             </li>
           ))}

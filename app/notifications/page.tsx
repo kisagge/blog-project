@@ -4,8 +4,8 @@ import {
   listNotifications,
   notificationRecipientId,
 } from "@/lib/notifications";
-import { kstDateTime, isoInstant } from "@/lib/kst";
 import MarkRead from "./mark-read";
+import KstTime from "@/app/ui/kst-time";
 
 export const metadata = { title: "알림" };
 
@@ -53,16 +53,18 @@ function Item({
     <span className="flex flex-col gap-0.5">
       <span className="text-sm">
         {unread && (
-          <span
-            className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle"
-            aria-label="안읽음"
-          />
+          <>
+            {/* 점은 장식, 상태는 화면 낭독기용 텍스트로(일반 span에는 aria-label을 쓸 수 없음). */}
+            <span
+              aria-hidden
+              className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle"
+            />
+            <span className="sr-only">안읽음: </span>
+          </>
         )}
         {body}
       </span>
-      <time dateTime={isoInstant(createdAt)} className="text-xs text-zinc-500">
-        {kstDateTime(createdAt)}
-      </time>
+      <KstTime value={createdAt} withTime className="text-xs text-zinc-500" />
     </span>
   );
   return url ? (
