@@ -6,7 +6,7 @@
 
 ### Changed
 
-- (내부) 서버 액션·API 정리 — 실시간 스트림(SSE) 응답 공용 헬퍼(`lib/sse`, 수명주기 테스트 추가), 공개 폼(가입·로그인·재설정 요청)의 요청 제한+CAPTCHA 앞단 공용화(`lib/form-guard`), "로그인 필요" 문구 상수화, 폐기 예정 zod `flatten()` → `z.flattenError`, 관리자 폼 상태를 공용 `FormState`로 통일, 재검증 경로 묶음, `app/admin/actions.ts`를 글·회원·사이트 설정 액션으로 분리. 화면·동작 변화 없음
+- (내부) 서버 액션·API 정리 — 실시간 스트림(SSE) 응답 공용 헬퍼(`lib/sse`, 수명주기 테스트 추가), 공개 폼(가입·로그인·재설정 요청)의 요청 제한+CAPTCHA 앞단 공용화(`lib/form-guard`), "로그인 필요" 문구 상수화, 폐기 예정 zod `flatten()` → `z.flattenError`, 관리자 폼 상태를 공용 `FormState`로 통일, 재검증 경로 묶음, `app/admin/actions.ts`를 글·회원·사이트 설정 액션으로 분리. 화면·동작 변화 없음 ([#246](https://github.com/kisagge/blog-project/pull/246))
 
 ## [0.113.6] - 2026-11-23
 
