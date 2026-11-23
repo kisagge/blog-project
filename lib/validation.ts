@@ -75,7 +75,7 @@ export const ReportSchema = z.object({
     .optional(),
 });
 
-// 비밀번호 규칙: 8자 이상 + 소문자·대문자·숫자·특수문자 각 1개 이상. 가입·재설정 공용.
+// 비밀번호 규칙: 8자 이상 + 소문자·대문자·숫자·특수문자 각 1개 이상. 가입·재설정 공용(폼 안내 문구는 limits.ts PASSWORD_HINT).
 const passwordField = z
   .string()
   .min(8, "비밀번호는 8자 이상이어야 합니다.")

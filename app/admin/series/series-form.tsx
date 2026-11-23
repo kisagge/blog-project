@@ -2,6 +2,7 @@
 import { useActionState } from "react";
 import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import type { SeriesFormState } from "./actions";
+import FormField from "@/app/ui/form-field";
 
 export default function SeriesForm({
   action,
@@ -28,41 +29,52 @@ export default function SeriesForm({
 
   return (
     <form action={formAction} className="flex max-w-md flex-col gap-3 text-sm">
-      <label className="flex flex-col gap-1">
-        <span className="text-zinc-500">제목</span>
-        <input
-          name="title"
-          defaultValue={d.title ?? ""}
-          className={INPUT_CLASS}
-        />
-        {err.title && (
-          <span className="text-xs text-red-600 dark:text-red-400">
-            {err.title[0]}
-          </span>
+      <FormField
+        id="series-title"
+        label="제목"
+        error={err.title}
+        labelClassName="text-zinc-500"
+      >
+        {(control) => (
+          <input
+            {...control}
+            name="title"
+            defaultValue={d.title ?? ""}
+            className={INPUT_CLASS}
+          />
         )}
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-zinc-500">slug (소문자·숫자·하이픈)</span>
-        <input
-          name="slug"
-          defaultValue={d.slug ?? ""}
-          className={INPUT_CLASS}
-        />
-        {err.slug && (
-          <span className="text-xs text-red-600 dark:text-red-400">
-            {err.slug[0]}
-          </span>
+      </FormField>
+      <FormField
+        id="series-slug"
+        label="slug (소문자·숫자·하이픈)"
+        error={err.slug}
+        labelClassName="text-zinc-500"
+      >
+        {(control) => (
+          <input
+            {...control}
+            name="slug"
+            defaultValue={d.slug ?? ""}
+            className={INPUT_CLASS}
+          />
         )}
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-zinc-500">설명 (선택)</span>
-        <textarea
-          name="description"
-          defaultValue={d.description ?? ""}
-          rows={2}
-          className={`${INPUT_CLASS} resize-y`}
-        />
-      </label>
+      </FormField>
+      <FormField
+        id="series-description"
+        label="설명 (선택)"
+        error={err.description}
+        labelClassName="text-zinc-500"
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            name="description"
+            defaultValue={d.description ?? ""}
+            rows={2}
+            className={`${INPUT_CLASS} resize-y`}
+          />
+        )}
+      </FormField>
       {state?.error && (
         <p role="alert" className="text-red-600 dark:text-red-400">
           {state.error}

@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { signup, type SignupState } from "./actions";
 import TurnstileWidget from "@/app/turnstile-widget";
+import FormField from "@/app/ui/form-field";
+import { PASSWORD_HINT } from "@/lib/limits";
 
 export default function SignupForm({ siteKey }: { siteKey?: string }) {
   const [state, action, pending] = useActionState<SignupState, FormData>(
@@ -24,22 +26,47 @@ export default function SignupForm({ siteKey }: { siteKey?: string }) {
   }
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
-      <Field
-        label="이메일"
-        name="email"
-        type="email"
-        error={state?.errors?.email}
-      />
-      <Field label="닉네임" name="nickname" error={state?.errors?.nickname} />
-      <Field
+      <FormField id="signup-email" label="이메일" error={state?.errors?.email}>
+        {(control) => (
+          <input
+            {...control}
+            name="email"
+            type="email"
+            autoComplete="email"
+            className={INPUT_CLASS}
+          />
+        )}
+      </FormField>
+      <FormField
+        id="signup-nickname"
+        label="닉네임"
+        error={state?.errors?.nickname}
+      >
+        {(control) => (
+          <input
+            {...control}
+            name="nickname"
+            autoComplete="nickname"
+            className={INPUT_CLASS}
+          />
+        )}
+      </FormField>
+      <FormField
+        id="signup-password"
         label="비밀번호"
-        name="password"
-        type="password"
+        hint={PASSWORD_HINT}
         error={state?.errors?.password}
-      />
-      <p className="-mt-3 text-xs text-zinc-500">
-        8자 이상, 소문자·대문자·숫자·특수문자를 각 1개 이상 포함하세요.
-      </p>
+      >
+        {(control) => (
+          <input
+            {...control}
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            className={INPUT_CLASS}
+          />
+        )}
+      </FormField>
       {state?.error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
@@ -56,31 +83,5 @@ export default function SignupForm({ siteKey }: { siteKey?: string }) {
         </Link>
       </p>
     </form>
-  );
-}
-
-function Field({
-  label,
-  name,
-  type = "text",
-  error,
-}: {
-  label: string;
-  name: string;
-  type?: string;
-  error?: string[];
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-medium">
-        {label}
-      </label>
-      <input id={name} name={name} type={type} className={INPUT_CLASS} />
-      {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error.join(" ")}
-        </p>
-      )}
-    </div>
   );
 }
