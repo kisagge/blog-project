@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { getMemberSession } from "@/lib/dal";
 import { getFollowingFeed } from "@/lib/follows";
-import { toFeedCard } from "@/app/feed/(list)/feed-card";
-import FeedCardItem from "@/app/feed/(list)/feed-card-item";
+import FeedCardList from "@/app/feed/(list)/feed-card-list";
 import MemberGate from "@/app/member-gate";
 import { guardPublicAccess } from "@/lib/site-config";
 
@@ -38,11 +37,7 @@ export default async function FollowingPage() {
           .
         </p>
       ) : (
-        <ul className="flex flex-col gap-6">
-          {items.map((f) => (
-            <FeedCardItem key={f.slug} card={toFeedCard(f)} linkAuthors />
-          ))}
-        </ul>
+        <FeedCardList feeds={items} linkAuthors />
       )}
     </main>
   );

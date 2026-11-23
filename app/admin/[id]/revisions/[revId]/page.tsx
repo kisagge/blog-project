@@ -2,10 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFeedById } from "@/lib/feeds";
 import { getRevision } from "@/lib/revisions";
-import { isoInstant, kstDateTime } from "@/lib/kst";
 import { diffStats, lineDiff } from "@/lib/text-diff";
 import DiffView from "@/app/admin/diff-view";
 import RestoreButton from "../restore-button";
+import KstTime from "@/app/ui/kst-time";
 
 export const metadata = { title: "이력 비교 · 관리자" };
 export const dynamic = "force-dynamic";
@@ -40,9 +40,7 @@ export default async function RevisionPage({
         </div>
       </div>
       <p className="text-sm text-zinc-500">
-        <time dateTime={isoInstant(rev.createdAt)}>
-          {kstDateTime(rev.createdAt)}
-        </time>
+        <KstTime value={rev.createdAt} withTime />
         까지의 버전 → 현재 글. 되돌리면 아래 변경이 취소됩니다.
       </p>
 

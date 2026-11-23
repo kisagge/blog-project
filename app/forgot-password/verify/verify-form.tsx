@@ -3,8 +3,6 @@ import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState, useEffect, useState } from "react";
 import { verifyCode, resendCode, type VerifyState } from "../actions";
 
-const inputCls = INPUT_CLASS;
-
 function useCountdown(expiresAtMs: number) {
   const [remaining, setRemaining] = useState(() =>
     Math.max(0, expiresAtMs - Date.now()),
@@ -56,7 +54,7 @@ export default function VerifyForm({ expiresAt }: { expiresAt: string }) {
             autoComplete="one-time-code"
             maxLength={6}
             placeholder="000000"
-            className={`${inputCls} text-center text-lg tracking-[0.4em]`}
+            className={`${INPUT_CLASS} text-center text-lg tracking-[0.4em]`}
           />
         </div>
         {state?.error && (

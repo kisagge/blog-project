@@ -225,7 +225,7 @@ export default async function DfDetailPage({
               imageUrl={characterImageUrl(server, characterId, 2)}
             />
           )}
-          <Tabs tabs={tabs} />
+          <Tabs tabs={tabs} label="캐릭터 정보" />
         </div>
       )}
     </main>
@@ -385,12 +385,12 @@ function EquipmentSection({ items }: { items: DfEquipItem[] }) {
                   </span>
                 )}
               </div>
-              <span className="ml-auto shrink-0 text-right text-xs text-zinc-500">
+              <div className="ml-auto shrink-0 text-right text-xs text-zinc-500">
                 {enhance && <div>{enhance}</div>}
                 {typeof it.refine === "number" && it.refine > 0 && (
                   <div>재련 {it.refine}</div>
                 )}
-              </span>
+              </div>
             </li>
           );
         })}

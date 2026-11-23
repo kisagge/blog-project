@@ -5,8 +5,6 @@ import Link from "next/link";
 import { signup, type SignupState } from "./actions";
 import TurnstileWidget from "@/app/turnstile-widget";
 
-const inputCls = INPUT_CLASS;
-
 export default function SignupForm({ siteKey }: { siteKey?: string }) {
   const [state, action, pending] = useActionState<SignupState, FormData>(
     signup,
@@ -77,7 +75,7 @@ function Field({
       <label htmlFor={name} className="text-sm font-medium">
         {label}
       </label>
-      <input id={name} name={name} type={type} className={inputCls} />
+      <input id={name} name={name} type={type} className={INPUT_CLASS} />
       {error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error.join(" ")}

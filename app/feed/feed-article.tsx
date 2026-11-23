@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { readingTimeMinutes, extractToc } from "@/lib/content";
-import { kstDate, isoInstant } from "@/lib/kst";
 import { postedAt, visibleEditedAt } from "@/lib/feed-dates";
 import Toc from "@/app/feed/toc";
 import MarkdownContent from "@/app/markdown-content";
+import KstTime from "@/app/ui/kst-time";
+import AuthorName from "@/app/ui/author-name";
 
 // 공개 상세와 미리보기가 공유하는 글 렌더(제목·게시일·마크다운 본문).
 export default function FeedArticle({
@@ -35,23 +36,21 @@ export default function FeedArticle({
       <header className="mb-8 border-b border-black/[.06] pb-6 dark:border-white/[.1]">
         <h1 className="text-3xl font-semibold tracking-tight">{feed.title}</h1>
         <p className="mt-2 text-sm text-zinc-500">
-          {authorName &&
-            (authorId && linkAuthors ? (
-              <span>
-                <Link href={`/u/${authorId}`} className="hover:underline">
-                  {authorName}
-                </Link>{" "}
-                ·{" "}
-              </span>
-            ) : (
-              <span>{authorName} · </span>
-            ))}
-          <time dateTime={isoInstant(shown)}>{kstDate(shown)}</time>
+          {authorName && (
+            <>
+              <AuthorName
+                id={authorId}
+                name={authorName}
+                link={!!linkAuthors}
+              />
+              {" · "}
+            </>
+          )}
+          <KstTime value={shown} />
           {editedAt && (
             <span>
               {" "}
-              · 수정{" "}
-              <time dateTime={isoInstant(editedAt)}>{kstDate(editedAt)}</time>
+              · 수정 <KstTime value={editedAt} />
             </span>
           )}
           {typeof feed.viewCount === "number" && (

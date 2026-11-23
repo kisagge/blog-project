@@ -5,7 +5,6 @@ import { updateProfileAction, type AccountState } from "./actions";
 import { uploadAvatar } from "./avatar-action";
 import Avatar from "@/app/avatar";
 
-const inputCls = INPUT_CLASS;
 const BIO_MAX = 160;
 
 export default function AccountForm({
@@ -56,7 +55,7 @@ export default function AccountForm({
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-zinc-500">이메일</span>
-        <input className={`${inputCls} opacity-60`} value={email} disabled />
+        <input className={`${INPUT_CLASS} opacity-60`} value={email} disabled />
       </label>
 
       {/* 아바타 */}
@@ -119,7 +118,7 @@ export default function AccountForm({
           aria-describedby={
             state?.errors?.nickname ? "nickname-error" : undefined
           }
-          className={inputCls}
+          className={INPUT_CLASS}
         />
         {state?.errors?.nickname && (
           <span
@@ -147,7 +146,7 @@ export default function AccountForm({
           placeholder="간단한 소개를 적어보세요."
           aria-invalid={state?.errors?.bio ? true : undefined}
           aria-describedby={state?.errors?.bio ? "bio-error" : undefined}
-          className={`${inputCls} resize-y`}
+          className={`${INPUT_CLASS} resize-y`}
         />
         {state?.errors?.bio && (
           <span

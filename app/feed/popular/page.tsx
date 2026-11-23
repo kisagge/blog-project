@@ -1,7 +1,6 @@
 import { getVisibleTopFeeds } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
-import { toFeedCard } from "@/app/feed/(list)/feed-card";
-import FeedCardItem from "@/app/feed/(list)/feed-card-item";
+import FeedCardList from "@/app/feed/(list)/feed-card-list";
 import { guardPublicAccess } from "@/lib/site-config";
 
 export const metadata = {
@@ -25,15 +24,7 @@ export default async function PopularPage() {
       {feeds.length === 0 ? (
         <p className="text-zinc-500">아직 인기 글이 없습니다.</p>
       ) : (
-        <ul className="flex flex-col gap-6">
-          {feeds.map((f) => (
-            <FeedCardItem
-              key={f.slug}
-              card={toFeedCard(f)}
-              linkAuthors={role !== "anon"}
-            />
-          ))}
-        </ul>
+        <FeedCardList feeds={feeds} linkAuthors={role !== "anon"} />
       )}
     </main>
   );

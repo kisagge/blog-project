@@ -5,7 +5,7 @@ import FeedVisibilityControl from "@/app/admin/feed-visibility-control";
 import Pager, { parsePage } from "@/app/admin/pager";
 import { publishNowAction } from "@/app/admin/feed-actions";
 import { type Visibility } from "@/lib/visibility";
-import { kstDateTime } from "@/lib/kst";
+import KstTime from "@/app/ui/kst-time";
 
 export const metadata = { title: "글 목록 · 관리자" };
 
@@ -94,7 +94,7 @@ export default async function AdminFeedsPage({
                 <p className="truncate text-sm text-zinc-500">/{feed.slug}</p>
                 {feed.status === "draft" && feed.scheduledAt && (
                   <p className="mt-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                    🕒 예약: {kstDateTime(feed.scheduledAt)}
+                    🕒 예약: <KstTime value={feed.scheduledAt} withTime />
                   </p>
                 )}
               </div>

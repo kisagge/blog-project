@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFeedById } from "@/lib/feeds";
 import { listRevisions, REVISION_LIMIT } from "@/lib/revisions";
-import { isoInstant, kstDateTime } from "@/lib/kst";
+import KstTime from "@/app/ui/kst-time";
 
 export const metadata = { title: "수정 이력 · 관리자" };
 export const dynamic = "force-dynamic";
@@ -60,10 +60,8 @@ export default async function RevisionsPage({
                   {r.title}
                 </span>{" "}
                 <span className="text-xs text-zinc-500">
-                  <time dateTime={isoInstant(r.createdAt)}>
-                    {kstDateTime(r.createdAt)}
-                  </time>{" "}
-                  까지의 버전 · {r.length.toLocaleString()}자
+                  <KstTime value={r.createdAt} withTime /> 까지의 버전 ·{" "}
+                  {r.length.toLocaleString()}자
                 </span>
               </Link>
             </li>

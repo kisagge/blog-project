@@ -9,8 +9,8 @@
 | 2   | 죽은 코드·주석·상수  | 미사용 export, 도달 불가 분기(jpeg), `server-only` 누락, 하드코딩된 사이트 문자열, 낡은 주석                                                                                  | 없음              | 완료 #242      |
 | 3   | `lib` 공용 질의·유틸 | `visibleFeedWhere`(22곳), KST·날짜 계산, 페이지 나눔, 정렬 상수, 이메일·세션·재설정 상수, 검증 필드                                                                           | 없음              | 완료 #243·#244 |
 | 4   | `lib` 도메인 정리    | member-posts·reports 분리, 관리자 User 모듈, 토글 트랜잭션 헬퍼, Result 타입 통일, 스케줄러 헬퍼, SSE 이벤트 타입 위치                                                        | 낮음              | 완료 #245      |
-| 5   | 서버 액션·API        | SSE 스트림 헬퍼(+테스트), 폼 가드(요청 제한+CAPTCHA), 회원 가드·문구, revalidate 경로, 폼 상태 모양, zod `flatten()` 폐기 대응, `admin/actions.ts` 영역별 분리                | 낮음              | 진행 중        |
-| 6   | UI 공용 요소·마크업  | `lib/ui` 상수, `<KstTime>`·`<AuthorName>`·`<FeedCardList>`·탭 컴포넌트, `<aside role=dialog>`·span 안 div·span의 aria-label 바로잡기                                          | 없음~낮음         |                |
+| 5   | 서버 액션·API        | SSE 스트림 헬퍼(+테스트), 폼 가드(요청 제한+CAPTCHA), 회원 가드·문구, revalidate 경로, 폼 상태 모양, zod `flatten()` 폐기 대응, `admin/actions.ts` 영역별 분리                | 낮음              | 완료 #246      |
+| 6   | UI 공용 요소·마크업  | `lib/ui` 상수, `<KstTime>`·`<AuthorName>`·`<FeedCardList>`·탭 컴포넌트, `<aside role=dialog>`·span 안 div·span의 aria-label 바로잡기                                          | 없음~낮음         | 진행 중        |
 | 7   | 폼 필드              | 공용 `FormField`(`aria-invalid`·`aria-describedby` — 가입·재설정·시리즈 폼에 누락)                                                                                            | 낮음              |                |
 | 8   | 편집기               | 이미지 업로드 공용 훅·버튼(네트워크 오류 시 "업로드 중…" 고착 수정 포함), 작성/미리보기 탭, 초안 자동저장                                                                     | 낮음~중간         |                |
 | 9   | 토글·리액션          | 디바운스 토글 훅, 리액션 컴포넌트 통합, 로그인 안내 모달 1개로, EventSource 공유                                                                                              | 중간(테스트 먼저) |                |

@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSeriesBySlug, getSeriesPosts } from "@/lib/series";
 import { getViewerRole } from "@/lib/dal";
-import { toFeedCard } from "@/app/feed/(list)/feed-card";
-import FeedCardItem from "@/app/feed/(list)/feed-card-item";
+import FeedCardList from "@/app/feed/(list)/feed-card-list";
 import { guardPublicAccess } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
@@ -68,15 +67,7 @@ export default async function SeriesPage({
       {posts.length === 0 ? (
         <p className="text-zinc-500">아직 공개된 글이 없습니다.</p>
       ) : (
-        <ol className="flex flex-col gap-6">
-          {posts.map((f) => (
-            <FeedCardItem
-              key={f.slug}
-              card={toFeedCard(f)}
-              linkAuthors={role !== "anon"}
-            />
-          ))}
-        </ol>
+        <FeedCardList feeds={posts} linkAuthors={role !== "anon"} ordered />
       )}
     </main>
   );

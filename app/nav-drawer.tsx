@@ -94,7 +94,8 @@ export default function NavDrawer({
         />
       )}
 
-      <aside
+      {/* 모달 드로어: aside는 dialog 역할을 가질 수 없어 div. */}
+      <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
@@ -192,7 +193,7 @@ export default function NavDrawer({
             <ThemeToggle />
           </div>
         </nav>
-      </aside>
+      </div>
     </>
   );
 }

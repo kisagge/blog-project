@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { getTagBySlug } from "@/lib/tags";
 import { getFeedsByTag } from "@/lib/feeds";
 import { getViewerRole } from "@/lib/dal";
-import { toFeedCard } from "@/app/feed/(list)/feed-card";
-import FeedCardItem from "@/app/feed/(list)/feed-card-item";
+import FeedCardList from "@/app/feed/(list)/feed-card-list";
 import { buildTagJsonLd, jsonLdHtml } from "@/lib/structured-data";
 import { absoluteUrl } from "@/lib/share";
 import { guardPublicAccess } from "@/lib/site-config";
@@ -75,15 +74,7 @@ export default async function TagPage({
       {feeds.length === 0 ? (
         <p className="text-zinc-500">아직 이 태그의 공개 글이 없습니다.</p>
       ) : (
-        <ul className="flex flex-col gap-6">
-          {feeds.map((f) => (
-            <FeedCardItem
-              key={f.slug}
-              card={toFeedCard(f)}
-              linkAuthors={role !== "anon"}
-            />
-          ))}
-        </ul>
+        <FeedCardList feeds={feeds} linkAuthors={role !== "anon"} />
       )}
     </main>
   );

@@ -3,8 +3,6 @@ import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState } from "react";
 import { submitNewPassword, type ResetState } from "../actions";
 
-const inputCls = INPUT_CLASS;
-
 export default function ResetForm() {
   const [state, action, pending] = useActionState<ResetState, FormData>(
     submitNewPassword,
@@ -56,7 +54,7 @@ function Field({
         name={name}
         type="password"
         autoComplete="new-password"
-        className={inputCls}
+        className={INPUT_CLASS}
       />
       {error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">

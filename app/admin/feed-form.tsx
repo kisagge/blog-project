@@ -200,7 +200,7 @@ export default function FeedForm({
           <input
             name="title"
             defaultValue={d.title}
-            className={inputCls}
+            className={INPUT_CLASS}
             {...fieldA11y("feed-title", err.title)}
           />
         </Field>
@@ -212,7 +212,7 @@ export default function FeedForm({
           <input
             name="slug"
             defaultValue={d.slug}
-            className={inputCls}
+            className={INPUT_CLASS}
             {...fieldA11y("feed-slug", err.slug)}
           />
         </Field>
@@ -220,7 +220,7 @@ export default function FeedForm({
           <input
             name="summary"
             defaultValue={d.summary ?? ""}
-            className={inputCls}
+            className={INPUT_CLASS}
             {...fieldA11y("feed-summary", err.summary)}
           />
         </Field>
@@ -233,7 +233,7 @@ export default function FeedForm({
             name="tags"
             defaultValue={d.tags ?? ""}
             placeholder="던파, 개발 후기"
-            className={inputCls}
+            className={INPUT_CLASS}
             {...fieldA11y("feed-tags", err.tags)}
           />
         </Field>
@@ -243,7 +243,7 @@ export default function FeedForm({
             name="content"
             defaultValue={d.content}
             rows={12}
-            className={inputCls}
+            className={INPUT_CLASS}
             {...fieldA11y("feed-content", err.content)}
           />
           <div className="mt-2 flex items-center gap-3 text-sm">
@@ -311,8 +311,6 @@ export default function FeedForm({
     </>
   );
 }
-
-const inputCls = INPUT_CLASS;
 
 // 입력과 이름표·오류 메시지를 연결하는 속성(id, aria-invalid, aria-describedby).
 function fieldA11y(id: string, error?: string[]) {
