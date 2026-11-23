@@ -8,11 +8,11 @@
 
 - 이미지 업로드가 "업로드 중"에 멈추던 문제 — 회원 글 작성기·내 정보 아바타는 업로드 요청이 예외로 끝나면(네트워크 오류·본문 크기 한도) 업로드 입력(아바타는 저장 버튼까지)이 영구 비활성. 아바타는 형식·크기 선검증도 없어 5MB 초과 파일이 바로 이 상태로 이어졌음
 - 서버 검증 오류 후 입력이 지워지던 문제 — 회원가입(이메일·닉네임)·관리자 글·시리즈 폼. React 19가 action 제출 후 비제어 폼을 초기화하므로, 실패 응답에 제출값(비밀번호 제외)을 담아 입력을 다시 채움
-- 편집기 작성/미리보기 탭에 방향키·Home/End 이동과 roving tabindex(WAI-ARIA 탭 패턴)
+- 편집기 작성/미리보기 탭에 방향키·Home/End 이동과 roving tabindex(WAI-ARIA 탭 패턴) ([#249](https://github.com/kisagge/blog-project/pull/249))
 
 ### Changed
 
-- (내부) 편집기 공용 훅·부품 — `useImageUpload`(업로드 4곳), `insertIntoTextarea`(캐럿 삽입 2곳), `TabList`(편집기 탭 2벌 + 던파 탭), `useDraft`(관리자·회원 편집기의 초안 정리·복원·디바운스 저장·실패 시 보존)
+- (내부) 편집기 공용 훅·부품 — `useImageUpload`(업로드 4곳), `insertIntoTextarea`(캐럿 삽입 2곳), `TabList`(편집기 탭 2벌 + 던파 탭), `useDraft`(관리자·회원 편집기의 초안 정리·복원·디바운스 저장·실패 시 보존) ([#249](https://github.com/kisagge/blog-project/pull/249))
 
 ## [0.113.9] - 2026-11-23
 
