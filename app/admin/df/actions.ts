@@ -10,6 +10,12 @@ import {
 } from "@/lib/df-characters";
 import { isVisibility, type Visibility } from "@/lib/visibility";
 
+// 관리 화면 + 공개 /df(목록·상세는 /df 아래).
+function revalidateDf() {
+  revalidatePath("/admin/df");
+  revalidatePath("/df");
+}
+
 export type DfSearchState =
   { rows?: DfCharacterRow[]; error?: string } | undefined;
 
@@ -38,22 +44,19 @@ export async function addDfCharacterAction(formData: FormData) {
     characterId: String(formData.get("characterId") ?? ""),
     characterName: String(formData.get("characterName") ?? ""),
   });
-  revalidatePath("/admin/df");
-  revalidatePath("/df");
+  revalidateDf();
 }
 
 export async function removeDfCharacterAction(formData: FormData) {
   await verifySession();
   await removeFeatured(String(formData.get("id") ?? ""));
-  revalidatePath("/admin/df");
-  revalidatePath("/df");
+  revalidateDf();
 }
 
 export async function reorderDfCharactersAction(orderedIds: string[]) {
   await verifySession();
   await reorderFeatured(orderedIds);
-  revalidatePath("/admin/df");
-  revalidatePath("/df");
+  revalidateDf();
 }
 
 export async function setDfVisibilityAction(
@@ -64,6 +67,5 @@ export async function setDfVisibilityAction(
   // 서버 액션 인자는 클라이언트가 임의로 보낼 수 있다 — 허용값 외는 무시.
   if (!isVisibility(visibility)) return;
   await setFeaturedVisibility(id, visibility);
-  revalidatePath("/admin/df");
-  revalidatePath("/df");
+  revalidateDf();
 }

@@ -1,4 +1,5 @@
 "use server";
+import { LOGIN_REQUIRED } from "@/lib/form-state";
 import { getCommentActor } from "@/lib/comment-actor";
 import { createReport, countPendingReportTargets } from "@/lib/reports";
 import { ReportSchema } from "@/lib/validation";
@@ -13,7 +14,7 @@ export async function submitReportAction(
   formData: FormData,
 ): Promise<{ ok: true } | { error: string }> {
   const actor = await getCommentActor();
-  if (!actor) return { error: "로그인이 필요합니다." };
+  if (!actor) return { error: LOGIN_REQUIRED };
   // 신고 남용 방지(회원당). 동일 대상 중복은 createReport의 유니크 제약이 별도 차단.
   if (!allowAction("report", actor.userId)) return { error: TOO_MANY_REQUESTS };
   const parsed = ReportSchema.safeParse({

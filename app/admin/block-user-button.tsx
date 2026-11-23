@@ -1,6 +1,6 @@
 "use client";
 import ConfirmDialog from "@/app/confirm-dialog";
-import { blockUserAction, unblockUserAction } from "@/app/admin/actions";
+import { blockUserAction, unblockUserAction } from "@/app/admin/member-actions";
 
 /** 차단/차단 해제 버튼 + 확인 모달(공용 ConfirmDialog). */
 export function BlockUserButton({

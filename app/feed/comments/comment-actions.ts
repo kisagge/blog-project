@@ -1,4 +1,5 @@
 "use server";
+import { LOGIN_REQUIRED } from "@/lib/form-state";
 import { revalidatePath } from "next/cache";
 import { getCommentActor } from "@/lib/comment-actor";
 import { getSession, getViewerRole } from "@/lib/dal";
@@ -66,7 +67,7 @@ export async function addCommentAction(
   formData: FormData,
 ): Promise<AddCommentResult | undefined> {
   const actor = await getCommentActor();
-  if (!actor) return { error: "로그인이 필요합니다." };
+  if (!actor) return { error: LOGIN_REQUIRED };
   const feed = await getReadableFeed(args.feedId, actor.role);
   if (!feed) return { error: NOT_FOUND };
   if (!allowAction("comment", actor.userId))
@@ -214,7 +215,7 @@ export async function editCommentAction(
   content: string,
 ): Promise<EditCommentResult> {
   const actor = await getCommentActor();
-  if (!actor) return { error: "로그인이 필요합니다." };
+  if (!actor) return { error: LOGIN_REQUIRED };
   const feed = await getReadableCommentFeed(commentId, actor.role);
   if (!feed) return { error: NOT_FOUND };
   const res = await editComment(commentId, actor.userId, content);

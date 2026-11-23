@@ -1,4 +1,5 @@
 "use server";
+import { LOGIN_REQUIRED } from "@/lib/form-state";
 import { getMemberSession } from "@/lib/dal";
 import type { UploadResult } from "@/lib/save-image";
 import { saveOwnedImage } from "@/lib/uploads";
@@ -9,7 +10,7 @@ export async function uploadPostImage(
   formData: FormData,
 ): Promise<UploadResult> {
   const session = await getMemberSession();
-  if (!session) return { error: "로그인이 필요합니다." };
+  if (!session) return { error: LOGIN_REQUIRED };
   if (!allowAction("postImageUpload", session.userId))
     return { error: TOO_MANY_REQUESTS };
   return saveOwnedImage(formData.get("file"), session.userId, "post");

@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getMemberSession } from "@/lib/dal";
-import { ProfileSchema } from "@/lib/validation";
+import { ProfileSchema, fieldErrors } from "@/lib/validation";
 import {
   updateProfile,
   isNicknameTaken,
@@ -9,7 +9,7 @@ import {
 } from "@/lib/users";
 import { createMemberSession } from "@/lib/session";
 import { canUseAsAvatar, deleteOwnedUpload } from "@/lib/uploads";
-import type { FormState } from "@/lib/form-state";
+import { LOGIN_REQUIRED, type FormState } from "@/lib/form-state";
 
 export type AccountState = FormState;
 
@@ -18,14 +18,14 @@ export async function updateProfileAction(
   formData: FormData,
 ): Promise<AccountState> {
   const session = await getMemberSession();
-  if (!session) return { error: "로그인이 필요합니다." };
+  if (!session) return { error: LOGIN_REQUIRED };
 
   const parsed = ProfileSchema.safeParse({
     nickname: String(formData.get("nickname") ?? ""),
     bio: String(formData.get("bio") ?? ""),
     avatarUrl: String(formData.get("avatarUrl") ?? ""),
   });
-  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
   if (await isNicknameTaken(parsed.data.nickname, session.userId))
     return { errors: { nickname: [NICKNAME_TAKEN_MESSAGE] } };

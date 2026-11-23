@@ -3,6 +3,11 @@ import { isAllowedPushEndpoint } from "@/lib/push-endpoint";
 import { UPLOAD_URL_RE } from "@/lib/upload";
 import { COMMENT_MAX_LENGTH } from "@/lib/limits";
 
+// 폼 필드별 에러 목록(FormState.errors 모양). zod 4에서 폐기 예정인 ZodError#flatten() 대신 z.flattenError.
+export function fieldErrors(error: z.ZodError) {
+  return z.flattenError(error).fieldErrors;
+}
+
 // 폼 공용 필드.
 const titleField = z.string().trim().min(1, "제목을 입력하세요.");
 // slug: 글·시리즈 공용 규칙(URL 식별자).

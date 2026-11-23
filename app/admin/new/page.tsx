@@ -1,5 +1,5 @@
 import FeedForm from "@/app/admin/feed-form";
-import { createFeed } from "@/app/admin/actions";
+import { createFeed } from "@/app/admin/feed-actions";
 import { listSeries } from "@/lib/series";
 
 export default async function NewFeedPage() {

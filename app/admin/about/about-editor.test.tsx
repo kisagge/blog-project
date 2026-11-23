@@ -2,13 +2,13 @@ import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 // 서버 액션("use server" → server-only 체인) 격리.
-vi.mock("@/app/admin/actions", () => ({
-  saveAboutAction: vi.fn(async () => ({ ok: true })),
+vi.mock("@/app/admin/site-actions", () => ({
+  saveAboutAction: vi.fn(async () => ({ done: true })),
 }));
 vi.mock("@/app/admin/upload-action", () => ({ uploadImage: vi.fn() }));
 
 import AboutEditor from "@/app/admin/about/about-editor";
-import { saveAboutAction } from "@/app/admin/actions";
+import { saveAboutAction } from "@/app/admin/site-actions";
 import { uploadImage } from "@/app/admin/upload-action";
 import { ABOUT_MAX_LENGTH } from "@/lib/validation";
 

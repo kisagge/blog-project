@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createAdminSession, deleteSession } from "@/lib/session";
 import { verifyTotp } from "@/lib/totp";
 import { safeEqual } from "@/lib/safe-equal";
-import { getClientIp } from "@/lib/client-ip";
+import { clientIpKey } from "@/lib/form-guard";
 import { allowAction, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 
 export type LoginState = { error?: string } | undefined;
@@ -19,7 +19,7 @@ export async function login(
   formData: FormData,
 ): Promise<LoginState> {
   // 무차별 대입 방지(IP당) — TOTP 미설정이면 비밀번호가 유일한 방어선.
-  if (!allowAction("adminLogin", (await getClientIp()) ?? "unknown"))
+  if (!allowAction("adminLogin", await clientIpKey()))
     return { error: TOO_MANY_REQUESTS };
   const password = String(formData.get("password") ?? "");
   // ADMIN_TOTP_SECRET가 설정돼 있으면 2단계(비밀번호 + Google Authenticator OTP).

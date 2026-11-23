@@ -2,6 +2,12 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.113.7] - 2026-11-23
+
+### Changed
+
+- (내부) 서버 액션·API 정리 — 실시간 스트림(SSE) 응답 공용 헬퍼(`lib/sse`, 수명주기 테스트 추가), 공개 폼(가입·로그인·재설정 요청)의 요청 제한+CAPTCHA 앞단 공용화(`lib/form-guard`), "로그인 필요" 문구 상수화, 폐기 예정 zod `flatten()` → `z.flattenError`, 관리자 폼 상태를 공용 `FormState`로 통일, 재검증 경로 묶음, `app/admin/actions.ts`를 글·회원·사이트 설정 액션으로 분리. 화면·동작 변화 없음 ([#246](https://github.com/kisagge/blog-project/pull/246))
+
 ## [0.113.6] - 2026-11-23
 
 ### Changed

@@ -9,14 +9,14 @@ import { makeFeed } from "@/lib/test-factories";
 
 let prisma: Awaited<ReturnType<typeof setupTestDb>>["prisma"];
 let cleanup: () => Promise<void>;
-let feedActions: typeof import("@/app/admin/actions");
+let feedActions: typeof import("@/app/admin/feed-actions");
 let dfActions: typeof import("@/app/admin/df/actions");
 
 beforeAll(async () => {
   const db = await setupTestDb();
   prisma = db.prisma;
   cleanup = db.cleanup;
-  feedActions = await import("@/app/admin/actions");
+  feedActions = await import("@/app/admin/feed-actions");
   dfActions = await import("@/app/admin/df/actions");
 });
 afterAll(async () => {

@@ -1,12 +1,12 @@
 "use server";
 import { redirect } from "next/navigation";
-import { verifyTurnstile } from "@/lib/turnstile";
-import { getClientIp } from "@/lib/client-ip";
+import { clientIpKey, guardPublicForm } from "@/lib/form-guard";
 import { allowAction, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 import {
   ResetEmailSchema,
   ResetCodeSchema,
   ResetPasswordSchema,
+  fieldErrors,
 } from "@/lib/validation";
 import {
   requestPasswordReset,
@@ -30,16 +30,9 @@ export async function requestCode(
   _state: RequestState,
   formData: FormData,
 ): Promise<RequestState> {
-  const ip = (await getClientIp()) ?? "unknown";
-  // 코드 요청 남발 방지(IP당). 한 IP가 여러 이메일을 두드리는 것을 차단(이메일당 60s 쿨다운은 별개).
-  if (!allowAction("passwordReset", ip)) return { error: TOO_MANY_REQUESTS };
-  if (
-    !(await verifyTurnstile(
-      String(formData.get("cf-turnstile-response") ?? ""),
-      ip,
-    ))
-  )
-    return { error: "사람 확인에 실패했습니다. 다시 시도해 주세요." };
+  // 코드 요청 남발 방지(IP당 한도 + CAPTCHA). 한 IP가 여러 이메일을 두드리는 것을 차단(이메일당 60s 쿨다운은 별개).
+  const blocked = await guardPublicForm("passwordReset", formData);
+  if (blocked) return { error: blocked };
 
   const parsed = ResetEmailSchema.safeParse({
     email: String(formData.get("email") ?? ""),
@@ -97,7 +90,7 @@ export async function verifyCode(
   });
   if (!parsed.success) return { error: "6자리 숫자 코드를 입력하세요." };
   // 코드 대입 방지: 이메일당(IP 교체 무력화) + IP당(여러 이메일 두드리기) 둘 다 통과해야 검증.
-  const ip = (await getClientIp()) ?? "unknown";
+  const ip = await clientIpKey();
   if (
     !allowAction("resetVerifyIp", ip) ||
     !allowAction("resetVerifyEmail", normalizeEmail(cookie.email))
@@ -125,7 +118,7 @@ export async function submitNewPassword(
     password: String(formData.get("password") ?? ""),
     confirm: String(formData.get("confirm") ?? ""),
   });
-  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
   try {
     const res = await resetPassword(cookie.email, parsed.data.password);
     if (!res.ok) return { error: res.error };

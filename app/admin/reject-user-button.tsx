@@ -1,7 +1,7 @@
 "use client";
 import { useRef } from "react";
 import { useFormStatus } from "react-dom";
-import { rejectUserAction } from "@/app/admin/actions";
+import { rejectUserAction } from "@/app/admin/member-actions";
 
 /** 거절 버튼 + 사유 입력 모달. 사유는 기록되어 재신청 시 관리자에게 표시된다(신청자엔 비노출). */
 export function RejectUserButton({ id, label }: { id: string; label: string }) {
