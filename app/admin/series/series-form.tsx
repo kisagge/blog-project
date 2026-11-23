@@ -24,7 +24,8 @@ export default function SeriesForm({
     SeriesFormState,
     FormData
   >(action, undefined);
-  const d = defaultValues ?? {};
+  // 실패 응답의 제출값이 있으면 그것으로(폼 초기화 후 입력 유지), 없으면 초기값.
+  const d = { ...defaultValues, ...state?.values };
   const err = state?.errors ?? {};
 
   return (

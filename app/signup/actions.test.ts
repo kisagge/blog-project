@@ -18,6 +18,8 @@ const cpu = vi.mocked(createPendingUser);
 const gci = vi.mocked(getClientIp);
 
 const VALID = { email: "a@x.com", nickname: "닉", password: "Abcdef1!" };
+// 실패 응답은 입력 유지용 제출값을 담는다(비밀번호 제외).
+const KEPT = { values: { email: "a@x.com", nickname: "닉" } };
 
 beforeEach(() => {
   vt.mockReset();
@@ -31,6 +33,7 @@ describe("signup action", () => {
     vt.mockResolvedValue(false);
     expect(await signup(undefined, formData(VALID))).toEqual({
       error: "사람 확인에 실패했습니다. 다시 시도해 주세요.",
+      ...KEPT,
     });
     expect(cpu).not.toHaveBeenCalled();
   });
@@ -39,6 +42,7 @@ describe("signup action", () => {
     vt.mockResolvedValue(true);
     const r = await signup(undefined, formData({ ...VALID, password: "weak" }));
     expect(r?.errors?.password?.length).toBeGreaterThan(0);
+    expect(r?.values).toEqual(KEPT.values); // 비밀번호는 돌려주지 않음
     expect(cpu).not.toHaveBeenCalled();
   });
 
@@ -47,6 +51,7 @@ describe("signup action", () => {
     cpu.mockResolvedValue({ ok: false, error: "이미 가입 신청 중입니다." });
     expect(await signup(undefined, formData(VALID))).toEqual({
       error: "이미 가입 신청 중입니다.",
+      ...KEPT,
     });
   });
 
@@ -71,6 +76,7 @@ describe("signup action", () => {
     }
     expect(await signup(undefined, formData(VALID))).toEqual({
       error: TOO_MANY_REQUESTS,
+      ...KEPT,
     });
   });
 });

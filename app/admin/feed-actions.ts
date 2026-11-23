@@ -41,15 +41,16 @@ export async function createFeed(
   formData: FormData,
 ): Promise<FeedFormState> {
   await verifySession();
-  const parsed = FeedFormSchema.safeParse(feedFormToObject(formData));
+  const values = feedFormToObject(formData);
+  const parsed = FeedFormSchema.safeParse(values);
   if (!parsed.success) {
-    return { errors: fieldErrors(parsed.error) };
+    return { errors: fieldErrors(parsed.error), values };
   }
   // 예약 발행은 생성 시에만. 미래면 draft+scheduledAt, 과거/무효면 폼 에러, 빈값이면 즉시.
   const { tags, seriesId, scheduledAt, ...feedData } = parsed.data;
   const sched = decideSchedule(scheduledAt);
   if (sched.kind === "error") {
-    return { errors: { scheduledAt: [sched.message] } };
+    return { errors: { scheduledAt: [sched.message] }, values };
   }
   let createdId: string | undefined;
   try {
@@ -65,6 +66,7 @@ export async function createFeed(
     return {
       error: "이미 사용 중인 slug일 수 있습니다.",
       errors: { slug: ["중복되었거나 저장에 실패했습니다."] },
+      values,
     };
   }
   await logAudit({
@@ -86,9 +88,10 @@ export async function updateFeed(
   formData: FormData,
 ): Promise<FeedFormState> {
   await verifySession();
-  const parsed = FeedFormSchema.safeParse(feedFormToObject(formData));
+  const values = feedFormToObject(formData);
+  const parsed = FeedFormSchema.safeParse(values);
   if (!parsed.success) {
-    return { errors: fieldErrors(parsed.error) };
+    return { errors: fieldErrors(parsed.error), values };
   }
   try {
     const { tags, seriesId, scheduledAt, ...feedData } = parsed.data;
@@ -115,6 +118,7 @@ export async function updateFeed(
     return {
       error: "저장 실패(중복 slug 등).",
       errors: { slug: ["중복되었거나 저장에 실패했습니다."] },
+      values,
     };
   }
   await logAudit({

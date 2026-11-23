@@ -1,22 +1,17 @@
 "use client";
 import { FIELD_ERROR, INPUT_CLASS } from "@/lib/ui";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import type { FeedFormState } from "@/app/admin/feed-actions";
 import { uploadImage } from "@/app/admin/upload-action";
 import { ToastViewport, useToast } from "@/app/toast";
-import { checkImage } from "@/lib/upload";
 import DraftRestoreBanner from "@/app/draft-restore-banner";
 import ScheduleField from "@/app/admin/schedule-field";
-import {
-  draftKey,
-  loadDraft,
-  saveDraft,
-  clearDraft,
-  pruneDrafts,
-} from "@/lib/draft-store";
+import { draftKey } from "@/lib/draft-store";
+import { useDraft } from "@/app/ui/use-draft";
 import { imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
 import type { Visibility } from "@/lib/visibility";
 import FormField from "@/app/ui/form-field";
+import { takeFile, useImageUpload } from "@/app/ui/use-image-upload";
 
 type FeedDraft = {
   title: string;
@@ -55,37 +50,24 @@ export default function FeedForm({
     undefined,
   );
   const d = defaultValues ?? {};
+  // 입력 기본값: 실패 응답의 제출값이 있으면 그것으로(폼 초기화 후 입력 유지), 없으면 초기값.
+  const v = { ...d, ...state?.values };
   const err = state?.errors ?? {};
 
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [restorable, setRestorable] = useState<FeedDraft | null>(null);
+  const { uploading, uploadFile } = useImageUpload(uploadImage);
   const { toasts, show } = useToast();
   const key = draftKey("admin", d.slug ?? "new");
 
-  // 마운트: 오래된 초안 정리 + 저장본이 초기값과 다르면 복원 제안.
-  useEffect(() => {
-    pruneDrafts();
-    const dft = loadDraft<FeedDraft>(key);
-    if (dft && Object.values(dft).some(Boolean)) {
-      const init: FeedDraft = {
-        title: d.title ?? "",
-        slug: d.slug ?? "",
-        summary: d.summary ?? "",
-        content: d.content ?? "",
-        visibility: d.visibility ?? "private",
-        tags: d.tags ?? "",
-      };
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (JSON.stringify(dft) !== JSON.stringify(init)) setRestorable(dft);
-    }
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const draft = useDraft<FeedDraft>(key, {
+    title: d.title ?? "",
+    slug: d.slug ?? "",
+    summary: d.summary ?? "",
+    content: d.content ?? "",
+    visibility: d.visibility ?? "private",
+    tags: d.tags ?? "",
+  });
 
   // uncontrolled 폼의 현재 값을 초안 형태로 읽음(input·실패 복구 공용).
   function readForm(): FeedDraft | null {
@@ -102,28 +84,18 @@ export default function FeedForm({
     };
   }
 
-  // form onInput으로 현재 값을 읽어 디바운스 저장.
-  function onFormInput() {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      const data = readForm();
-      if (data && Object.values(data).some(Boolean)) saveDraft(key, data);
-    }, 800);
-  }
-
-  // 제출 실패(검증 에러 반환) 시 clear-on-submit으로 지워진 초안을 복구.
+  // 제출 실패(검증 에러 반환) 시 제출할 때 지운 초안을 되살림.
   useEffect(() => {
-    if (state?.errors || state?.error) {
-      const data = readForm();
-      if (data && Object.values(data).some(Boolean)) saveDraft(key, data);
-    }
+    if (state?.errors || state?.error) draft.save(readForm());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
+  // 비제어 폼이라 저장본을 각 입력의 value에 직접 넣음.
   function restore() {
     const f = formRef.current;
-    if (f && restorable) {
-      for (const [name, val] of Object.entries(restorable)) {
+    const saved = draft.accept();
+    if (f && saved) {
+      for (const [name, val] of Object.entries(saved)) {
         const el = f.elements.namedItem(name);
         if (
           el instanceof HTMLInputElement ||
@@ -133,11 +105,6 @@ export default function FeedForm({
           el.value = val;
       }
     }
-    setRestorable(null);
-  }
-  function ignoreDraft() {
-    clearDraft(key);
-    setRestorable(null);
   }
 
   // caret: 삽입 후 캐럿을 둘 text 안의 위치(기본 = 끝).
@@ -155,34 +122,13 @@ export default function FeedForm({
   }
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // 같은 파일 재선택 허용
+    const file = takeFile(e);
     if (!file) return;
-
-    // 업로드 전 선검증: 크기 초과 파일이 bodySizeLimit에 걸려 침묵 실패하는 걸 막고 즉시 피드백
-    const check = checkImage(file.type, file.size);
-    if (!check.ok) {
-      show(check.error);
-      return;
-    }
-
-    setUploading(true);
-    const fd = new FormData();
-    fd.set("file", file);
-    try {
-      const res = await uploadImage(fd);
-      if ("error" in res) {
-        show(res.error);
-        return;
-      }
-      const { text, caret } = imageMarkdown(res.url);
-      insertAtCursor(text, caret); // 캐럿을 대체 텍스트 자리([ ] 안)로
-      show(IMAGE_ALT_HINT, "success");
-    } catch {
-      show("업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setUploading(false);
-    }
+    const res = await uploadFile(file);
+    if ("error" in res) return show(res.error);
+    const { text, caret } = imageMarkdown(res.url);
+    insertAtCursor(text, caret); // 캐럿을 대체 텍스트 자리([ ] 안)로
+    show(IMAGE_ALT_HINT, "success");
   }
 
   return (
@@ -190,19 +136,19 @@ export default function FeedForm({
       <form
         ref={formRef}
         action={formAction}
-        onInput={onFormInput}
-        onSubmit={() => clearDraft(key)}
+        onInput={() => draft.saveSoon(readForm)}
+        onSubmit={draft.clear}
         className="flex flex-col gap-5"
       >
-        {restorable && (
-          <DraftRestoreBanner onRestore={restore} onDismiss={ignoreDraft} />
+        {draft.restorable && (
+          <DraftRestoreBanner onRestore={restore} onDismiss={draft.dismiss} />
         )}
         <FormField id="feed-title" label="제목" error={err.title}>
           {(control) => (
             <input
               {...control}
               name="title"
-              defaultValue={d.title}
+              defaultValue={v.title}
               className={INPUT_CLASS}
             />
           )}
@@ -216,7 +162,7 @@ export default function FeedForm({
             <input
               {...control}
               name="slug"
-              defaultValue={d.slug}
+              defaultValue={v.slug}
               className={INPUT_CLASS}
             />
           )}
@@ -226,7 +172,7 @@ export default function FeedForm({
             <input
               {...control}
               name="summary"
-              defaultValue={d.summary ?? ""}
+              defaultValue={v.summary ?? ""}
               className={INPUT_CLASS}
             />
           )}
@@ -240,7 +186,7 @@ export default function FeedForm({
             <input
               {...control}
               name="tags"
-              defaultValue={d.tags ?? ""}
+              defaultValue={v.tags ?? ""}
               placeholder="던파, 개발 후기"
               className={INPUT_CLASS}
             />
@@ -257,7 +203,7 @@ export default function FeedForm({
                 {...control}
                 ref={contentRef}
                 name="content"
-                defaultValue={d.content}
+                defaultValue={v.content}
                 rows={12}
                 className={INPUT_CLASS}
               />
@@ -281,7 +227,9 @@ export default function FeedForm({
           공개 범위
           <select
             name="visibility"
-            defaultValue={d.visibility ?? "private"}
+            // select는 마운트 후 defaultValue 변경을 반영하지 않아, 값이 바뀌면 다시 마운트.
+            key={`visibility-${v.visibility}`}
+            defaultValue={v.visibility ?? "private"}
             className="rounded border border-black/15 bg-transparent px-2 py-1 dark:border-white/20"
           >
             <option value="public">전체 공개</option>
@@ -294,7 +242,8 @@ export default function FeedForm({
             시리즈
             <select
               name="seriesId"
-              defaultValue={d.seriesId ?? ""}
+              key={`series-${v.seriesId}`}
+              defaultValue={v.seriesId ?? ""}
               className="rounded border border-black/15 bg-transparent px-2 py-1 dark:border-white/20"
             >
               <option value="">없음</option>

@@ -25,3 +25,25 @@ describe("SeriesForm 접근성", () => {
     expect(alert).toHaveTextContent("이미 사용 중인 slug입니다.");
   });
 });
+
+describe("SeriesForm 오류 후 입력 유지", () => {
+  test("서버가 돌려준 제출값으로 입력을 다시 채움(React 19 폼 초기화 대응)", async () => {
+    const action = vi.fn(async () => ({
+      errors: { slug: ["이미 사용 중인 slug입니다."] },
+      values: { title: "새 시리즈", slug: "taken", description: "설명" },
+    }));
+    render(<SeriesForm action={action} submitLabel="만들기" />);
+    fireEvent.change(screen.getByLabelText("제목"), {
+      target: { value: "새 시리즈" },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "만들기" }));
+    });
+    await screen.findByRole("alert");
+    expect(screen.getByLabelText("제목")).toHaveValue("새 시리즈");
+    expect(screen.getByLabelText("slug (소문자·숫자·하이픈)")).toHaveValue(
+      "taken",
+    );
+    expect(screen.getByLabelText("설명 (선택)")).toHaveValue("설명");
+  });
+});

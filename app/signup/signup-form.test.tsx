@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 vi.mock("@/app/signup/actions", () => ({
   signup: vi.fn(async () => ({
     errors: { email: ["올바른 이메일을 입력하세요."] },
+    values: { email: "bad", nickname: "새회원" },
   })),
 }));
 
@@ -28,5 +29,18 @@ describe("SignupForm 접근성", () => {
     expect(email).toHaveAttribute("aria-describedby", alert.id);
     expect(email).toHaveAttribute("autocomplete", "email");
     expect(screen.getByLabelText("닉네임")).not.toHaveAttribute("aria-invalid");
+  });
+});
+
+describe("SignupForm 오류 후 입력 유지", () => {
+  test("이메일·닉네임은 돌려받은 값으로 유지(비밀번호는 비움)", async () => {
+    render(<SignupForm />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "가입 신청" }));
+    });
+    await screen.findByRole("alert");
+    expect(screen.getByLabelText("이메일")).toHaveValue("bad");
+    expect(screen.getByLabelText("닉네임")).toHaveValue("새회원");
+    expect(screen.getByLabelText("비밀번호")).toHaveValue("");
   });
 });

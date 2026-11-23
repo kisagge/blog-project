@@ -20,3 +20,21 @@ export function imageMarkdown(url: string): { text: string; caret: number } {
 
 export const IMAGE_ALT_HINT =
   "이미지를 넣었습니다. 대괄호 [ ] 안에 이미지 설명(대체 텍스트)을 입력하세요.";
+
+// 제어 textarea의 선택 영역에 text를 넣고(setValue), 렌더 뒤 캐럿을 text 안 caret 위치로 옮겨 포커스.
+export function insertIntoTextarea(
+  ta: HTMLTextAreaElement | null,
+  value: string,
+  setValue: (v: string) => void,
+  text: string,
+  caret = text.length,
+): void {
+  const start = ta?.selectionStart ?? value.length;
+  const end = ta?.selectionEnd ?? value.length;
+  setValue(spliceText(value, start, end, text));
+  requestAnimationFrame(() => {
+    if (!ta) return;
+    ta.selectionStart = ta.selectionEnd = start + caret;
+    ta.focus();
+  });
+}

@@ -6,9 +6,14 @@ import MarkdownContent from "@/app/markdown-content";
 import MarkdownHelp from "@/app/account/posts/markdown-help";
 import { uploadImage } from "@/app/admin/upload-action";
 import { saveAboutAction, type AboutFormState } from "@/app/admin/site-actions";
-import { checkImage } from "@/lib/upload";
 import { ABOUT_MAX_LENGTH } from "@/lib/validation";
-import { imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
+import {
+  imageMarkdown,
+  insertIntoTextarea,
+  IMAGE_ALT_HINT,
+} from "@/lib/textarea";
+import { takeFile, useImageUpload } from "@/app/ui/use-image-upload";
+import TabList, { EDITOR_TABS, panelId, tabId } from "@/app/ui/tab-list";
 
 const inputCls =
   "rounded border border-black/15 bg-transparent px-3 py-2 text-sm dark:border-white/20";
@@ -22,53 +27,23 @@ export default function AboutEditor({ initial }: { initial: string }) {
   );
   const [content, setContent] = useState(initial);
   const [tab, setTab] = useState<"write" | "preview">("write");
-  const [uploading, setUploading] = useState(false);
+  const { uploading, uploadFile } = useImageUpload(uploadImage);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [notice, setNotice] = useState(""); // 업로드 후 대체 텍스트 입력 안내(상태 영역)
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const tooLong = content.length > ABOUT_MAX_LENGTH;
 
-  // caret: 삽입 후 캐럿을 둘 text 안의 위치(기본 = 끝). 제어 상태라 렌더 후 캐럿 이동.
-  function insertAtCursor(text: string, caret = text.length) {
-    const ta = taRef.current;
-    const start = ta?.selectionStart ?? content.length;
-    const end = ta?.selectionEnd ?? content.length;
-    setContent(content.slice(0, start) + text + content.slice(end));
-    requestAnimationFrame(() => {
-      if (!ta) return;
-      ta.selectionStart = ta.selectionEnd = start + caret;
-      ta.focus();
-    });
-  }
-
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // 같은 파일 재선택 허용
+    const file = takeFile(e);
     if (!file) return;
-    const check = checkImage(file.type, file.size);
-    if (!check.ok) return setUploadError(check.error);
     setUploadError(null);
-    setUploading(true);
-    const fd = new FormData();
-    fd.set("file", file);
-    try {
-      const res = await uploadImage(fd);
-      if ("error" in res) setUploadError(res.error);
-      else {
-        const { text, caret } = imageMarkdown(res.url);
-        insertAtCursor(text, caret); // 캐럿을 대체 텍스트 자리([ ] 안)로
-        setNotice(IMAGE_ALT_HINT);
-      }
-    } catch {
-      setUploadError("업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setUploading(false);
-    }
+    const res = await uploadFile(file);
+    if ("error" in res) return setUploadError(res.error);
+    const { text, caret } = imageMarkdown(res.url);
+    insertIntoTextarea(taRef.current, content, setContent, text, caret); // 캐럿을 대체 텍스트 자리([ ] 안)로
+    setNotice(IMAGE_ALT_HINT);
   }
-
-  const tabCls = (on: boolean) =>
-    `rounded px-2 py-1 ${on ? "bg-black/[.06] font-medium dark:bg-white/[.1]" : "text-zinc-500"}`;
 
   return (
     <form action={action} className="flex flex-col gap-3">
@@ -76,41 +51,21 @@ export default function AboutEditor({ initial }: { initial: string }) {
         <label htmlFor="about-content" className="text-sm font-medium">
           소개 본문 (마크다운)
         </label>
-        <div
-          role="tablist"
-          aria-label="소개 본문 보기 전환"
-          className="flex gap-1 text-xs"
-        >
-          <button
-            type="button"
-            role="tab"
-            id="about-tab-write"
-            aria-selected={tab === "write"}
-            aria-controls="about-panel-write"
-            onClick={() => setTab("write")}
-            className={tabCls(tab === "write")}
-          >
-            작성
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="about-tab-preview"
-            aria-selected={tab === "preview"}
-            aria-controls="about-panel-preview"
-            onClick={() => setTab("preview")}
-            className={tabCls(tab === "preview")}
-          >
-            미리보기
-          </button>
-        </div>
+        <TabList
+          label="소개 본문 보기 전환"
+          prefix="about"
+          variant="pill"
+          tabs={EDITOR_TABS}
+          active={tab}
+          onChange={setTab}
+        />
       </div>
 
       {/* 작성 탭: textarea는 항상 마운트(폼 제출 보존), 미리보기일 땐 hidden */}
       <div
-        id="about-panel-write"
+        id={panelId("about", "write")}
         role="tabpanel"
-        aria-labelledby="about-tab-write"
+        aria-labelledby={tabId("about", "write")}
         hidden={tab === "preview"}
         className="flex flex-col gap-2"
       >
@@ -157,9 +112,9 @@ export default function AboutEditor({ initial }: { initial: string }) {
 
       {/* 미리보기 탭: 패널은 항상 마운트(aria-controls 참조 유지), 렌더는 미리보기일 때만. */}
       <div
-        id="about-panel-preview"
+        id={panelId("about", "preview")}
         role="tabpanel"
-        aria-labelledby="about-tab-preview"
+        aria-labelledby={tabId("about", "preview")}
         hidden={tab === "write"}
         className={`${inputCls} min-h-[24rem] overflow-auto`}
       >
