@@ -1,5 +1,5 @@
 "use client";
-import { INPUT_CLASS } from "@/lib/ui";
+import { FIELD_ERROR, INPUT_CLASS } from "@/lib/ui";
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { FeedFormState } from "@/app/admin/feed-actions";
 import { uploadImage } from "@/app/admin/upload-action";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/draft-store";
 import { imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
 import type { Visibility } from "@/lib/visibility";
+import FormField from "@/app/ui/form-field";
 
 type FeedDraft = {
   title: string;
@@ -196,70 +197,86 @@ export default function FeedForm({
         {restorable && (
           <DraftRestoreBanner onRestore={restore} onDismiss={ignoreDraft} />
         )}
-        <Field id="feed-title" label="제목" error={err.title}>
-          <input
-            name="title"
-            defaultValue={d.title}
-            className={INPUT_CLASS}
-            {...fieldA11y("feed-title", err.title)}
-          />
-        </Field>
-        <Field
+        <FormField id="feed-title" label="제목" error={err.title}>
+          {(control) => (
+            <input
+              {...control}
+              name="title"
+              defaultValue={d.title}
+              className={INPUT_CLASS}
+            />
+          )}
+        </FormField>
+        <FormField
           id="feed-slug"
           label="slug (소문자·숫자·하이픈)"
           error={err.slug}
         >
-          <input
-            name="slug"
-            defaultValue={d.slug}
-            className={INPUT_CLASS}
-            {...fieldA11y("feed-slug", err.slug)}
-          />
-        </Field>
-        <Field id="feed-summary" label="요약 (선택)" error={err.summary}>
-          <input
-            name="summary"
-            defaultValue={d.summary ?? ""}
-            className={INPUT_CLASS}
-            {...fieldA11y("feed-summary", err.summary)}
-          />
-        </Field>
-        <Field
+          {(control) => (
+            <input
+              {...control}
+              name="slug"
+              defaultValue={d.slug}
+              className={INPUT_CLASS}
+            />
+          )}
+        </FormField>
+        <FormField id="feed-summary" label="요약 (선택)" error={err.summary}>
+          {(control) => (
+            <input
+              {...control}
+              name="summary"
+              defaultValue={d.summary ?? ""}
+              className={INPUT_CLASS}
+            />
+          )}
+        </FormField>
+        <FormField
           id="feed-tags"
           label="태그 (쉼표로 구분, 최대 5개)"
           error={err.tags}
         >
-          <input
-            name="tags"
-            defaultValue={d.tags ?? ""}
-            placeholder="던파, 개발 후기"
-            className={INPUT_CLASS}
-            {...fieldA11y("feed-tags", err.tags)}
-          />
-        </Field>
-        <Field id="feed-content" label="본문 (마크다운)" error={err.content}>
-          <textarea
-            ref={contentRef}
-            name="content"
-            defaultValue={d.content}
-            rows={12}
-            className={INPUT_CLASS}
-            {...fieldA11y("feed-content", err.content)}
-          />
-          <div className="mt-2 flex items-center gap-3 text-sm">
-            <label className="cursor-pointer rounded border border-black/15 px-2 py-1 dark:border-white/20">
-              이미지 첨부
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleImage}
-                disabled={uploading}
-                className="hidden"
+          {(control) => (
+            <input
+              {...control}
+              name="tags"
+              defaultValue={d.tags ?? ""}
+              placeholder="던파, 개발 후기"
+              className={INPUT_CLASS}
+            />
+          )}
+        </FormField>
+        <FormField
+          id="feed-content"
+          label="본문 (마크다운)"
+          error={err.content}
+        >
+          {(control) => (
+            <>
+              <textarea
+                {...control}
+                ref={contentRef}
+                name="content"
+                defaultValue={d.content}
+                rows={12}
+                className={INPUT_CLASS}
               />
-            </label>
-            {uploading && <span className="text-zinc-500">업로드 중…</span>}
-          </div>
-        </Field>
+              <div className="mt-2 flex items-center gap-3 text-sm">
+                <label className="cursor-pointer rounded border border-black/15 px-2 py-1 dark:border-white/20">
+                  이미지 첨부
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImage}
+                    disabled={uploading}
+                    className="hidden"
+                  />
+                </label>
+                {uploading && <span className="text-zinc-500">업로드 중…</span>}
+              </div>
+            </>
+          )}
+        </FormField>
         <label className="flex items-center gap-2 text-sm">
           공개 범위
           <select
@@ -290,9 +307,9 @@ export default function FeedForm({
           </label>
         )}
         {allowSchedule && (
-          <Field label="예약 발행 (선택)" error={err.scheduledAt}>
+          <Fieldset label="예약 발행 (선택)" error={err.scheduledAt}>
             <ScheduleField />
-          </Field>
+          </Fieldset>
         )}
         {state?.error && (
           <p role="alert" className="text-sm text-red-600 dark:text-red-400">
@@ -312,53 +329,25 @@ export default function FeedForm({
   );
 }
 
-// 입력과 이름표·오류 메시지를 연결하는 속성(id, aria-invalid, aria-describedby).
-function fieldA11y(id: string, error?: string[]) {
-  return {
-    id,
-    "aria-invalid": error ? true : undefined,
-    "aria-describedby": error ? `${id}-error` : undefined,
-  };
-}
-
-// 폼 필드 틀. id가 있으면 그 입력에 <label htmlFor>로 연결(입력엔 fieldA11y로 같은 id),
-// 없으면 여러 컨트롤을 묶는 그룹이라 fieldset/legend로 이름을 준다(예: 예약 발행).
-function Field({
-  id,
+// 여러 입력을 묶는 필드(예약 발행: 날짜·시각) — legend로 이름 붙임.
+function Fieldset({
   label,
   error,
   children,
 }: {
-  id?: string;
   label: string;
   error?: string[];
   children: React.ReactNode;
 }) {
-  const message = error && (
-    <p
-      id={id ? `${id}-error` : undefined}
-      role="alert"
-      className="text-sm text-red-600 dark:text-red-400"
-    >
-      {error.join(" ")}
-    </p>
-  );
-  if (!id) {
-    return (
-      <fieldset className="flex flex-col gap-1">
-        <legend className="mb-1 text-sm font-medium">{label}</legend>
-        {children}
-        {message}
-      </fieldset>
-    );
-  }
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
-        {label}
-      </label>
+    <fieldset className="flex flex-col gap-1">
+      <legend className="mb-1 text-sm font-medium">{label}</legend>
       {children}
-      {message}
-    </div>
+      {error && (
+        <p role="alert" className={FIELD_ERROR}>
+          {error.join(" ")}
+        </p>
+      )}
+    </fieldset>
   );
 }

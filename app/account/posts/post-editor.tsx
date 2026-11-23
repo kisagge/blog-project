@@ -1,5 +1,5 @@
 "use client";
-import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
+import { FIELD_ERROR, INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { submitPost, type PostFormState } from "./actions";
 import { uploadPostImage } from "./image-action";
@@ -15,6 +15,7 @@ import {
   clearDraft,
   pruneDrafts,
 } from "@/lib/draft-store";
+import FormField from "@/app/ui/form-field";
 
 type PostDraft = { title: string; content: string; tags: string };
 
@@ -148,33 +149,43 @@ export default function PostEditor({
         <DraftRestoreBanner onRestore={restore} onDismiss={ignoreDraft} />
       )}
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-500">제목</span>
-        <input
-          name="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          maxLength={120}
-          aria-invalid={state?.errors?.title ? true : undefined}
-          className={INPUT_CLASS}
-        />
-        {state?.errors?.title && (
-          <span role="alert" className="text-xs text-red-600 dark:text-red-400">
-            {state.errors.title[0]}
-          </span>
+      <FormField
+        className="text-sm"
+        id="post-title"
+        label="제목"
+        error={state?.errors?.title}
+        labelClassName="text-zinc-500"
+      >
+        {(control) => (
+          <input
+            {...control}
+            name="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={120}
+            className={INPUT_CLASS}
+          />
         )}
-      </label>
+      </FormField>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-500">태그 (쉼표로 구분, 최대 5개)</span>
-        <input
-          name="tags"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="던파, 개발 후기"
-          className={INPUT_CLASS}
-        />
-      </label>
+      <FormField
+        className="text-sm"
+        id="post-tags"
+        label="태그 (쉼표로 구분, 최대 5개)"
+        error={state?.errors?.tags}
+        labelClassName="text-zinc-500"
+      >
+        {(control) => (
+          <input
+            {...control}
+            name="tags"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="던파, 개발 후기"
+            className={INPUT_CLASS}
+          />
+        )}
+      </FormField>
 
       <div className="flex flex-col gap-1 text-sm">
         <div className="flex items-center justify-between">
@@ -265,6 +276,9 @@ export default function PostEditor({
             onChange={(e) => setContent(e.target.value)}
             rows={16}
             aria-invalid={state?.errors?.content ? true : undefined}
+            aria-describedby={
+              state?.errors?.content ? "post-content-error" : undefined
+            }
             className={`${INPUT_CLASS} w-full resize-y font-mono`}
           />
         </div>
@@ -288,9 +302,9 @@ export default function PostEditor({
         </div>
 
         {state?.errors?.content && (
-          <span role="alert" className="text-xs text-red-600 dark:text-red-400">
-            {state.errors.content[0]}
-          </span>
+          <p id="post-content-error" role="alert" className={FIELD_ERROR}>
+            {state.errors.content.join(" ")}
+          </p>
         )}
       </div>
 

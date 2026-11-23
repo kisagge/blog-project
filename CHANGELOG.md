@@ -2,6 +2,16 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.113.9] - 2026-11-23
+
+### Fixed
+
+- 폼 접근성: 회원가입·비밀번호 재설정·시리즈 폼의 필드 오류가 입력과 연결되지 않던 것(`aria-invalid`·`aria-describedby`·`role="alert"` 누락)과 회원 글 작성기·내 정보의 일부 누락을 보완, 비밀번호 규칙 안내를 입력의 설명으로 연결, 가입·재설정·닉네임 입력에 `autocomplete`
+
+### Changed
+
+- (내부) 공용 `FormField`(이름표·안내문·오류 연결) — 가입·재설정·관리자 글·시리즈·회원 글·내 정보 폼의 제각각이던 필드 틀 3벌과 수작업 연결 대체, 비밀번호 안내 문구 상수(`PASSWORD_HINT`), 필드 오류 스타일 통일(`FIELD_ERROR`)
+
 ## [0.113.8] - 2026-11-23
 
 ### Fixed

@@ -122,3 +122,25 @@ describe("PostEditor 초안 자동저장", () => {
     expect(localStorage.getItem(KEY)).toBeNull();
   });
 });
+
+describe("PostEditor 필드 오류 접근성", () => {
+  test("제목·본문 오류가 각 입력의 설명으로 연결", async () => {
+    const { submitPost } = await import("@/app/account/posts/actions");
+    vi.mocked(submitPost).mockResolvedValue({
+      errors: {
+        title: ["제목을 입력하세요."],
+        content: ["본문을 입력하세요."],
+      },
+    });
+    render(<PostEditor />);
+    fireEvent.submit(screen.getByLabelText("제목").closest("form")!);
+    await screen.findAllByRole("alert");
+    const title = screen.getByLabelText("제목");
+    const content = screen.getByLabelText("본문 (마크다운)");
+    expect(title).toHaveAttribute("aria-invalid", "true");
+    expect(title).toHaveAccessibleDescription("제목을 입력하세요.");
+    expect(content).toHaveAttribute("aria-invalid", "true");
+    expect(content).toHaveAccessibleDescription("본문을 입력하세요.");
+    expect(screen.getByLabelText(/태그/)).toHaveAttribute("name", "tags");
+  });
+});

@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { updateProfileAction, type AccountState } from "./actions";
 import { uploadAvatar } from "./avatar-action";
 import Avatar from "@/app/avatar";
+import FormField from "@/app/ui/form-field";
 
 const BIO_MAX = 160;
 
@@ -107,56 +108,53 @@ export default function AccountForm({
         <input type="hidden" name="avatarUrl" value={avatar} />
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-500">닉네임</span>
-        <input
-          name="nickname"
-          value={nick}
-          onChange={(e) => setNick(e.target.value)}
-          maxLength={20}
-          aria-invalid={state?.errors?.nickname ? true : undefined}
-          aria-describedby={
-            state?.errors?.nickname ? "nickname-error" : undefined
-          }
-          className={INPUT_CLASS}
-        />
-        {state?.errors?.nickname && (
-          <span
-            id="nickname-error"
-            className="text-xs text-red-600 dark:text-red-400"
-          >
-            {state.errors.nickname[0]}
-          </span>
+      <FormField
+        id="account-nickname"
+        label="닉네임"
+        error={state?.errors?.nickname}
+        labelClassName="text-zinc-500"
+        className="text-sm"
+      >
+        {(control) => (
+          <input
+            {...control}
+            name="nickname"
+            value={nick}
+            onChange={(e) => setNick(e.target.value)}
+            maxLength={20}
+            autoComplete="nickname"
+            className={INPUT_CLASS}
+          />
         )}
-      </label>
+      </FormField>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="flex items-center justify-between text-zinc-500">
-          자기소개
-          <span className="text-xs">
-            {bioValue.length}/{BIO_MAX}
-          </span>
-        </span>
-        <textarea
-          name="bio"
-          value={bioValue}
-          onChange={(e) => setBioValue(e.target.value)}
-          maxLength={BIO_MAX}
-          rows={3}
-          placeholder="간단한 소개를 적어보세요."
-          aria-invalid={state?.errors?.bio ? true : undefined}
-          aria-describedby={state?.errors?.bio ? "bio-error" : undefined}
-          className={`${INPUT_CLASS} resize-y`}
-        />
-        {state?.errors?.bio && (
-          <span
-            id="bio-error"
-            className="text-xs text-red-600 dark:text-red-400"
-          >
-            {state.errors.bio[0]}
-          </span>
+      <FormField
+        id="account-bio"
+        label={
+          <>
+            자기소개
+            <span className="text-xs">
+              {bioValue.length}/{BIO_MAX}
+            </span>
+          </>
+        }
+        error={state?.errors?.bio}
+        labelClassName="flex items-center justify-between text-zinc-500"
+        className="text-sm"
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            name="bio"
+            value={bioValue}
+            onChange={(e) => setBioValue(e.target.value)}
+            maxLength={BIO_MAX}
+            rows={3}
+            placeholder="간단한 소개를 적어보세요."
+            className={`${INPUT_CLASS} resize-y`}
+          />
         )}
-      </label>
+      </FormField>
 
       {state?.error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">

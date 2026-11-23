@@ -2,6 +2,8 @@
 import { INPUT_CLASS, PRIMARY_BTN } from "@/lib/ui";
 import { useActionState } from "react";
 import { submitNewPassword, type ResetState } from "../actions";
+import FormField, { type FieldControlProps } from "@/app/ui/form-field";
+import { PASSWORD_HINT } from "@/lib/limits";
 
 export default function ResetForm() {
   const [state, action, pending] = useActionState<ResetState, FormData>(
@@ -10,19 +12,21 @@ export default function ResetForm() {
   );
   return (
     <form action={action} className="flex w-full max-w-sm flex-col gap-4">
-      <Field
+      <FormField
+        id="reset-password"
         label="새 비밀번호"
-        name="password"
+        hint={PASSWORD_HINT}
         error={state?.errors?.password}
-      />
-      <p className="-mt-2 text-xs text-zinc-500">
-        8자 이상, 소문자·대문자·숫자·특수문자를 각 1개 이상 포함하세요.
-      </p>
-      <Field
+      >
+        {(control) => <PasswordInput {...control} name="password" />}
+      </FormField>
+      <FormField
+        id="reset-confirm"
         label="새 비밀번호 확인"
-        name="confirm"
         error={state?.errors?.confirm}
-      />
+      >
+        {(control) => <PasswordInput {...control} name="confirm" />}
+      </FormField>
       {state?.error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}
@@ -35,32 +39,13 @@ export default function ResetForm() {
   );
 }
 
-function Field({
-  label,
-  name,
-  error,
-}: {
-  label: string;
-  name: string;
-  error?: string[];
-}) {
+function PasswordInput(props: FieldControlProps & { name: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-medium">
-        {label}
-      </label>
-      <input
-        id={name}
-        name={name}
-        type="password"
-        autoComplete="new-password"
-        className={INPUT_CLASS}
-      />
-      {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error.join(" ")}
-        </p>
-      )}
-    </div>
+    <input
+      {...props}
+      type="password"
+      autoComplete="new-password"
+      className={INPUT_CLASS}
+    />
   );
 }

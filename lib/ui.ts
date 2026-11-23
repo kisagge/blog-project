@@ -12,3 +12,6 @@ export const PRIMARY_BTN =
 // 네이티브 <dialog> 패널(확인 모달 공용).
 export const DIALOG_PANEL =
   "bg-background text-foreground m-auto w-[min(90vw,24rem)] rounded-lg border border-black/15 p-5 shadow-xl backdrop:bg-black/40 dark:border-white/20";
+
+// 폼 필드 오류 메시지.
+export const FIELD_ERROR = "text-sm text-red-600 dark:text-red-400";
