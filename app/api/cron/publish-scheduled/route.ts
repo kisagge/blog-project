@@ -1,16 +1,13 @@
-import { timingSafeEqual } from "crypto";
+import { safeEqual } from "@/lib/safe-equal";
 import { publishDueFeeds } from "@/lib/scheduled";
 
 export const dynamic = "force-dynamic";
 
-// 상수시간 문자열 비교(길이 노출 없이 불일치=false).
+// 시크릿 헤더 확인. 미설정(빈 값)이면 항상 거부 — 빈 값끼리 일치로 통과하지 않게.
 function secretMatches(provided: string | null): boolean {
   const expected = process.env.CRON_SECRET ?? "";
   if (!expected || !provided) return false;
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
+  return safeEqual(provided, expected);
 }
 
 // 예약 발행 cron 엔드포인트(보조 경로). 평소엔 앱 내부 스케줄러(instrumentation → lib/scheduled)가 발행하고,

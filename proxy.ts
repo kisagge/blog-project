@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { decrypt } from "@/lib/jwt";
+import { decrypt, SESSION_COOKIE } from "@/lib/jwt";
 import { rateLimit, TOO_MANY_REQUESTS } from "@/lib/rate-limit";
 import { clientIpFromXff } from "@/lib/forwarded-ip";
 import {
@@ -33,7 +33,7 @@ export async function proxy(req: NextRequest) {
 
   // 관리자 경로 가드.
   if (req.nextUrl.pathname.startsWith("/admin")) {
-    const session = await decrypt(req.cookies.get("session")?.value);
+    const session = await decrypt(req.cookies.get(SESSION_COOKIE)?.value);
     if (session?.role !== "admin") {
       return NextResponse.redirect(new URL("/login", req.nextUrl));
     }

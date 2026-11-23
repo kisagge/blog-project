@@ -23,3 +23,16 @@ export type ReactionSummary = {
   count: number;
   reacted: boolean;
 };
+
+// 이모지별 수·내 반응 → 화면 요약(고정 세트 순서, 0개인 이모지는 뺀다). 글·댓글 리액션 공용.
+export function toReactionSummaries(
+  counts: Map<string, number>,
+  mine: Set<string>,
+): ReactionSummary[] {
+  const out: ReactionSummary[] = [];
+  for (const emoji of REACTION_EMOJIS) {
+    const count = counts.get(emoji) ?? 0;
+    if (count > 0) out.push({ emoji, count, reacted: mine.has(emoji) });
+  }
+  return out;
+}

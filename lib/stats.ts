@@ -2,21 +2,9 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { countUsersByStatus } from "@/lib/users";
 import { COMPLETE_DEPTH } from "@/lib/read-metrics";
+import { kstRecentDays } from "@/lib/kst";
 
 export type TrendPoint = { day: string; count: number };
-
-// 최근 days일의 KST(UTC+9) 날짜 문자열(YYYY-MM-DD) 배열, 오래된→오늘.
-function recentKstDays(days: number): string[] {
-  const out: string[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    out.push(
-      new Date(Date.now() + 9 * 3600 * 1000 - i * 86_400_000)
-        .toISOString()
-        .slice(0, 10),
-    );
-  }
-  return out;
-}
 
 // groupBy 결과(빈 날 없음)를 윈도우에 맞춰 0으로 채운다.
 function fillTrend(
@@ -28,7 +16,7 @@ function fillTrend(
 
 // 일별 피드 조회수 추이. View.day가 이미 KST 문자열이라 groupBy로 바로 집계(raw 불필요).
 export async function getViewTrend(days = 14): Promise<TrendPoint[]> {
-  const window = recentKstDays(days);
+  const window = kstRecentDays(days);
   const rows = await prisma.view.groupBy({
     by: ["day"],
     where: { entityType: "feed", day: { gte: window[0] } },
@@ -40,7 +28,7 @@ export async function getViewTrend(days = 14): Promise<TrendPoint[]> {
 
 // 일별 회원 가입 추이. User.createdAt은 DateTime이라 raw date(+9h)로 KST 일자 그룹.
 export async function getSignupTrend(days = 14): Promise<TrendPoint[]> {
-  const window = recentKstDays(days);
+  const window = kstRecentDays(days);
   // getViewTrend와 동일하게 윈도우(최근 N일 KST) 밖은 제외 — date(+9h)가 YYYY-MM-DD라 문자열 비교.
   const rows = await prisma.$queryRaw<{ day: string; c: bigint | number }[]>`
     SELECT date("createdAt", '+9 hours') AS day, COUNT(*) AS c
@@ -74,7 +62,7 @@ export type ReadStat = {
 // 글별 읽기 지표: 최근 days일(KST) 조회수 상위 take개 글의 완독률·평균 읽은 시간.
 // 지표는 조회 행에 덧붙는 값이라 측정 도입 전 조회·비콘이 오지 않은 조회는 분모(measured)에서 빠진다.
 export async function getReadStats(days = 30, take = 10): Promise<ReadStat[]> {
-  const since = recentKstDays(days)[0];
+  const since = kstRecentDays(days)[0];
   const base = { entityType: "feed", day: { gte: since } } as const;
   const top = await prisma.view.groupBy({
     by: ["entityId"],

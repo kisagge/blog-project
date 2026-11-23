@@ -4,6 +4,7 @@ import { sendToUser, sendToUsers } from "@/lib/push";
 import { getSession } from "@/lib/dal";
 import { ensureAdminUser, ADMIN_EMAIL } from "@/lib/comment-actor";
 import { publishUnread } from "@/lib/events";
+import { commentPermalink } from "@/lib/share";
 
 // 회원 알림 환경설정(종류별 on/off). off면 해당 이벤트는 인앱·푸시 모두 미생성.
 export type NotificationPrefs = {
@@ -117,7 +118,7 @@ export async function notifyCommentReply(args: {
   if (!parent || parent.userId === args.fromUserId) return;
   if (!parent.user.notifyOnReply) return; // 수신자가 답글 알림을 끔
   const body = `${args.fromNickname}님이 회원님의 댓글에 답글을 남겼습니다.`;
-  const url = `/feed/${args.slug}?c=${args.commentId}`;
+  const url = commentPermalink(args.slug, args.commentId);
   await createNotification(parent.userId, body, url);
   await sendToUser(parent.userId, { title: "새 답글", body, url });
 }
@@ -162,7 +163,7 @@ export async function notifyFeedComment(args: {
   });
   if (!owner?.notifyOnComment) return;
   const body = `${args.fromNickname}님이 '${feed?.title ?? "글"}'에 댓글을 남겼습니다.`;
-  const url = `/feed/${args.slug}?c=${args.commentId}`;
+  const url = commentPermalink(args.slug, args.commentId);
   await createNotification(ownerId, body, url);
   await sendToUser(ownerId, { title: "새 댓글", body, url });
 }
@@ -183,7 +184,7 @@ export async function notifyCommentMention(args: {
     where: { role: "member", status: "approved" },
     select: { id: true, nickname: true, notifyOnMention: true },
   });
-  const url = `/feed/${args.slug}?c=${args.commentId}`;
+  const url = commentPermalink(args.slug, args.commentId);
   const body = `${args.fromNickname}님이 회원님을 멘션했습니다.`;
   // 멘션 대상(본인·off·미멘션 제외)을 모은 뒤 인앱·푸시를 각각 한 번에(대상 수 무관 상수 쿼리).
   const targets = members

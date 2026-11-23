@@ -1,8 +1,12 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { encrypt, type SessionPayload } from "@/lib/jwt";
-
-const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+import {
+  encrypt,
+  SESSION_COOKIE,
+  SESSION_TTL_S,
+  type SessionPayload,
+} from "@/lib/jwt";
+import { baseCookieOptions } from "@/lib/cookie-options";
 
 // 유니온 멤버별로 분배되는 Omit (기본 Omit은 공통 키만 남겨 member 필드를 잃는다)
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
@@ -12,18 +16,15 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
 async function setSessionCookie(
   payload: DistributiveOmit<SessionPayload, "expiresAt">,
 ) {
-  const expiresAt = new Date(Date.now() + MAX_AGE_MS);
+  const expiresAt = new Date(Date.now() + SESSION_TTL_S * 1000);
   const token = await encrypt({
     ...payload,
     expiresAt: expiresAt.toISOString(),
   } as SessionPayload);
   const cookieStore = await cookies();
-  cookieStore.set("session", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+  cookieStore.set(SESSION_COOKIE, token, {
+    ...baseCookieOptions(),
     expires: expiresAt,
-    sameSite: "lax",
-    path: "/",
   });
 }
 
@@ -42,5 +43,5 @@ export async function createMemberSession(
 
 export async function deleteSession() {
   const cookieStore = await cookies();
-  cookieStore.delete("session");
+  cookieStore.delete(SESSION_COOKIE);
 }

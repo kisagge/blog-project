@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { kstDay } from "@/lib/kst";
+import { baseCookieOptions } from "@/lib/cookie-options";
 
 const VID = "vid";
 const VID_MAX_AGE = 60 * 60 * 24 * 365; // 1년
@@ -13,13 +14,7 @@ async function visitorId(): Promise<string> {
   const existing = store.get(VID)?.value;
   if (existing) return existing;
   const id = randomUUID();
-  store.set(VID, id, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: VID_MAX_AGE,
-  });
+  store.set(VID, id, { ...baseCookieOptions(), maxAge: VID_MAX_AGE });
   return id;
 }
 

@@ -10,6 +10,7 @@ import MemberGate from "@/app/member-gate";
 import Avatar from "@/app/avatar";
 import FollowButton from "@/app/u/follow-button";
 import { guardPublicAccess } from "@/lib/site-config";
+import { commentPermalink } from "@/lib/share";
 
 export const dynamic = "force-dynamic";
 
@@ -134,7 +135,7 @@ export default async function MemberProfilePage({
             {comments.map((c) => (
               <li key={c.id} className="py-2 text-sm">
                 <Link
-                  href={`/feed/${c.feed.slug}?c=${c.id}`}
+                  href={commentPermalink(c.feed.slug, c.id)}
                   className="group block"
                 >
                   <span className="line-clamp-2 text-zinc-700 group-hover:underline dark:text-zinc-300">

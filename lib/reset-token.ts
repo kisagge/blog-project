@@ -1,11 +1,12 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { SignJWT, jwtVerify } from "jose";
+import { signJwt, verifyJwt } from "@/lib/jwt";
+import { baseCookieOptions } from "@/lib/cookie-options";
+import { RESET_VERIFY_GRACE_MS } from "@/lib/reset-policy";
 
 // 비밀번호 재설정 플로우 단계 인증용 서명 쿠키(세션과 분리).
 const COOKIE = "pwreset";
-const MAX_AGE_S = 15 * 60; // 검증 후 새 비번 입력까지의 여유
-const key = () => new TextEncoder().encode(process.env.SESSION_SECRET);
+const MAX_AGE_S = RESET_VERIFY_GRACE_MS / 1000; // 검증 후 새 비번 입력까지의 여유
 
 export type ResetCookie = {
   email: string;
@@ -14,32 +15,13 @@ export type ResetCookie = {
 };
 
 export async function setResetCookie(data: ResetCookie) {
-  const token = await new SignJWT(data)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${MAX_AGE_S}s`)
-    .sign(key());
+  const token = await signJwt(data, MAX_AGE_S);
   const store = await cookies();
-  store.set(COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: MAX_AGE_S,
-  });
+  store.set(COOKIE, token, { ...baseCookieOptions(), maxAge: MAX_AGE_S });
 }
 
 export async function getResetCookie(): Promise<ResetCookie | undefined> {
-  const token = (await cookies()).get(COOKIE)?.value;
-  if (!token) return undefined;
-  try {
-    const { payload } = await jwtVerify(token, key(), {
-      algorithms: ["HS256"],
-    });
-    return payload as unknown as ResetCookie;
-  } catch {
-    return undefined;
-  }
+  return verifyJwt<ResetCookie>((await cookies()).get(COOKIE)?.value);
 }
 
 export async function clearResetCookie() {

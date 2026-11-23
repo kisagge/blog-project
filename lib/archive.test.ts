@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { groupByYearMonth, kstDayOfMonth } from "@/lib/archive";
+import { groupByYearMonth } from "@/lib/archive";
+import { kstDayOfMonth } from "@/lib/kst";
 
 const post = (slug: string, iso: string) => ({
   slug,

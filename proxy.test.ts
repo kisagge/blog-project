@@ -1,7 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/jwt", () => ({ decrypt: vi.fn(async () => null) }));
+vi.mock("@/lib/jwt", () => ({
+  decrypt: vi.fn(async () => null),
+  SESSION_COOKIE: "session",
+}));
 
 import { proxy } from "@/proxy";
 import { RATE_LIMITS } from "@/lib/request-kind";
