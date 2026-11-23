@@ -5,7 +5,7 @@ import { useActionState, useRef, useState } from "react";
 import MarkdownContent from "@/app/markdown-content";
 import MarkdownHelp from "@/app/account/posts/markdown-help";
 import { uploadImage } from "@/app/admin/upload-action";
-import { saveAboutAction, type AboutFormState } from "@/app/admin/actions";
+import { saveAboutAction, type AboutFormState } from "@/app/admin/site-actions";
 import { checkImage } from "@/lib/upload";
 import { ABOUT_MAX_LENGTH } from "@/lib/validation";
 import { imageMarkdown, IMAGE_ALT_HINT } from "@/lib/textarea";
@@ -149,7 +149,7 @@ export default function AboutEditor({ initial }: { initial: string }) {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={18}
-          aria-invalid={tooLong || state.error ? true : undefined}
+          aria-invalid={tooLong || state?.error ? true : undefined}
           aria-describedby="about-hint"
           className={`${inputCls} w-full resize-y font-mono`}
         />
@@ -199,12 +199,12 @@ export default function AboutEditor({ initial }: { initial: string }) {
           role="status"
           className="text-sm text-green-700 dark:text-green-400"
         >
-          {state.ok && !pending ? "저장했습니다." : ""}
+          {state?.done && !pending ? "저장했습니다." : ""}
         </span>
       </div>
-      {state.error && (
+      {state?.error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {state.error}
+          {state?.error}
         </p>
       )}
     </form>

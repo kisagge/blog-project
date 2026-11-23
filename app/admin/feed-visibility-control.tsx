@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import VisibilityControl from "@/app/admin/visibility-control";
-import { setFeedVisibility } from "@/app/admin/actions";
+import { setFeedVisibility } from "@/app/admin/feed-actions";
 import type { Visibility } from "@/lib/visibility";
 
 export default function FeedVisibilityControl({

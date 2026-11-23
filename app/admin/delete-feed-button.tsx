@@ -1,6 +1,6 @@
 "use client";
 import ConfirmDialog from "@/app/confirm-dialog";
-import { deleteFeed } from "@/app/admin/actions";
+import { deleteFeed } from "@/app/admin/feed-actions";
 
 /** 삭제 버튼 + 확인 모달(공용 ConfirmDialog). */
 export function DeleteFeedButton({ id, title }: { id: string; title: string }) {

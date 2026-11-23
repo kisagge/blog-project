@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal";
-import { SeriesSchema } from "@/lib/validation";
+import { SeriesSchema, fieldErrors } from "@/lib/validation";
 import {
   createSeries,
   updateSeries,
@@ -12,9 +12,9 @@ import {
   getSeriesById,
 } from "@/lib/series";
 import { logAudit } from "@/lib/audit";
+import type { FormState } from "@/lib/form-state";
 
-export type SeriesFormState =
-  { errors?: Record<string, string[]>; message?: string } | undefined;
+export type SeriesFormState = FormState;
 
 function revalidateSeries() {
   revalidatePath("/admin/series");
@@ -36,7 +36,7 @@ export async function createSeriesAction(
 ): Promise<SeriesFormState> {
   await verifySession();
   const parsed = SeriesSchema.safeParse(toInput(formData));
-  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
   let createdId: string | undefined;
   try {
     const s = await createSeries(parsed.data);
@@ -61,7 +61,7 @@ export async function updateSeriesAction(
 ): Promise<SeriesFormState> {
   await verifySession();
   const parsed = SeriesSchema.safeParse(toInput(formData));
-  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
   try {
     await updateSeries(id, parsed.data);
   } catch {

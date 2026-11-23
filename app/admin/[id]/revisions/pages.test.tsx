@@ -12,7 +12,7 @@ vi.mock("@/lib/revisions", () => ({
   listRevisions: vi.fn(),
   getRevision: vi.fn(),
 }));
-vi.mock("@/app/admin/actions", () => ({ restoreRevisionAction: vi.fn() }));
+vi.mock("@/app/admin/feed-actions", () => ({ restoreRevisionAction: vi.fn() }));
 
 import RevisionsPage from "@/app/admin/[id]/revisions/page";
 import RevisionPage from "@/app/admin/[id]/revisions/[revId]/page";

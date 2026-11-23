@@ -1,6 +1,6 @@
 "use client";
 import ConfirmDialog from "@/app/confirm-dialog";
-import { restoreRevisionAction } from "@/app/admin/actions";
+import { restoreRevisionAction } from "@/app/admin/feed-actions";
 
 /** 이 버전으로 되돌리기 + 확인 모달(공용 ConfirmDialog). 현재 버전은 이력으로 남는다. */
 export default function RestoreButton({ revisionId }: { revisionId: string }) {

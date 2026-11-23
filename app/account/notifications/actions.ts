@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { getMemberSession } from "@/lib/dal";
 import { setNotificationPrefs } from "@/lib/notifications";
-import type { FormState } from "@/lib/form-state";
+import { LOGIN_REQUIRED, type FormState } from "@/lib/form-state";
 
 export type NotifPrefsState = FormState;
 
@@ -12,7 +12,7 @@ export async function updateNotificationPrefsAction(
   formData: FormData,
 ): Promise<NotifPrefsState> {
   const session = await getMemberSession();
-  if (!session) return { error: "로그인이 필요합니다." };
+  if (!session) return { error: LOGIN_REQUIRED };
   await setNotificationPrefs(session.userId, {
     onReply: formData.get("onReply") === "on",
     onComment: formData.get("onComment") === "on",

@@ -1,5 +1,5 @@
 import { countUsersByStatus, listUsersByStatus } from "@/lib/users";
-import { approveUserAction } from "@/app/admin/actions";
+import { approveUserAction } from "@/app/admin/member-actions";
 import { RejectUserButton } from "@/app/admin/reject-user-button";
 import MemberTabs from "@/app/admin/member-tabs";
 

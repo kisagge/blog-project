@@ -1,7 +1,7 @@
 "use client";
 import { INPUT_CLASS } from "@/lib/ui";
 import { useActionState, useEffect, useRef, useState } from "react";
-import type { FeedFormState } from "@/app/admin/actions";
+import type { FeedFormState } from "@/app/admin/feed-actions";
 import { uploadImage } from "@/app/admin/upload-action";
 import { ToastViewport, useToast } from "@/app/toast";
 import { checkImage } from "@/lib/upload";
@@ -112,7 +112,7 @@ export default function FeedForm({
 
   // 제출 실패(검증 에러 반환) 시 clear-on-submit으로 지워진 초안을 복구.
   useEffect(() => {
-    if (state?.errors || state?.message) {
+    if (state?.errors || state?.error) {
       const data = readForm();
       if (data && Object.values(data).some(Boolean)) saveDraft(key, data);
     }
@@ -294,9 +294,9 @@ export default function FeedForm({
             <ScheduleField />
           </Field>
         )}
-        {state?.message && (
+        {state?.error && (
           <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-            {state.message}
+            {state.error}
           </p>
         )}
         <button

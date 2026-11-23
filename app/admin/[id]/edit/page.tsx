@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import FeedForm from "@/app/admin/feed-form";
-import { updateFeed } from "@/app/admin/actions";
+import { updateFeed } from "@/app/admin/feed-actions";
 import { getFeedById } from "@/lib/feeds";
 import { listSeries } from "@/lib/series";
 import { countRevisions } from "@/lib/revisions";

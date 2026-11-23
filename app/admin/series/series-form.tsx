@@ -63,9 +63,9 @@ export default function SeriesForm({
           className={`${INPUT_CLASS} resize-y`}
         />
       </label>
-      {state?.message && (
+      {state?.error && (
         <p role="alert" className="text-red-600 dark:text-red-400">
-          {state.message}
+          {state.error}
         </p>
       )}
       <button

@@ -1,6 +1,9 @@
 import { getPublicEnabled } from "@/lib/site-config";
 import { getAdminNickname } from "@/lib/admin-user";
-import { setSitePublic, setAdminNicknameAction } from "@/app/admin/actions";
+import {
+  setSitePublic,
+  setAdminNicknameAction,
+} from "@/app/admin/site-actions";
 
 export const metadata = { title: "설정 · 관리자" };
 

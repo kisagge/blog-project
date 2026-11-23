@@ -6,3 +6,6 @@ export type FormState =
 
 // 일반 에러만 다루는 액션(로그인·코드요청 등) 공용 상태.
 export type SimpleFormState = { error?: string } | undefined;
+
+// 로그인 안 된 요청에 대한 공용 안내(회원 전용 액션).
+export const LOGIN_REQUIRED = "로그인이 필요합니다.";
