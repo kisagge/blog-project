@@ -6,13 +6,13 @@
 
 ### Fixed
 
-- 마크업·접근성: 메뉴 드로어가 `dialog` 역할을 가질 수 없는 `<aside>`였던 것을 `<div role="dialog">`로, 던파 장비 행의 `<span>` 안 `<div>`(인라인 안 블록) 수정, 알림 "안읽음" 표시가 일반 `span`의 `aria-label`(낭독기가 무시할 수 있음)이던 것을 화면 낭독기용 텍스트로
+- 마크업·접근성: 메뉴 드로어가 `dialog` 역할을 가질 수 없는 `<aside>`였던 것을 `<div role="dialog">`로, 던파 장비 행의 `<span>` 안 `<div>`(인라인 안 블록) 수정, 알림 "안읽음" 표시가 일반 `span`의 `aria-label`(낭독기가 무시할 수 있음)이던 것을 화면 낭독기용 텍스트로 ([#247](https://github.com/kisagge/blog-project/pull/247))
 - 던파 캐릭터 상세 탭이 선택 상태를 알리지 않던 일반 버튼 → ARIA 탭(tablist/tab/tabpanel, 선택 상태, 방향키·Home/End 이동)
 - 관리자 신고 큐·가려진 콘텐츠·예약 글 목록의 시각을 `<time datetime>`으로
 
 ### Changed
 
-- (내부) 공용 UI 부품 `app/ui` — `KstTime`(시각 표시 13곳), `AuthorName`(작성자 링크/텍스트 5곳), `LinkTabs`(회원·신고·계정 탭 3벌), `FeedCardList`(인기·태그·시리즈·팔로잉 목록), 폼의 `inputCls = INPUT_CLASS` 별칭 제거
+- (내부) 공용 UI 부품 `app/ui` — `KstTime`(시각 표시 13곳), `AuthorName`(작성자 링크/텍스트 5곳), `LinkTabs`(회원·신고·계정 탭 3벌), `FeedCardList`(인기·태그·시리즈·팔로잉 목록), 폼의 `inputCls = INPUT_CLASS` 별칭 제거 ([#247](https://github.com/kisagge/blog-project/pull/247))
 
 ## [0.113.7] - 2026-11-23
 
