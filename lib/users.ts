@@ -2,7 +2,7 @@ import "server-only";
 import { uploadNameFromUrl } from "@/lib/save-image";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE, pageWindow } from "@/lib/pagination";
-import { getAdminNickname } from "@/lib/admin-user";
+import { getAdminNickname, RESERVED_EMAIL_DOMAIN } from "@/lib/admin-user";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import type { Result } from "@/lib/result";
 import { normalizeEmail } from "@/lib/email";
@@ -29,6 +29,8 @@ export async function isNicknameTaken(
   return found !== null;
 }
 
+export const RESERVED_EMAIL_MESSAGE = "사용할 수 없는 이메일입니다.";
+
 export const BLOCKED_SIGNUP_MESSAGE =
   "이 이메일로는 가입할 수 없습니다. 관리자에게 문의해 주세요.";
 
@@ -38,6 +40,9 @@ export async function createPendingUser(input: {
   password: string;
 }): Promise<Result> {
   const email = normalizeEmail(input.email);
+  // 관리자 예약 계정 도메인은 가입 불가(예약 계정 선점 방지).
+  if (email.endsWith(RESERVED_EMAIL_DOMAIN))
+    return { ok: false, error: RESERVED_EMAIL_MESSAGE };
   const existing = await prisma.user.findUnique({
     where: { email },
     select: { id: true, status: true },
@@ -133,6 +138,8 @@ export async function authenticateMember(
   if (!user) return { ok: false, error: generic };
   if (!(await verifyPassword(password, user.passwordHash)))
     return { ok: false, error: generic };
+  // 회원 로그인은 회원 행만(예약 관리자 등 다른 역할은 존재를 드러내지 않고 일반 오류).
+  if (user.role !== "member") return { ok: false, error: generic };
   if (user.status === "blocked")
     return { ok: false, error: "이용이 제한된 계정입니다." };
   if (user.status === "rejected")

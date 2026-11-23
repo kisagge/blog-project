@@ -27,3 +27,22 @@ describe("admin user / nickname", () => {
     expect(await m.getAdminNickname()).toBe("운영자");
   });
 });
+
+describe("예약 관리자 이메일 선점 방지", () => {
+  test("같은 이메일의 기존 행이 있어도 ensureAdminUser는 로그인 불가 해시·승인 상태로 고정", async () => {
+    const prisma = (await import("@/lib/prisma")).prisma;
+    await prisma.user.deleteMany({ where: { email: "admin@byjang.local" } });
+    await prisma.user.create({
+      data: {
+        email: "admin@byjang.local",
+        nickname: "선점자",
+        passwordHash: "salt:hash",
+        status: "pending",
+      },
+    });
+    const a = await m.ensureAdminUser();
+    expect(a.role).toBe("admin");
+    expect(a.passwordHash).toBe("-");
+    expect(a.status).toBe("approved");
+  });
+});
