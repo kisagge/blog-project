@@ -1,14 +1,14 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { setupTestDb } from "@/lib/test-db";
 
-type Mod = typeof import("@/lib/comment-actor");
+type Mod = typeof import("@/lib/admin-user");
 let m: Mod;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const db = await setupTestDb();
   cleanup = db.cleanup;
-  m = await import("@/lib/comment-actor");
+  m = await import("@/lib/admin-user");
 });
 afterAll(async () => {
   await cleanup();

@@ -77,7 +77,7 @@ describe("users", () => {
   });
 
   test("예약 admin User는 회원 목록/카운트에서 제외", async () => {
-    const { ensureAdminUser } = await import("@/lib/comment-actor");
+    const { ensureAdminUser } = await import("@/lib/admin-user");
     await ensureAdminUser();
     const before = await m.countUsersByStatus("approved");
     const list = await m.listUsersByStatus("approved");
@@ -287,7 +287,7 @@ describe("users", () => {
     expect(p?.nickname).toBe("프로필회원");
     expect(p).toHaveProperty("createdAt");
     // 예약 admin(role admin)은 프로필 없음
-    const { ensureAdminUser } = await import("@/lib/comment-actor");
+    const { ensureAdminUser } = await import("@/lib/admin-user");
     const admin = await ensureAdminUser();
     expect(await m.getMemberProfile(admin.id)).toBeNull();
     // 없는 id

@@ -2,7 +2,7 @@ import "server-only";
 import { uploadNameFromUrl } from "@/lib/save-image";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE, pageWindow } from "@/lib/pagination";
-import { getAdminNickname } from "@/lib/comment-actor";
+import { getAdminNickname } from "@/lib/admin-user";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import type { Result } from "@/lib/result";
 import { normalizeEmail } from "@/lib/email";

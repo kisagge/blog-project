@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { swallow } from "@/lib/log";
+import { startBackgroundTask, stopBackgroundTask } from "@/lib/background-task";
 import { DAY_MS, kstDayOf } from "@/lib/kst";
 
 // 계속 쌓이기만 하는 기록의 보존 기간(일). 단일 SQLite·512MB 인스턴스라 무한 증가를 막는다.
@@ -69,28 +69,17 @@ async function pruneAndLog(): Promise<void> {
   );
 }
 
-// 하루 1회 보존 정리. 예약 발행 스케줄러와 같은 방식(앱 내부 인터벌, 단일 프로세스 전제).
-// 배포마다 컨테이너가 재기동되므로 부팅 직후가 아니라 지연 후 첫 실행(기동·마이그레이션과 경합 회피).
-const g = globalThis as {
-  __retentionDelay?: ReturnType<typeof setTimeout>;
-  __retentionSched?: ReturnType<typeof setInterval>;
-};
+// 하루 1회 보존 정리. 배포마다 컨테이너가 재기동되므로 부팅 직후가 아니라 지연 후 첫 실행
+// (기동·마이그레이션과 경합 회피).
+const TASK = "retention";
 export function startRetentionScheduler(
   run: () => Promise<unknown> = pruneAndLog, // 테스트 주입용
   { firstDelayMs = 10 * 60_000, intervalMs = DAY_MS } = {},
 ): void {
-  if (g.__retentionDelay || g.__retentionSched) return; // 중복 시작 방지(register 재호출·HMR)
-  const tick = () => void run().catch(swallow("scheduler:retention"));
-  g.__retentionDelay = setTimeout(tick, firstDelayMs);
-  g.__retentionDelay.unref?.();
-  g.__retentionSched = setInterval(tick, intervalMs);
-  g.__retentionSched.unref?.(); // 테스트/종료 시 프로세스 잔류 방지
+  startBackgroundTask(TASK, run, { firstDelayMs, intervalMs });
 }
 
 // 스케줄러 정지(테스트 정리용).
 export function stopRetentionScheduler(): void {
-  if (g.__retentionDelay) clearTimeout(g.__retentionDelay);
-  if (g.__retentionSched) clearInterval(g.__retentionSched);
-  g.__retentionDelay = undefined;
-  g.__retentionSched = undefined;
+  stopBackgroundTask(TASK);
 }

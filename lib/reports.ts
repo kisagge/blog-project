@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/app/generated/prisma/client";
 import type { ReportReason, ReportTargetType } from "@/lib/report-reasons";
 
 type CreateInput = {
@@ -89,6 +90,62 @@ export type ReportQueueItem = {
   hidden: boolean;
 };
 
+// ── 신고 대상(댓글·회원 글) 공용 로드·요약 ──
+const COMMENT_TARGET_SELECT = {
+  id: true,
+  content: true,
+  hiddenAt: true,
+  userId: true,
+  user: { select: { nickname: true } },
+  feed: { select: { slug: true } },
+} as const;
+const FEED_TARGET_SELECT = {
+  id: true,
+  title: true,
+  slug: true,
+  hiddenAt: true,
+  authorId: true,
+  author: { select: { nickname: true } },
+} as const;
+
+type CommentTarget = Prisma.CommentGetPayload<{
+  select: typeof COMMENT_TARGET_SELECT;
+}>;
+type FeedTarget = Prisma.FeedGetPayload<{ select: typeof FEED_TARGET_SELECT }>;
+
+// 관리자 화면에 보일 대상 요약(미리보기·링크·작성자). 큐·숨김 목록 공용.
+function commentTarget(c: CommentTarget) {
+  return {
+    targetType: "comment" as const,
+    targetId: c.id,
+    preview: c.content,
+    slug: c.feed.slug,
+    authorNickname: c.user.nickname,
+    authorId: c.userId as string | null,
+  };
+}
+function feedTarget(f: FeedTarget) {
+  return {
+    targetType: "feed" as const,
+    targetId: f.id,
+    preview: f.title,
+    slug: f.slug,
+    authorNickname: f.author?.nickname ?? "알 수 없음",
+    authorId: f.authorId,
+  };
+}
+
+// 대상 숨김 시각 설정/해제(PrismaPromise 반환 — $transaction 안에서도 사용).
+function setTargetHidden(
+  targetType: ReportTargetType,
+  targetId: string,
+  hiddenAt: Date | null,
+) {
+  return targetType === "comment"
+    ? prisma.comment.update({ where: { id: targetId }, data: { hiddenAt } })
+    : prisma.feed.update({ where: { id: targetId }, data: { hiddenAt } });
+}
+
 // 관리자 큐: pending 신고를 대상별로 묶어 미리보기·신고 수·사유와 함께 반환.
 export async function listReportQueue(): Promise<ReportQueueItem[]> {
   const pend = await prisma.report.findMany({
@@ -136,27 +193,13 @@ export async function listReportQueue(): Promise<ReportQueueItem[]> {
     commentIds.length
       ? prisma.comment.findMany({
           where: { id: { in: commentIds } },
-          select: {
-            id: true,
-            content: true,
-            hiddenAt: true,
-            userId: true,
-            user: { select: { nickname: true } },
-            feed: { select: { slug: true } },
-          },
+          select: COMMENT_TARGET_SELECT,
         })
       : [],
     feedIds.length
       ? prisma.feed.findMany({
           where: { id: { in: feedIds } },
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            hiddenAt: true,
-            authorId: true,
-            author: { select: { nickname: true } },
-          },
+          select: FEED_TARGET_SELECT,
         })
       : [],
   ]);
@@ -165,37 +208,17 @@ export async function listReportQueue(): Promise<ReportQueueItem[]> {
 
   const items: ReportQueueItem[] = [];
   for (const a of byKey.values()) {
-    if (a.targetType === "comment") {
-      const c = commentMap.get(a.targetId);
-      if (!c) continue; // 대상이 사라짐(하드 삭제 등)
-      items.push({
-        targetType: "comment",
-        targetId: a.targetId,
-        preview: c.content,
-        slug: c.feed.slug,
-        authorNickname: c.user.nickname,
-        authorId: c.userId,
-        reportCount: a.count,
-        reasons: [...a.reasons],
-        firstReportedAt: a.firstReportedAt.toISOString(),
-        hidden: c.hiddenAt !== null,
-      });
-    } else {
-      const f = feedMap.get(a.targetId);
-      if (!f) continue;
-      items.push({
-        targetType: "feed",
-        targetId: a.targetId,
-        preview: f.title,
-        slug: f.slug,
-        authorNickname: f.author?.nickname ?? "알 수 없음",
-        authorId: f.authorId,
-        reportCount: a.count,
-        reasons: [...a.reasons],
-        firstReportedAt: a.firstReportedAt.toISOString(),
-        hidden: f.hiddenAt !== null,
-      });
-    }
+    const c = a.targetType === "comment" ? commentMap.get(a.targetId) : null;
+    const f = a.targetType === "feed" ? feedMap.get(a.targetId) : null;
+    const target = c ? commentTarget(c) : f ? feedTarget(f) : null;
+    if (!target) continue; // 대상이 사라짐(하드 삭제 등)
+    items.push({
+      ...target,
+      reportCount: a.count,
+      reasons: [...a.reasons],
+      firstReportedAt: a.firstReportedAt.toISOString(),
+      hidden: (c ?? f)!.hiddenAt !== null,
+    });
   }
   // 신고 많은 순 → 오래된 순.
   items.sort(
@@ -213,15 +236,7 @@ export async function hideTarget(
 ): Promise<void> {
   const now = new Date();
   await prisma.$transaction([
-    targetType === "comment"
-      ? prisma.comment.update({
-          where: { id: targetId },
-          data: { hiddenAt: now },
-        })
-      : prisma.feed.update({
-          where: { id: targetId },
-          data: { hiddenAt: now },
-        }),
+    setTargetHidden(targetType, targetId, now),
     prisma.report.updateMany({
       where: { targetType, targetId, status: "pending" },
       data: { status: "resolved", resolvedAt: now },
@@ -234,17 +249,7 @@ export async function unhideTarget(
   targetType: ReportTargetType,
   targetId: string,
 ): Promise<void> {
-  if (targetType === "comment") {
-    await prisma.comment.update({
-      where: { id: targetId },
-      data: { hiddenAt: null },
-    });
-  } else {
-    await prisma.feed.update({
-      where: { id: targetId },
-      data: { hiddenAt: null },
-    });
-  }
+  await setTargetHidden(targetType, targetId, null);
 }
 
 // 신고 기각(숨김 없이 pending → dismissed).
@@ -294,45 +299,21 @@ export async function listHiddenTargets(): Promise<HiddenTargetItem[]> {
     prisma.comment.findMany({
       where: { hiddenAt: { not: null } },
       orderBy: { hiddenAt: "desc" },
-      select: {
-        id: true,
-        content: true,
-        hiddenAt: true,
-        userId: true,
-        user: { select: { nickname: true } },
-        feed: { select: { slug: true } },
-      },
+      select: COMMENT_TARGET_SELECT,
     }),
     prisma.feed.findMany({
       where: { hiddenAt: { not: null }, authorId: { not: null } },
       orderBy: { hiddenAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        hiddenAt: true,
-        authorId: true,
-        author: { select: { nickname: true } },
-      },
+      select: FEED_TARGET_SELECT,
     }),
   ]);
   const items: HiddenTargetItem[] = [
     ...comments.map((c) => ({
-      targetType: "comment" as const,
-      targetId: c.id,
-      preview: c.content,
-      slug: c.feed.slug,
-      authorNickname: c.user.nickname,
-      authorId: c.userId,
+      ...commentTarget(c),
       hiddenAt: c.hiddenAt!.toISOString(),
     })),
     ...feeds.map((f) => ({
-      targetType: "feed" as const,
-      targetId: f.id,
-      preview: f.title,
-      slug: f.slug,
-      authorNickname: f.author?.nickname ?? "알 수 없음",
-      authorId: f.authorId,
+      ...feedTarget(f),
       hiddenAt: f.hiddenAt!.toISOString(),
     })),
   ];
