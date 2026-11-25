@@ -2,6 +2,17 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.113.14] - 2026-11-25
+
+### Fixed
+
+- (CI) 백업 워크플로가 `apt-get update` 없이 `age`를 설치 — 러너의 패키지 목록이 오래되면 404로 실패해 오프사이트 사본이 빠질 수 있었음
+- (CI) 예약 발행 수동 트리거의 `.env` 해석이 CRLF(`\r`이 붙은 값 → 401)·작은따옴표·`export` 접두사·중복 정의에서 깨지던 것 → `scripts/publish-scheduled-remote.sh`로 옮기고 테스트 ([#253](https://github.com/kisagge/blog-project/pull/253))
+
+### Changed
+
+- (CI) 서버 앱 경로 `/srv/byjang` 하드코딩 5곳 → 워크플로 `DEPLOY_DIR` 환경 변수로 원격 스크립트에 전달. 클린 코드 리팩토링 계획(#240–#253) 완료 — 계획 문서를 `docs/plans/archive/`로 ([#253](https://github.com/kisagge/blog-project/pull/253))
+
 ## [0.113.13] - 2026-11-25
 
 ### Fixed

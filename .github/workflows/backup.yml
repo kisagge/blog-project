@@ -1,7 +1,7 @@
 name: DB Backup
 
 # 매일 04:00 KST(19:00 UTC) + 수동 실행. 실행 중인 web 컨테이너에서 로컬 백업 스크립트 호출.
-# 기존 배포와 동일한 SSH 시크릿 재사용(새 크레덴셜 없음). 백업은 /srv/byjang/data/backups에 적재.
+# 기존 배포와 동일한 SSH 시크릿 재사용(새 크레덴셜 없음). 백업은 $DEPLOY_DIR/data/backups에 적재.
 # 오프사이트: 최신 백업을 runner로 가져와 age 공개키(BACKUP_AGE_RECIPIENT)로 암호화한 뒤
 # 워크플로 아티팩트(90일)로 보관 — 인스턴스 유실 대비. 저장소가 공개라 아티팩트는 누구나 받을 수 있으므로
 # 반드시 암호화하며, CI엔 공개키만 있어 복호화 불가(개인키는 운영자만 보관). 복원: docs/deploy/lightsail.md.
@@ -9,6 +9,9 @@ on:
   schedule:
     - cron: "0 19 * * *"
   workflow_dispatch:
+
+env:
+  DEPLOY_DIR: /srv/byjang # 서버 앱 디렉터리(deploy·publish-scheduled 워크플로와 동일)
 
 jobs:
   backup:
@@ -20,9 +23,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           command_timeout: 5m
+          envs: DEPLOY_DIR
           script: |
             set -e
-            cd /srv/byjang
+            cd "$DEPLOY_DIR"
             docker compose exec -T web sh scripts/backup-db.sh
             echo "== 최근 백업 =="; ls -lh data/backups | tail -5
 
@@ -48,14 +52,17 @@ jobs:
           AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
         run: |
           set -euo pipefail
+          # 러너 이미지의 패키지 목록이 오래되면 install이 404로 실패 → 먼저 갱신.
+          sudo apt-get update -qq >/dev/null
           sudo apt-get install -y -qq age >/dev/null
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/backup_key && chmod 600 ~/.ssh/backup_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           SSH="ssh -i $HOME/.ssh/backup_key -o BatchMode=yes $SSH_USER@$SSH_HOST"
-          NAME=$($SSH 'ls -t /srv/byjang/data/backups/prod-*.db.gz | head -1 | xargs -n1 basename')
+          BACKUPS="$DEPLOY_DIR/data/backups"
+          NAME=$($SSH "ls -t $BACKUPS/prod-*.db.gz | head -1 | xargs -n1 basename")
           case "$NAME" in prod-*.db.gz) ;; *) echo "::error::최신 백업 파일을 찾지 못함: $NAME"; exit 1 ;; esac
-          $SSH "cat /srv/byjang/data/backups/$NAME" > "$NAME"
+          $SSH "cat $BACKUPS/$NAME" > "$NAME"
           gzip -t "$NAME"  # 손상·잘림 검사(평문 단계에서만 가능)
           age -r "$AGE_RECIPIENT" -o "$NAME.age" "$NAME"
           rm -f "$NAME" ~/.ssh/backup_key  # 평문·키는 runner에 남기지 않음

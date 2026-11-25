@@ -12,6 +12,7 @@ on:
 # Node 20 런타임 액션(도커 액션 등)을 Node 24로 강제 — 2026-06-16 디프리케이션 대응.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  DEPLOY_DIR: /srv/byjang # 서버 앱 디렉터리(backup·publish-scheduled 워크플로와 동일)
 
 jobs:
   test:
@@ -100,7 +101,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: DEPLOY_SHA,DEPLOY_COMPOSE_B64
+          envs: DEPLOY_SHA,DEPLOY_COMPOSE_B64,DEPLOY_DIR
           command_timeout: 20m
           script_path: scripts/deploy-remote.sh
       - name: 외부 헬스 확인(nginx 경유)
