@@ -5,6 +5,7 @@ import { updateProfileAction, type AccountState } from "./actions";
 import { uploadAvatar } from "./avatar-action";
 import Avatar from "@/app/avatar";
 import FormField from "@/app/ui/form-field";
+import { takeFile, useImageUpload } from "@/app/ui/use-image-upload";
 
 const BIO_MAX = 160;
 
@@ -26,7 +27,7 @@ export default function AccountForm({
   const [nick, setNick] = useState(nickname);
   const [bioValue, setBioValue] = useState(bio);
   const [avatar, setAvatar] = useState(avatarUrl);
-  const [uploading, setUploading] = useState(false);
+  const { uploading, uploadFile } = useImageUpload(uploadAvatar);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -36,19 +37,11 @@ export default function AccountForm({
     avatar !== avatarUrl;
 
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const file = takeFile(e);
     if (!file) return;
     setAvatarError(null);
-    setUploading(true);
-    const fd = new FormData();
-    fd.set("file", file);
-    const res = await uploadAvatar(fd);
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = ""; // 같은 파일 재선택 허용
-    if ("error" in res) {
-      setAvatarError(res.error);
-      return;
-    }
+    const res = await uploadFile(file);
+    if ("error" in res) return setAvatarError(res.error);
     setAvatar(res.url);
   }
 

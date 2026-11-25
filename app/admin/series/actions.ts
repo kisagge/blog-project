@@ -35,14 +35,15 @@ export async function createSeriesAction(
   formData: FormData,
 ): Promise<SeriesFormState> {
   await verifySession();
-  const parsed = SeriesSchema.safeParse(toInput(formData));
-  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+  const values = toInput(formData);
+  const parsed = SeriesSchema.safeParse(values);
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
   let createdId: string | undefined;
   try {
     const s = await createSeries(parsed.data);
     createdId = s.id;
   } catch {
-    return { errors: { slug: ["이미 사용 중인 slug입니다."] } };
+    return { errors: { slug: ["이미 사용 중인 slug입니다."] }, values };
   }
   await logAudit({
     action: "series.create",
@@ -60,12 +61,13 @@ export async function updateSeriesAction(
   formData: FormData,
 ): Promise<SeriesFormState> {
   await verifySession();
-  const parsed = SeriesSchema.safeParse(toInput(formData));
-  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+  const values = toInput(formData);
+  const parsed = SeriesSchema.safeParse(values);
+  if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
   try {
     await updateSeries(id, parsed.data);
   } catch {
-    return { errors: { slug: ["이미 사용 중인 slug입니다."] } };
+    return { errors: { slug: ["이미 사용 중인 slug입니다."] }, values };
   }
   await logAudit({
     action: "series.update",

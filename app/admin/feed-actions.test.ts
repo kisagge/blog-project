@@ -101,3 +101,23 @@ describe("수정 이력(리비전)", () => {
     ).toBe("옛 본문");
   });
 });
+
+describe("실패 응답의 제출값(입력 유지)", () => {
+  test("검증 실패 시 제출값을 그대로 돌려줌(폼 초기화 후 다시 채우기용)", async () => {
+    const { id } = await prisma.feed.create({
+      data: { ...base, slug: "keep-values", status: "published" },
+    });
+    const res = await updateFeed(
+      id,
+      {},
+      formData({ ...base, slug: "BAD SLUG", content: "긴 본문" }),
+    );
+    expect(res?.errors?.slug?.length).toBeGreaterThan(0);
+    expect(res?.values).toMatchObject({
+      title: "원제",
+      slug: "BAD SLUG",
+      content: "긴 본문",
+      visibility: "public",
+    });
+  });
+});

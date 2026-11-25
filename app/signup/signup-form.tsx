@@ -32,6 +32,7 @@ export default function SignupForm({ siteKey }: { siteKey?: string }) {
             {...control}
             name="email"
             type="email"
+            defaultValue={state?.values?.email}
             autoComplete="email"
             className={INPUT_CLASS}
           />
@@ -46,6 +47,7 @@ export default function SignupForm({ siteKey }: { siteKey?: string }) {
           <input
             {...control}
             name="nickname"
+            defaultValue={state?.values?.nickname}
             autoComplete="nickname"
             className={INPUT_CLASS}
           />

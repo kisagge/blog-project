@@ -8,6 +8,7 @@ vi.mock("@/app/account/posts/image-action", () => ({
 }));
 
 import PostEditor from "@/app/account/posts/post-editor";
+import { PNG_1x1 } from "@/test/helpers";
 import { uploadPostImage } from "@/app/account/posts/image-action";
 
 beforeEach(() => localStorage.clear());
@@ -23,7 +24,9 @@ describe("PostEditor 미리보기", () => {
       screen.getByRole("heading", { level: 1, name: "미리보기제목" }),
     ).toBeInTheDocument();
     // textarea를 담은 작성 패널은 hidden(폼 제출 위해 마운트는 유지)
-    expect(document.getElementById("panel-write")).toHaveAttribute("hidden");
+    expect(document.getElementById("post-panel-write")).toHaveAttribute(
+      "hidden",
+    );
   });
 
   test("빈 본문이면 미리보기에 안내 문구", () => {
@@ -142,5 +145,46 @@ describe("PostEditor 필드 오류 접근성", () => {
     expect(content).toHaveAttribute("aria-invalid", "true");
     expect(content).toHaveAccessibleDescription("본문을 입력하세요.");
     expect(screen.getByLabelText(/태그/)).toHaveAttribute("name", "tags");
+  });
+});
+
+describe("PostEditor 업로드 실패 복구", () => {
+  test("업로드 요청이 예외로 끝나도 '업로드 중'에 멈추지 않고 오류 안내", async () => {
+    vi.mocked(uploadPostImage).mockRejectedValueOnce(new Error("network"));
+    render(<PostEditor />);
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([PNG_1x1], "a.png", { type: "image/png" })] },
+    });
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "업로드에 실패했습니다",
+    );
+    expect(input).not.toBeDisabled();
+    expect(screen.queryByText("업로드 중…")).toBeNull();
+  });
+});
+
+describe("PostEditor 탭 키보드", () => {
+  test("방향키로 작성↔미리보기 전환, 작성 패널은 숨김으로만(본문 값 유지)", () => {
+    render(<PostEditor />);
+    fireEvent.change(screen.getByLabelText("본문 (마크다운)"), {
+      target: { value: "유지될 본문" },
+    });
+    const write = screen.getByRole("tab", { name: "작성" });
+    expect(write).toHaveAttribute("tabindex", "0");
+    fireEvent.keyDown(write, { key: "ArrowRight" });
+    const preview = screen.getByRole("tab", { name: "미리보기" });
+    expect(preview).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(preview);
+    expect(document.getElementById("post-panel-write")).toHaveAttribute(
+      "hidden",
+    );
+    fireEvent.keyDown(preview, { key: "Home" });
+    expect(write).toHaveAttribute("aria-selected", "true");
+    expect(
+      (screen.getByLabelText("본문 (마크다운)") as HTMLTextAreaElement).value,
+    ).toBe("유지될 본문");
   });
 });

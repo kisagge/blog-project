@@ -85,3 +85,33 @@ describe("FeedForm 접근성", () => {
     expect(alert).toHaveTextContent("제목을 입력하세요.");
   });
 });
+
+describe("FeedForm 오류 후 입력 유지", () => {
+  test("서버가 돌려준 제출값으로 제목·slug·본문·공개범위를 다시 채움", async () => {
+    action.mockResolvedValue({
+      errors: { slug: ["slug 형식 오류"] },
+      values: {
+        title: "제목있음",
+        slug: "BAD SLUG",
+        summary: "",
+        content: "긴 본문",
+        visibility: "members",
+        tags: "a",
+        seriesId: "",
+        scheduledAt: "",
+      },
+    });
+    render(<FeedForm action={action} submitLabel="저장" />);
+    fireEvent.submit(screen.getByLabelText("제목").closest("form")!);
+    await screen.findByRole("alert");
+    expect(screen.getByLabelText("제목")).toHaveValue("제목있음");
+    expect(screen.getByLabelText("slug (소문자·숫자·하이픈)")).toHaveValue(
+      "BAD SLUG",
+    );
+    expect(screen.getByLabelText("본문 (마크다운)")).toHaveValue("긴 본문");
+    expect(
+      (document.querySelector('[name="visibility"]') as HTMLSelectElement)
+        .value,
+    ).toBe("members");
+  });
+});
