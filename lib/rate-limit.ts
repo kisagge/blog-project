@@ -49,6 +49,7 @@ export const TOO_MANY_REQUESTS =
 // 민감 액션별 한도(접두사로 키 분리). 단일 컨테이너라 인메모리 한도로 충분.
 export const ACTION_LIMITS = {
   signin: { limit: 10, windowMs: 5 * 60_000 }, // 로그인 브루트포스
+  withdraw: { limit: 5, windowMs: 10 * 60_000 }, // 회원 탈퇴(비밀번호 재확인 대입 방지, 회원당)
   signup: { limit: 5, windowMs: 10 * 60_000 }, // 가입 스팸
   passwordReset: { limit: 5, windowMs: 10 * 60_000 }, // 코드 요청(이메일당 60s 쿨다운은 별개)
   // 재설정 코드 무차별 대입 방지: 코드당 5회 제한만으론 재발급(60s마다)으로 시도를 계속 늘릴 수 있어

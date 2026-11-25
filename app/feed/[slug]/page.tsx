@@ -74,6 +74,8 @@ export default async function FeedDetailPage({
   ]);
   if (!feed) notFound();
   const view = feedDetailView(feed, role, session);
+  // 작성자 프로필 링크는 회원일 때만(관리자 글·탈퇴 회원 글은 링크 없음).
+  const profileId = feed.author?.role === "member" ? feed.authorId : null;
   if (view === "not-found") notFound();
 
   // 임시저장: 본인만 미리보기(공유·댓글·조회수 없이 본문만).
@@ -89,7 +91,7 @@ export default async function FeedDetailPage({
         <FeedArticle
           feed={feed}
           authorName={feed.author?.nickname}
-          authorId={feed.authorId}
+          authorId={profileId}
           linkAuthors={role !== "anon"}
           tags={feed.feedTags.map((ft) => ft.tag)}
         />
@@ -167,7 +169,7 @@ export default async function FeedDetailPage({
       <FeedArticle
         feed={feed}
         authorName={authorName}
-        authorId={feed.authorId}
+        authorId={profileId}
         linkAuthors={role !== "anon"}
         tags={feed.feedTags.map((ft) => ft.tag)}
       />

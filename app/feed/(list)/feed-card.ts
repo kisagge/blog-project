@@ -25,7 +25,7 @@ export function toFeedCard(f: {
   publishedAt?: Date | null;
   viewCount: number;
   visibility: string;
-  author: { id: string; nickname: string } | null;
+  author: { id: string; nickname: string; role: string } | null;
   feedTags?: { tag: { name: string; slug: string } }[];
 }): FeedCard {
   return {
@@ -37,7 +37,8 @@ export function toFeedCard(f: {
     viewCount: f.viewCount,
     visibility: f.visibility as Visibility,
     authorName: f.author?.nickname ?? null,
-    authorId: f.author?.id ?? null,
+    // 탈퇴 회원은 공개 프로필이 없어 링크하지 않음(이름은 "탈퇴한 회원").
+    authorId: f.author?.role === "member" ? f.author.id : null,
     tags: (f.feedTags ?? []).map((ft) => ft.tag),
   };
 }

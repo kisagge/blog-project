@@ -96,7 +96,7 @@ const COMMENT_TARGET_SELECT = {
   content: true,
   hiddenAt: true,
   userId: true,
-  user: { select: { nickname: true } },
+  user: { select: { nickname: true, role: true } },
   feed: { select: { slug: true } },
 } as const;
 const FEED_TARGET_SELECT = {
@@ -105,7 +105,7 @@ const FEED_TARGET_SELECT = {
   slug: true,
   hiddenAt: true,
   authorId: true,
-  author: { select: { nickname: true } },
+  author: { select: { nickname: true, role: true } },
 } as const;
 
 type CommentTarget = Prisma.CommentGetPayload<{
@@ -121,7 +121,8 @@ function commentTarget(c: CommentTarget) {
     preview: c.content,
     slug: c.feed.slug,
     authorNickname: c.user.nickname,
-    authorId: c.userId as string | null,
+    // 탈퇴 회원은 프로필이 없어 링크 대상에서 제외.
+    authorId: c.user.role === "member" ? (c.userId as string | null) : null,
   };
 }
 function feedTarget(f: FeedTarget) {
@@ -131,7 +132,7 @@ function feedTarget(f: FeedTarget) {
     preview: f.title,
     slug: f.slug,
     authorNickname: f.author?.nickname ?? "알 수 없음",
-    authorId: f.authorId,
+    authorId: f.author?.role === "member" ? f.authorId : null,
   };
 }
 
