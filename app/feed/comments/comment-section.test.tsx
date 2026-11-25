@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderFeed } from "@/test/render-feed";
 import { act } from "react";
 import type { CommentNode } from "@/lib/comments";
 
@@ -46,7 +47,7 @@ function node(id: string, over: Partial<CommentNode> = {}): CommentNode {
 }
 
 function renderSection(items: CommentNode[]) {
-  return render(
+  return renderFeed(
     <CommentSection
       feedId="f1"
       slug="hello"
@@ -117,5 +118,19 @@ describe("CommentSection 실시간(SSE) 병합", () => {
     emit({ kind: "feedLike", count: 5 });
     expect(screen.getByRole("heading", { name: "댓글 1" })).toBeInTheDocument();
     expect(screen.getByText("내용 a")).toBeInTheDocument();
+  });
+});
+
+describe("CommentSection 삭제 확인 대화상자", () => {
+  // jsdom은 닫힌 <dialog>의 이름을 계산하지 못해, 이름 출처(aria-labelledby → 제목) 연결로 확인.
+  test("대화상자 이름이 제목에 연결됨", () => {
+    renderSection([node("a")]);
+    const dialog = screen
+      .getAllByRole("dialog", { hidden: true })
+      .find((d) => d.textContent?.includes("삭제할까요"))!;
+    const title = document.getElementById(
+      dialog.getAttribute("aria-labelledby") ?? "",
+    );
+    expect(title).toHaveTextContent("댓글을 삭제할까요?");
   });
 });

@@ -9,6 +9,7 @@ import BookmarkButton from "./bookmark-button";
 import FeedReactions from "./feed-reactions";
 import CommentSection from "./comments/comment-section";
 import { FeedEventsProvider } from "./feed-events-context";
+import { LoginPromptProvider } from "./login-prompt";
 
 export default async function FeedEngagement({
   feedId,
@@ -39,46 +40,49 @@ export default async function FeedEngagement({
     <section className="mt-10 border-t border-black/[.08] pt-6 dark:border-white/[.145]">
       {/* 댓글·좋아요가 피드 SSE 연결 1개를 공유 */}
       <FeedEventsProvider feedId={feedId}>
-        <div className="flex flex-wrap items-center gap-2">
-          <LikeButton
-            feedId={feedId}
-            slug={slug}
-            initialCount={like.count}
-            initialLiked={like.liked}
-            canParticipate={canParticipate}
-          />
-          {/* 북마크는 회원 전용(저장 목록도 회원 전용) → admin에겐 미노출.
-              개인 저장이라 SSE 무관(provider 안에 있어도 미사용). */}
-          {!isAdmin && (
-            <BookmarkButton
+        {/* 비로그인 참여 시 로그인 안내 — 대화상자 1개를 좋아요·반응·저장·댓글이 공유 */}
+        <LoginPromptProvider>
+          <div className="flex flex-wrap items-center gap-2">
+            <LikeButton
               feedId={feedId}
               slug={slug}
-              initialBookmarked={bookmarked}
+              initialCount={like.count}
+              initialLiked={like.liked}
               canParticipate={canParticipate}
             />
-          )}
-        </div>
-        {/* 글 이모지 리액션 — 좋아요/북마크 줄 아래. 글 SSE 연결을 공유. */}
-        <FeedReactions
-          feedId={feedId}
-          slug={slug}
-          initialReactions={reactions}
-          canParticipate={canParticipate}
-        />
-        {/* 정렬 변경(URL) 시 새 초기 데이터로 다시 마운트 */}
-        <CommentSection
-          key={sort}
-          feedId={feedId}
-          slug={slug}
-          sort={sort}
-          canParticipate={canParticipate}
-          actorUserId={actor?.userId}
-          isAdmin={isAdmin}
-          linkAuthors={linkAuthors}
-          initialItems={page.items}
-          initialTotal={page.total}
-          initialHighlightId={highlightCommentId}
-        />
+            {/* 북마크는 회원 전용(저장 목록도 회원 전용) → admin에겐 미노출.
+              개인 저장이라 SSE 무관(provider 안에 있어도 미사용). */}
+            {!isAdmin && (
+              <BookmarkButton
+                feedId={feedId}
+                slug={slug}
+                initialBookmarked={bookmarked}
+                canParticipate={canParticipate}
+              />
+            )}
+          </div>
+          {/* 글 이모지 리액션 — 좋아요/북마크 줄 아래. 글 SSE 연결을 공유. */}
+          <FeedReactions
+            feedId={feedId}
+            slug={slug}
+            initialReactions={reactions}
+            canParticipate={canParticipate}
+          />
+          {/* 정렬 변경(URL) 시 새 초기 데이터로 다시 마운트 */}
+          <CommentSection
+            key={sort}
+            feedId={feedId}
+            slug={slug}
+            sort={sort}
+            canParticipate={canParticipate}
+            actorUserId={actor?.userId}
+            isAdmin={isAdmin}
+            linkAuthors={linkAuthors}
+            initialItems={page.items}
+            initialTotal={page.total}
+            initialHighlightId={highlightCommentId}
+          />
+        </LoginPromptProvider>
       </FeedEventsProvider>
     </section>
   );

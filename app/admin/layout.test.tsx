@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { FakeEventSource } from "@/test/helpers";
 
 vi.mock("@/lib/dal", () => ({ verifySession: vi.fn() }));
 vi.mock("@/app/actions/auth", () => ({ logout: vi.fn() }));
@@ -8,14 +9,8 @@ vi.mock("@/lib/reports", () => ({
 }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/admin" }));
 
-// AdminNav가 신고 수 실시간 갱신에 EventSource를 쓴다(jsdom 미구현) → 최소 스텁.
-vi.stubGlobal(
-  "EventSource",
-  class {
-    addEventListener() {}
-    close() {}
-  },
-);
+// AdminNav가 신고 수 실시간 갱신에 EventSource를 쓴다(jsdom 미구현) → 테스트용 대역.
+vi.stubGlobal("EventSource", FakeEventSource);
 
 import AdminLayout from "@/app/admin/layout";
 import { verifySession } from "@/lib/dal";

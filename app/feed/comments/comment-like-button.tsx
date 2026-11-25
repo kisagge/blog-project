@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import LoginRequiredModal from "../login-required-modal";
+import { useState } from "react";
+import { useLoginPrompt } from "../login-prompt";
+import { useOptimisticToggle } from "@/app/ui/use-optimistic-toggle";
 import { toggleCommentLikeAction } from "./comment-actions";
 
 export default function CommentLikeButton({
@@ -18,65 +19,35 @@ export default function CommentLikeButton({
   initialLiked: boolean;
   canParticipate: boolean;
 }) {
+  const promptLogin = useLoginPrompt();
   const [count, setCount] = useState(initialCount);
-  const [liked, setLiked] = useState(initialLiked);
-  const modal = useRef<HTMLDialogElement>(null);
   // 서버 truth(initialCount)가 SSE로 바뀌면 렌더 중 count 동기화(effect-setState 회피).
   const [syncedCount, setSyncedCount] = useState(initialCount);
   if (initialCount !== syncedCount) {
     setSyncedCount(initialCount);
     setCount(initialCount);
   }
-
-  // 디바운스: 연타를 최종 상태 1요청으로 합침. committed=서버에 반영된 내 like 상태.
-  const committed = useRef(initialLiked);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
+  const like = useOptimisticToggle(
+    initialLiked,
+    () => toggleCommentLikeAction(commentId, feedId, slug),
+    (failed) => setCount((c) => c + (failed ? -1 : 1)),
   );
 
   function onClick() {
-    if (!canParticipate) {
-      modal.current?.showModal();
-      return;
-    }
-    const next = !liked;
-    setLiked(next);
+    if (!canParticipate) return promptLogin();
+    const next = like.toggle();
     setCount((c) => c + (next ? 1 : -1));
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      if (next === committed.current) return; // 짝수 연타 → 호출 없음
-      committed.current = next;
-      // toggle은 현재 내 상태를 뒤집음 → committed와 다를 때 1회 호출이면 desired에 도달.
-      void (async () => {
-        try {
-          await toggleCommentLikeAction(commentId, feedId, slug);
-        } catch {
-          // 429(미들웨어가 액션 전 반환) 등 실패 → 낙관 롤백(리액션·follow 버튼 패턴).
-          committed.current = !next;
-          // 레이스 가드: 인플라이트 중 다시 토글했으면(liked!==next) 최신 의도 보존.
-          setLiked((cur) => (cur === next ? !next : cur));
-          setCount((c) => c + (next ? -1 : 1));
-        }
-      })();
-    }, 500);
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={onClick}
-        aria-pressed={liked}
-        className={`inline-flex items-center gap-1 ${liked ? "text-red-600 dark:text-red-400" : "hover:text-zinc-800 dark:hover:text-zinc-200"}`}
-      >
-        <span aria-hidden>{liked ? "♥" : "♡"}</span>
-        {count > 0 && count}
-      </button>
-      <LoginRequiredModal ref={modal} />
-    </>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={like.on}
+      className={`inline-flex items-center gap-1 ${like.on ? "text-red-600 dark:text-red-400" : "hover:text-zinc-800 dark:hover:text-zinc-200"}`}
+    >
+      <span aria-hidden>{like.on ? "♥" : "♡"}</span>
+      {count > 0 && count}
+    </button>
   );
 }

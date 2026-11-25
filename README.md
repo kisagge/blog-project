@@ -116,7 +116,7 @@ app/          라우트
   about                           소개(관리자 편집)
   sitemap.ts, robots.ts, llms.txt SEO · AI 검색 안내
   maintenance, uploads/[name]     점검 안내, 업로드 서빙
-  ui/                             공용 UI 부품·훅(FormField·TabList·KstTime·AuthorName·LinkTabs, useImageUpload·useDraft)
+  ui/                             공용 UI 부품·훅(FormField·TabList·KstTime·AuthorName·LinkTabs, useImageUpload·useDraft·useOptimisticToggle·useServerEvent)
 lib/          도메인 로직 (feeds, df-characters, users, member-posts, comments,
               likes, reports, tags, content, notifications, push, mailer,
               visibility, turnstile, rate-limit, dal, session …)

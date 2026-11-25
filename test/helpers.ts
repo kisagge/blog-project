@@ -30,7 +30,18 @@ export class FakeEventSource {
     this.url = url;
     FakeEventSource.instances.push(this);
   }
-  addEventListener() {}
+  listeners = new Map<string, Set<(e: { data: string }) => void>>();
+  addEventListener(name: string, cb: (e: { data: string }) => void) {
+    if (!this.listeners.has(name)) this.listeners.set(name, new Set());
+    this.listeners.get(name)!.add(cb);
+  }
+  removeEventListener(name: string, cb: (e: { data: string }) => void) {
+    this.listeners.get(name)?.delete(cb);
+  }
+  // 이름 있는 SSE 이벤트(event: name) 흉내.
+  emit(name: string, data: string) {
+    this.listeners.get(name)?.forEach((cb) => cb({ data }));
+  }
   close() {
     this.closed = true;
   }

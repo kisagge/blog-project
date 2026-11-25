@@ -220,9 +220,12 @@ export default function CommentSection({
 
       <dialog
         ref={confirmRef}
+        aria-labelledby="comment-delete-title"
         className="bg-background text-foreground m-auto w-[min(90vw,22rem)] rounded-lg border border-black/15 p-5 shadow-xl backdrop:bg-black/40 dark:border-white/20"
       >
-        <h2 className="text-base font-semibold">댓글을 삭제할까요?</h2>
+        <h2 id="comment-delete-title" className="text-base font-semibold">
+          댓글을 삭제할까요?
+        </h2>
         <p className="mt-2 text-sm text-zinc-500">
           삭제한 댓글은 되돌릴 수 없습니다.
         </p>
