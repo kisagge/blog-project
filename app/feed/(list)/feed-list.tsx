@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadFeeds } from "./actions";
-import type { FeedCard } from "./feed-card";
+import { appendUnique, type FeedCard } from "./feed-card";
 import FeedCardItem from "./feed-card-item";
 import FeedCardSkeleton from "./feed-card-skeleton";
 
@@ -34,42 +34,47 @@ export default function FeedList({
   const [query, setQuery] = useState(initialQuery);
   const [sort, setSort] = useState<Sort>(initialSort);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const basePath = author === "member" ? "/community" : "/feed";
   const tag = initialTag; // 마운트 동안 고정(태그 변경은 key remount로 처리)
   // 정렬 토글이 없으면 서버 기본 동작 유지(undefined 전달).
   const sortParam: Sort | undefined = showSort ? sort : undefined;
 
-  // 최신 상태를 옵저버/비동기 콜백에서 참조하기 위한 ref(스테일 클로저 방지)
-  const reqIdRef = useRef(0); // 검색이 바뀔 때마다 증가 → 지난 요청 결과를 폐기
-  const loadingRef = useRef(false);
-  const hasMoreRef = useRef(initialHasMore);
-  const itemsLenRef = useRef(initialItems.length);
-  const queryRef = useRef(initialQuery);
-  const sortRef = useRef(sortParam);
+  // 비동기 콜백(디바운스·옵저버)에서 최신 값을 읽기 위한 스냅샷.
+  const latest = useRef({ items, query, sortParam });
   useEffect(() => {
-    hasMoreRef.current = hasMore;
-  }, [hasMore]);
-  useEffect(() => {
-    itemsLenRef.current = items.length;
-  }, [items.length]);
-  useEffect(() => {
-    queryRef.current = query;
-  }, [query]);
-  useEffect(() => {
-    sortRef.current = sortParam;
-  }, [sortParam]);
+    latest.current = { items, query, sortParam };
+  });
+  // 검색·정렬이 바뀔 때마다 증가 → 그 전에 보낸 요청의 응답은 폐기.
+  const reqId = useRef(0);
 
-  // 검색어 변경 → 300ms 디바운스 후 목록 리셋 조회. 첫 마운트는 SSR 데이터가 있으니 건너뜀.
+  // reset: 검색·정렬 변경(첫 페이지부터 교체) / 아니면 다음 페이지 덧붙이기.
+  // 요청이 실패해도(429·네트워크) loading은 반드시 풀고 다시 시도 버튼을 보인다.
+  async function load(reset: boolean) {
+    const myReq = reset ? ++reqId.current : reqId.current;
+    const { items: cur, query: q, sortParam: sp } = latest.current;
+    setLoading(true);
+    setFailed(false);
+    try {
+      const res = await loadFeeds(q, reset ? 0 : cur.length, author, tag, sp);
+      if (myReq !== reqId.current) return;
+      setItems((prev) => (reset ? res.items : appendUnique(prev, res.items)));
+      setHasMore(res.hasMore);
+    } catch {
+      if (myReq === reqId.current) setFailed(true);
+    } finally {
+      if (myReq === reqId.current) setLoading(false);
+    }
+  }
+
+  // 검색어·정렬 변경 → 300ms 디바운스 후 주소 갱신 + 목록 리셋 조회. 첫 마운트는 SSR 데이터가 있으니 건너뜀.
   const mounted = useRef(false);
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true;
       return;
     }
-    const t = setTimeout(async () => {
-      const myReq = ++reqIdRef.current;
-      setLoading(true);
-      loadingRef.current = true;
+    const t = setTimeout(() => {
       const params = new URLSearchParams();
       if (query.trim()) params.set("q", query.trim());
       if (tag) params.set("tag", tag);
@@ -80,49 +85,28 @@ export default function FeedList({
         "",
         qs ? `${basePath}?${qs}` : basePath,
       );
-      const res = await loadFeeds(query, 0, author, tag, sortParam);
-      if (myReq !== reqIdRef.current) return; // 더 최신 검색이 진행 중이면 폐기
-      setItems(res.items);
-      setHasMore(res.hasMore);
-      setLoading(false);
-      loadingRef.current = false;
+      void load(true);
     }, 300);
     return () => clearTimeout(t);
-  }, [query, author, basePath, tag, sortParam]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, sortParam]);
 
-  const loadMore = useCallback(async () => {
-    if (loadingRef.current || !hasMoreRef.current) return;
-    const myReq = reqIdRef.current;
-    setLoading(true);
-    loadingRef.current = true;
-    const res = await loadFeeds(
-      queryRef.current,
-      itemsLenRef.current,
-      author,
-      tag,
-      sortRef.current,
-    );
-    if (myReq !== reqIdRef.current) return; // 로드 중 검색이 바뀌면 폐기
-    setItems((prev) => [...prev, ...res.items]);
-    setHasMore(res.hasMore);
-    setLoading(false);
-    loadingRef.current = false;
-  }, [author, tag]);
-
-  // 화면 하단 센티넬이 보이면 다음 페이지 로드
+  // 화면 하단 센티넬이 보이면 다음 페이지. 불러오는 중·끝·실패(다시 시도 대기)면 관찰하지 않음 —
+  // 로드가 끝나 옵저버가 다시 붙을 때 센티넬이 아직 보이면 곧바로 이어서 채운다.
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el) return;
+    if (!el || loading || failed || !hasMore) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) loadMore();
+        if (entries[0].isIntersecting) void load(false);
       },
       { rootMargin: "200px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [loadMore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, failed, hasMore]);
 
   return (
     <>
@@ -164,7 +148,7 @@ export default function FeedList({
                 key={s}
                 type="button"
                 onClick={() => setSort(s)}
-                aria-current={active ? "true" : undefined}
+                aria-pressed={active}
                 className={`rounded-full px-3 py-1 ${
                   active
                     ? "bg-zinc-900 font-medium text-white dark:bg-white dark:text-zinc-900"
@@ -212,6 +196,21 @@ export default function FeedList({
             <FeedCardSkeleton />
           </ul>
         </>
+      )}
+      {failed && (
+        <div
+          role="alert"
+          className="mt-6 flex items-center justify-center gap-3 text-sm text-zinc-500"
+        >
+          목록을 불러오지 못했습니다.
+          <button
+            type="button"
+            onClick={() => void load(items.length === 0)}
+            className="rounded border border-black/15 px-3 py-1 dark:border-white/20"
+          >
+            다시 시도
+          </button>
+        </div>
       )}
       {!hasMore && items.length > 0 && (
         <p className="mt-6 text-center text-sm text-zinc-500">

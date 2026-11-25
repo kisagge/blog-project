@@ -42,6 +42,29 @@ export function canReadFeed(feed: GateFields, role: ViewerRole): boolean {
   );
 }
 
+// 글 상세 화면 판정(본문·메타데이터 공용). canReadFeed와 달리 임시저장 미리보기(작성자·관리자)와
+// 회원공개 글의 비회원 안내(members-only)를 구분한다.
+//   draft-preview: 본인 임시저장 — 본문만(공유·댓글·조회수 없음)
+//   members-only: 회원공개 + 비회원 — 가입 안내, 색인 제외
+//   not-found: 남의 임시저장·숨김(비관리자)·비공개(비관리자)·없는 글
+export type FeedDetailView =
+  "ok" | "draft-preview" | "members-only" | "not-found";
+
+export function feedDetailView(
+  feed: GateFields & { authorId: string | null },
+  role: ViewerRole,
+  session: { role: string; userId?: string } | null | undefined,
+): FeedDetailView {
+  if (feed.status === "draft") {
+    const own =
+      session?.role === "admin" ||
+      (session?.role === "member" && session.userId === feed.authorId);
+    return own ? "draft-preview" : "not-found";
+  }
+  if (feed.hiddenAt && role !== "admin") return "not-found"; // 신고 숨김
+  return checkAccess(feed.visibility as Visibility, role);
+}
+
 export type ReadableFeed = { id: string; slug: string };
 
 const GATE_SELECT = {

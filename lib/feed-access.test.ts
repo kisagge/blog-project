@@ -88,3 +88,43 @@ describe("feed-access", () => {
     ).toBeNull();
   });
 });
+
+describe("feedDetailView(글 상세 화면 판정)", () => {
+  const base = {
+    status: "published",
+    hiddenAt: null as Date | null,
+    visibility: "public",
+    authorId: "u1" as string | null,
+  };
+  const anon = undefined;
+  const author = { role: "member" as const, userId: "u1" };
+  const other = { role: "member" as const, userId: "u2" };
+  const admin = { role: "admin" as const };
+
+  test("임시저장: 작성자·관리자만 미리보기, 그 외 404", async () => {
+    const { feedDetailView } = await import("@/lib/feed-access");
+    const draft = { ...base, status: "draft" };
+    expect(feedDetailView(draft, "member", author)).toBe("draft-preview");
+    expect(feedDetailView(draft, "admin", admin)).toBe("draft-preview");
+    expect(feedDetailView(draft, "member", other)).toBe("not-found");
+    expect(feedDetailView(draft, "anon", anon)).toBe("not-found");
+  });
+
+  test("신고로 숨김: 관리자만", async () => {
+    const { feedDetailView } = await import("@/lib/feed-access");
+    const hidden = { ...base, hiddenAt: new Date() };
+    expect(feedDetailView(hidden, "admin", admin)).toBe("ok");
+    expect(feedDetailView(hidden, "member", author)).toBe("not-found");
+  });
+
+  test("공개 범위: 회원공개는 비회원에게 가입 안내, 비공개는 관리자 외 404", async () => {
+    const { feedDetailView } = await import("@/lib/feed-access");
+    const members = { ...base, visibility: "members" };
+    const priv = { ...base, visibility: "private" };
+    expect(feedDetailView(base, "anon", anon)).toBe("ok");
+    expect(feedDetailView(members, "anon", anon)).toBe("members-only");
+    expect(feedDetailView(members, "member", other)).toBe("ok");
+    expect(feedDetailView(priv, "member", author)).toBe("not-found");
+    expect(feedDetailView(priv, "admin", admin)).toBe("ok");
+  });
+});
