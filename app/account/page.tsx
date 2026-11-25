@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
@@ -25,6 +26,14 @@ export default async function AccountPage() {
         bio={user.bio ?? ""}
         avatarUrl={user.avatarUrl ?? ""}
       />
+      <p className="border-t border-black/[.08] pt-6 text-right text-sm dark:border-white/[.145]">
+        <Link
+          href="/account/withdraw"
+          className="text-zinc-500 hover:text-red-600 hover:underline dark:hover:text-red-400"
+        >
+          회원 탈퇴
+        </Link>
+      </p>
     </main>
   );
 }

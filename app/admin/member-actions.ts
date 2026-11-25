@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
 import { logAudit } from "@/lib/audit";
+import { withdrawMember } from "@/lib/withdrawal";
 
 // 관리자 회원 액션: 가입 승인·거절, 차단·해제.
 
@@ -65,6 +66,27 @@ export async function unblockUserAction(formData: FormData) {
     targetType: "member",
     targetId: id,
     summary: `회원 차단 해제: ${await memberLabel(id)}`,
+  });
+  revalidatePath("/admin/members");
+}
+
+// 차단 회원 탈퇴 처리(관리자 대행). 차단 회원은 로그인할 수 없어 스스로 탈퇴할 수 없으므로,
+// 삭제 요청을 받으면 관리자가 처리한다. 글·댓글은 "탈퇴한 회원"으로 남고, 이메일은 해시로만 남아 재가입을 막는다.
+export async function withdrawMemberAction(formData: FormData) {
+  await verifySession();
+  const id = String(formData.get("id") ?? "");
+  const u = await prisma.user.findUnique({
+    where: { id },
+    select: { nickname: true, status: true },
+  });
+  if (u?.status !== "blocked") return; // 일반 회원은 본인이 직접 탈퇴
+  const res = await withdrawMember(id, { deletePosts: false });
+  if (!res.ok) return;
+  await logAudit({
+    action: "member.withdraw",
+    targetType: "member",
+    targetId: id,
+    summary: `차단 회원 탈퇴 처리: ${u.nickname}`,
   });
   revalidatePath("/admin/members");
 }

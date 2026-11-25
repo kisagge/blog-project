@@ -27,7 +27,7 @@ export const FEED_LIST_SELECT = {
   publishedAt: true, // 카드 표시·정렬용 게시일(postedAt)
   viewCount: true,
   visibility: true,
-  author: { select: { id: true, nickname: true } },
+  author: { select: { id: true, nickname: true, role: true } },
   feedTags: { select: { tag: { select: { name: true, slug: true } } } },
 } as const;
 
@@ -299,7 +299,7 @@ export const getFeedBySlug = cache(async (slug: string) => {
   return prisma.feed.findUnique({
     where: { slug },
     include: {
-      author: { select: { id: true, nickname: true } },
+      author: { select: { id: true, nickname: true, role: true } },
       feedTags: { select: { tag: { select: { name: true, slug: true } } } },
     },
   });

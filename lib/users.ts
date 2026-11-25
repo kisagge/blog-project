@@ -6,6 +6,8 @@ import { getAdminNickname, RESERVED_EMAIL_DOMAIN } from "@/lib/admin-user";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import type { Result } from "@/lib/result";
 import { normalizeEmail } from "@/lib/email";
+import { isEmailBlocked } from "@/lib/blocked-email";
+import { WITHDRAWN_NICKNAME } from "@/lib/withdrawal";
 
 export type UserStatus = "pending" | "approved" | "rejected" | "blocked";
 
@@ -17,7 +19,8 @@ export async function isNicknameTaken(
   exceptUserId?: string,
 ): Promise<boolean> {
   const trimmed = nickname.trim();
-  // 관리자 닉네임 선점 방지(관리자 User 행이 없을 때의 기본값까지 차단).
+  // 관리자 닉네임·"탈퇴한 회원" 선점 방지(사칭). 관리자 행이 없을 때의 기본 닉네임까지 차단.
+  if (trimmed === WITHDRAWN_NICKNAME) return true;
   if (trimmed === (await getAdminNickname()).trim()) return true;
   const found = await prisma.user.findFirst({
     where: {
@@ -43,6 +46,9 @@ export async function createPendingUser(input: {
   // 관리자 예약 계정 도메인은 가입 불가(예약 계정 선점 방지).
   if (email.endsWith(RESERVED_EMAIL_DOMAIN))
     return { ok: false, error: RESERVED_EMAIL_MESSAGE };
+  // 차단 상태로 탈퇴한 회원의 이메일(해시)은 재가입 불가 — 탈퇴로 차단을 피하지 못하게.
+  if (await isEmailBlocked(email))
+    return { ok: false, error: BLOCKED_SIGNUP_MESSAGE };
   const existing = await prisma.user.findUnique({
     where: { email },
     select: { id: true, status: true },
@@ -271,4 +277,17 @@ export async function listUsersPage(
     prisma.user.count({ where }),
   ]);
   return { items, total, pageSize: take };
+}
+
+// 로그인한 회원 본인의 비밀번호 재확인(탈퇴 등 되돌릴 수 없는 작업 전).
+export async function verifyMemberPassword(
+  userId: string,
+  password: string,
+): Promise<boolean> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true, role: true },
+  });
+  if (!u || u.role !== "member") return false;
+  return verifyPassword(password, u.passwordHash);
 }

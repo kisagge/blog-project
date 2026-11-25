@@ -1,5 +1,8 @@
 import { countUsersByStatus, listUsersPage } from "@/lib/users";
-import { BlockUserButton } from "@/app/admin/block-user-button";
+import {
+  BlockUserButton,
+  WithdrawMemberButton,
+} from "@/app/admin/block-user-button";
 import MemberTabs from "@/app/admin/member-tabs";
 import Pager, { parsePage } from "@/app/admin/pager";
 
@@ -44,11 +47,19 @@ export default async function AdminMembersPage({
                   </span>
                 )}
               </span>
-              <BlockUserButton
-                id={u.id}
-                blocked={u.status === "blocked"}
-                label={`${u.nickname} · ${u.email}`}
-              />
+              <span className="flex shrink-0 gap-2">
+                {u.status === "blocked" && (
+                  <WithdrawMemberButton
+                    id={u.id}
+                    label={`${u.nickname} · ${u.email}`}
+                  />
+                )}
+                <BlockUserButton
+                  id={u.id}
+                  blocked={u.status === "blocked"}
+                  label={`${u.nickname} · ${u.email}`}
+                />
+              </span>
             </li>
           ))}
         </ul>

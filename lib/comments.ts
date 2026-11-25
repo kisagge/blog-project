@@ -59,7 +59,7 @@ export type CommentNode = {
   id: string;
   nickname: string;
   userId: string;
-  authorRole: "member" | "admin"; // 회원 작성자만 프로필 링크 노출용
+  authorRole: "member" | "admin" | "withdrawn"; // 회원 작성자만 프로필 링크 노출용(관리자·탈퇴 회원은 링크 없음)
   content: string;
   deleted: boolean;
   hidden: boolean; // 신고로 가려짐(모더레이션). content는 비움.
@@ -107,7 +107,10 @@ function toNode(
     id: c.id,
     userId: c.userId,
     nickname: c.user.nickname,
-    authorRole: c.user.role === "admin" ? "admin" : "member",
+    authorRole:
+      c.user.role === "admin" || c.user.role === "withdrawn"
+        ? c.user.role
+        : "member",
     content: deleted || hidden ? "" : c.content,
     deleted,
     hidden,
