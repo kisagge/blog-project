@@ -8,7 +8,7 @@ import {
 } from "@/lib/feeds";
 import { getViewerRole, getSession, isBlockedMember } from "@/lib/dal";
 import { getAdminNickname } from "@/lib/admin-user";
-import { checkAccess, type Visibility } from "@/lib/visibility";
+import { feedDetailView } from "@/lib/feed-access";
 import FeedArticle from "@/app/feed/feed-article";
 import FeedEngagement from "@/app/feed/feed-engagement";
 import RelatedFeeds from "@/app/feed/related-feeds";
@@ -27,17 +27,6 @@ import { absoluteUrl, firstContentImage, toAbsolute } from "@/lib/share";
 import { buildFeedJsonLd, jsonLdHtml } from "@/lib/structured-data";
 import { guardPublicAccess } from "@/lib/site-config";
 
-// 임시저장(draft) 글은 작성자 본인(또는 관리자)만 볼 수 있다.
-type DraftCheck = { status: string; authorId: string | null };
-function canViewDraft(
-  feed: DraftCheck,
-  session: Awaited<ReturnType<typeof getSession>>,
-): boolean {
-  if (feed.status !== "draft") return true;
-  if (session?.role === "admin") return true;
-  return session?.role === "member" && session.userId === feed.authorId;
-}
-
 export async function generateMetadata({
   params,
 }: {
@@ -51,14 +40,11 @@ export async function generateMetadata({
     getViewerRole(),
     getSession(),
   ]);
-  if (!feed) return { title: "찾을 수 없음" };
-  if (!canViewDraft(feed, session)) return { title: "찾을 수 없음" };
-  if (feed.status === "draft") return { title: feed.title }; // 본인 임시저장
-  if (feed.hiddenAt && role !== "admin") return { title: "찾을 수 없음" }; // 신고 숨김
-  const access = checkAccess(feed.visibility as Visibility, role);
-  if (access === "not-found") return { title: "찾을 수 없음" };
+  const view = feed ? feedDetailView(feed, role, session) : "not-found";
+  if (!feed || view === "not-found") return { title: "찾을 수 없음" };
+  if (view === "draft-preview") return { title: feed.title }; // 본인 임시저장
   const description =
-    access === "ok" ? feed.summary?.trim() || undefined : undefined;
+    view === "ok" ? feed.summary?.trim() || undefined : undefined;
   // og:image는 파일 기반 opengraph-image.tsx가 동적 생성(전체공개 글만 제목 노출).
   return {
     title: feed.title,
@@ -67,7 +53,7 @@ export async function generateMetadata({
     alternates: { canonical: `/feed/${slug}` },
     openGraph: { type: "article", title: feed.title, description },
     // 회원공개 글을 비회원(=크롤러)이 보면 가입 안내 게이트뿐 — 색인 제외.
-    ...(access === "members-only" && { robots: { index: false } }),
+    ...(view === "members-only" && { robots: { index: false } }),
   };
 }
 
@@ -87,10 +73,11 @@ export default async function FeedDetailPage({
     getSession(),
   ]);
   if (!feed) notFound();
+  const view = feedDetailView(feed, role, session);
+  if (view === "not-found") notFound();
 
   // 임시저장: 본인만 미리보기(공유·댓글·조회수 없이 본문만).
-  if (feed.status === "draft") {
-    if (!canViewDraft(feed, session)) notFound();
+  if (view === "draft-preview") {
     return (
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <p
@@ -118,12 +105,7 @@ export default async function FeedDetailPage({
     );
   }
 
-  // 신고로 가려진 글: 관리자만 열람(검토용), 그 외엔 404.
-  if (feed.hiddenAt && role !== "admin") notFound();
-
-  const access = checkAccess(feed.visibility as Visibility, role);
-  if (access === "not-found") notFound(); // 비공개: 관리자 외 404
-  if (access === "members-only") {
+  if (view === "members-only") {
     // 회원 공개 + 비로그인: 안내 + 가입/로그인 유도 + 다른 전체공개 글.
     const { items } = await searchFeeds({ role: "anon", take: 5 });
     return (
@@ -141,9 +123,21 @@ export default async function FeedDetailPage({
 
   const sp = await searchParams;
   const sort = sp.sort === "newest" ? "newest" : "popular";
-  // 작성자 표시: 회원 글이면 작성자 닉네임, 관리자 글이면 관리자 닉네임.
-  const authorName = feed.author?.nickname ?? (await getAdminNickname());
-  const blocked = await isBlockedMember(); // 차단 회원은 공유 버튼 비노출
+  const tagSlugs = feed.feedTags.map((ft) => ft.tag.slug);
+  const firstImage = firstContentImage(feed.content);
+  const shareImage = firstImage ? toAbsolute(firstImage) : undefined;
+  // 본문 주변 데이터는 서로 독립 — 한 번에 병렬 조회.
+  const [adminNickname, blocked, adjacent, seriesCtx, related] =
+    await Promise.all([
+      // 작성자 표시: 회원 글이면 작성자 닉네임, 관리자 글이면 관리자 닉네임.
+      feed.author ? null : getAdminNickname(),
+      isBlockedMember(), // 차단 회원은 공유 버튼 비노출
+      getAdjacentFeeds(feed, role),
+      getSeriesContext(feed, role),
+      getRelatedFeeds(feed.id, tagSlugs, role, 5),
+    ]);
+  const authorName = feed.author?.nickname ?? adminNickname ?? "";
+  const { prev, next } = adjacent;
   // 신고: 회원이 본인 아닌 회원 글에만(관리자 글·본인 글 제외).
   // 작성자 본인: 게시 글에서도 바로 수정·삭제(이전엔 '내 글' 탭에서만 가능).
   const isAuthor =
@@ -154,8 +148,6 @@ export default async function FeedDetailPage({
     session?.role === "member" &&
     !!feed.authorId &&
     session.userId !== feed.authorId;
-  const { prev, next } = await getAdjacentFeeds(feed, role);
-  const seriesCtx = await getSeriesContext(feed, role);
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
@@ -187,10 +179,7 @@ export default async function FeedDetailPage({
             title={feed.title}
             description={feed.summary?.trim() || undefined}
             kakaoKey={process.env.KAKAO_JS_KEY}
-            imageUrl={(() => {
-              const i = firstContentImage(feed.content);
-              return i ? toAbsolute(i) : undefined;
-            })()}
+            imageUrl={shareImage}
           />
         </div>
       )}
@@ -223,14 +212,7 @@ export default async function FeedDetailPage({
         sort={sort}
         highlightCommentId={sp.c}
       />
-      <RelatedFeeds
-        items={await getRelatedFeeds(
-          feed.id,
-          feed.feedTags.map((ft) => ft.tag.slug),
-          role,
-          5,
-        )}
-      />
+      <RelatedFeeds items={related} />
     </main>
   );
 }

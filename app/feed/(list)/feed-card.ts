@@ -41,3 +41,13 @@ export function toFeedCard(f: {
     tags: (f.feedTags ?? []).map((ft) => ft.tag),
   };
 }
+
+// 다음 페이지 덧붙이기: offset 페이지네이션이라 로드 사이에 글이 추가·삭제되면 항목이 밀려
+// 같은 글이 다시 올 수 있다 → slug 기준으로 이미 있는 글은 건너뜀(중복 표시·key 충돌 방지).
+export function appendUnique<T extends { slug: string }>(
+  prev: T[],
+  next: T[],
+): T[] {
+  const seen = new Set(prev.map((c) => c.slug));
+  return [...prev, ...next.filter((c) => !seen.has(c.slug))];
+}

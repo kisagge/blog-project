@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import FeedCardItem from "@/app/feed/(list)/feed-card-item";
-import type { FeedCard } from "@/app/feed/(list)/feed-card";
+import { appendUnique, type FeedCard } from "@/app/feed/(list)/feed-card";
 import { loadSavedFeeds } from "./actions";
 
 // 저장한 글 목록 + "더보기"(무한스크롤 대신 버튼). 카드 마크업은 공용 FeedCardItem 재사용.
@@ -20,10 +20,7 @@ export default function SavedFeedList({
     startLoad(async () => {
       const res = await loadSavedFeeds(items.length);
       // 로드 사이 저장/해제로 항목이 밀릴 수 있어 slug 기준 dedup(중복 키 방지).
-      setItems((prev) => {
-        const seen = new Set(prev.map((c) => c.slug));
-        return [...prev, ...res.items.filter((c) => !seen.has(c.slug))];
-      });
+      setItems((prev) => appendUnique(prev, res.items));
       setHasMore(res.hasMore);
     });
   }
