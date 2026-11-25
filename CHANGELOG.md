@@ -6,11 +6,11 @@
 
 ### Fixed
 
-- 던파 캐릭터 상세: 아이템 이미지의 대체 텍스트가 바로 옆 이름과 같아 화면 낭독기가 이름을 두 번 읽던 것 → 장식용(`alt=""`), 최근 활동 시각을 `<time datetime>`(KST 오프셋 포함)으로
+- 던파 캐릭터 상세: 아이템 이미지의 대체 텍스트가 바로 옆 이름과 같아 화면 낭독기가 이름을 두 번 읽던 것 → 장식용(`alt=""`), 최근 활동 시각을 `<time datetime>`(KST 오프셋 포함)으로 ([#251](https://github.com/kisagge/blog-project/pull/251))
 
 ### Changed
 
-- (내부) 던파 캐릭터 상세 페이지(716줄) 분리 — 데이터 로드(`load.ts`), 탭 구성(`character-tabs.tsx`), 탭별 섹션(`sections/` 능력치·장비·스킬·아바타·활동), 공용 `ItemRow`·`StatGrid`, 순수 포맷터 테스트(버프 설명·마법부여·시각)
+- (내부) 던파 캐릭터 상세 페이지(716줄) 분리 — 데이터 로드(`load.ts`), 탭 구성(`character-tabs.tsx`), 탭별 섹션(`sections/` 능력치·장비·스킬·아바타·활동), 공용 `ItemRow`·`StatGrid`, 순수 포맷터 테스트(버프 설명·마법부여·시각) ([#251](https://github.com/kisagge/blog-project/pull/251))
 
 ## [0.113.11] - 2026-11-25
 
