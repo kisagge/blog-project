@@ -12,7 +12,7 @@
   - 임시저장·팔로우·알림·푸시 구독·저장한 글은 삭제, 탈퇴 회원 프로필은 404, 작성자 링크 없음
   - 같은 이메일로 다시 가입 가능. "탈퇴한 회원" 닉네임은 예약(사칭 방지)
 - 관리자 **차단 회원 탈퇴 처리**(회원 관리, 감사 기록): 차단 회원은 로그인할 수 없어 삭제 요청을 관리자가 대행. 이메일은 SHA-256 해시로만 남겨 같은 이메일 재가입(차단 회피)을 막음
-- DB: `User.withdrawnAt`, `BlockedEmail` 테이블(마이그레이션 `20261125000000_member_withdrawal`)
+- DB: `User.withdrawnAt`, `BlockedEmail` 테이블(마이그레이션 `20261125000000_member_withdrawal`) ([#254](https://github.com/kisagge/blog-project/pull/254))
 
 ## [0.113.14] - 2026-11-25
 
