@@ -3,9 +3,12 @@ name: Publish Scheduled
 # 정시 발행은 앱 내부 스케줄러(instrumentation.ts, 2분 간격)가 담당한다.
 # 이 워크플로는 수동 백업 — 필요 시 즉시 발행을 트리거(GitHub schedule은 저활동 레포에서
 # 수 시간 지연돼 신뢰 불가하므로 제거). backup.yml과 동일 SSH로 호스트에서 localhost 호출.
-# 호스트 .env에 CRON_SECRET 설정 시에만 동작(미설정이면 401 → 건너뜀).
+# 호스트 .env에 CRON_SECRET 설정 시에만 동작(미설정이면 건너뜀). 서버 작업은 scripts/publish-scheduled-remote.sh.
 on:
   workflow_dispatch:
+
+env:
+  DEPLOY_DIR: /srv/byjang # 서버 앱 디렉터리(deploy·backup 워크플로와 동일)
 
 jobs:
   publish:
@@ -17,10 +20,5 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           command_timeout: 3m
-          script: |
-            set -e
-            cd /srv/byjang
-            SECRET=$(grep -E '^CRON_SECRET=' .env | cut -d= -f2- | tr -d '"')
-            if [ -z "$SECRET" ]; then echo "CRON_SECRET 미설정 — 건너뜀"; exit 0; fi
-            curl -fsS -X POST -H "x-cron-secret: $SECRET" \
-              http://127.0.0.1:3010/api/cron/publish-scheduled
+          envs: DEPLOY_DIR
+          script_path: scripts/publish-scheduled-remote.sh
