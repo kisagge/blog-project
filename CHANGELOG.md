@@ -2,6 +2,19 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.113.11] - 2026-11-25
+
+### Fixed
+
+- 글 저장(북마크) 실패 시 되돌리지 않던 문제 — 요청 제한(429) 등으로 실패해도 "저장됨"으로 남고 처리 안 된 promise 거부가 발생
+- 로그인 안내 대화상자: 참여 버튼마다 하나씩 생기던 것(댓글 N개면 2N+α개)을 글 영역에 1개로, 접근 가능한 이름(`aria-labelledby`)과 닫기 버튼 추가. 댓글 삭제 확인 대화상자에도 이름 연결
+- 이모지 반응 선택 메뉴(`role="menu"`)에 방향키·Home/End 이동(ARIA menu 패턴)
+- 관리자 화면에서 헤더 벨과 관리자 내비가 `/api/events` 연결을 각각 열던 것 → 탭당 1개 공유
+
+### Changed
+
+- (내부) 낙관적 토글 공용 훅 `useOptimisticToggle(s)`(좋아요·댓글 좋아요·저장·반응 — 디바운스·짝수 연타 생략·실패 시 되돌림·재동기화 가드), 글·댓글 반응 컴포넌트를 `ReactionBar` 하나로(각 200줄 → 데이터 출처만 다른 얇은 래퍼), `LoginPromptProvider`, `useServerEvent`
+
 ## [0.113.10] - 2026-11-23
 
 ### Fixed

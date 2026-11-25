@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
+import { renderFeed } from "@/test/render-feed";
 
 // server-only 모듈을 끌어오지 않도록 액션을 모킹(클라 단위 테스트).
 const getLikeSummaryAction = vi.fn(async () => ({ count: 5, liked: false }));
@@ -14,7 +15,7 @@ import LikeButton from "@/app/feed/like-button";
 import { FakeEventSource } from "@/test/helpers";
 
 function renderButton() {
-  return render(
+  return renderFeed(
     <FeedEventsProvider feedId="f1">
       <LikeButton
         feedId="f1"

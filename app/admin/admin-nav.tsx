@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useServerEvent } from "@/app/ui/use-server-event";
 
 const TABS = [
   { href: "/admin", label: "대시보드" },
@@ -22,16 +23,12 @@ export default function AdminNav({
   pendingReports?: number;
 }) {
   const pathname = usePathname();
-  // 미처리 신고 수를 SSE로 라이브 갱신(초기값은 서버 prop). EventSource는 쿠키 자동 전송.
+  // 미처리 신고 수를 SSE로 라이브 갱신(초기값은 서버 prop). 헤더 알림 벨과 연결 1개 공유.
   const [reports, setReports] = useState(pendingReports);
-  useEffect(() => {
-    const es = new EventSource("/api/events");
-    es.addEventListener("reports", (e) => {
-      const n = Number((e as MessageEvent).data);
-      if (Number.isFinite(n)) setReports(n);
-    });
-    return () => es.close();
-  }, []);
+  useServerEvent("reports", (data) => {
+    const n = Number(data);
+    if (Number.isFinite(n)) setReports(n);
+  });
 
   return (
     <nav className="flex gap-4 text-sm">

@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { renderFeed } from "@/test/render-feed";
 import type { CommentNode } from "@/lib/comments";
 
 const { editCommentAction } = vi.hoisted(() => ({
@@ -39,7 +40,7 @@ function renderItem(
   over: Partial<CommentNode> = {},
   props: Partial<Parameters<typeof CommentItem>[0]> = {},
 ) {
-  return render(
+  return renderFeed(
     <CommentItem
       node={node(over)}
       feedId="f1"

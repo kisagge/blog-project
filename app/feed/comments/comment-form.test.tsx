@@ -1,11 +1,6 @@
 import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
-import {
-  render,
-  screen,
-  fireEvent,
-  act,
-  cleanup,
-} from "@testing-library/react";
+import { screen, fireEvent, act, cleanup } from "@testing-library/react";
+import { renderFeed } from "@/test/render-feed";
 
 const { addCommentAction } = vi.hoisted(() => ({ addCommentAction: vi.fn() }));
 vi.mock("./comment-actions", () => ({ addCommentAction }));
@@ -26,7 +21,7 @@ afterEach(() => {
 describe("CommentForm 자동저장/복원", () => {
   test("입력 → 디바운스 후 초안 저장(최상위 박스)", () => {
     vi.useFakeTimers();
-    render(<CommentForm feedId="f1" slug="s" canParticipate />);
+    renderFeed(<CommentForm feedId="f1" slug="s" canParticipate />);
     fireEvent.change(screen.getByPlaceholderText("댓글을 입력하세요"), {
       target: { value: "잃어버리면 안 되는 긴 댓글" },
     });
@@ -39,7 +34,7 @@ describe("CommentForm 자동저장/복원", () => {
       KEY,
       JSON.stringify({ savedAt: Date.now(), data: "복원될 내용" }),
     );
-    render(<CommentForm feedId="f1" slug="s" canParticipate />);
+    renderFeed(<CommentForm feedId="f1" slug="s" canParticipate />);
     expect(
       (screen.getByPlaceholderText("댓글을 입력하세요") as HTMLTextAreaElement)
         .value,
@@ -48,7 +43,9 @@ describe("CommentForm 자동저장/복원", () => {
 
   test("답글 폼(parentId)은 자동저장 안 함", () => {
     vi.useFakeTimers();
-    render(<CommentForm feedId="f1" slug="s" parentId="c1" canParticipate />);
+    renderFeed(
+      <CommentForm feedId="f1" slug="s" parentId="c1" canParticipate />,
+    );
     fireEvent.change(screen.getByPlaceholderText("댓글을 입력하세요"), {
       target: { value: "답글 내용" },
     });
@@ -62,7 +59,7 @@ describe("CommentForm 자동저장/복원", () => {
       KEY,
       JSON.stringify({ savedAt: Date.now(), data: "제출될 내용" }),
     );
-    render(<CommentForm feedId="f1" slug="s" canParticipate />);
+    renderFeed(<CommentForm feedId="f1" slug="s" canParticipate />);
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "댓글 등록" }));
     });

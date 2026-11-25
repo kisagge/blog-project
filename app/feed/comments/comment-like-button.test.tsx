@@ -1,5 +1,6 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { screen, fireEvent, act } from "@testing-library/react";
+import { renderFeed } from "@/test/render-feed";
 
 const { toggleCommentLikeAction } = vi.hoisted(() => ({
   toggleCommentLikeAction: vi.fn().mockResolvedValue(undefined),
@@ -24,7 +25,7 @@ beforeEach(() => {
 describe("CommentLikeButton", () => {
   test("낙관 토글 + 디바운스 후 액션 1회 호출", () => {
     vi.useFakeTimers();
-    render(
+    renderFeed(
       <CommentLikeButton
         {...props}
         initialCount={2}
@@ -45,7 +46,7 @@ describe("CommentLikeButton", () => {
   test("액션 실패(429 등) 시 낙관 토글 롤백", async () => {
     vi.useFakeTimers();
     toggleCommentLikeAction.mockRejectedValueOnce(new Error("429"));
-    render(
+    renderFeed(
       <CommentLikeButton
         {...props}
         initialCount={2}
@@ -66,7 +67,7 @@ describe("CommentLikeButton", () => {
   });
 
   test("비참여자: 클릭 시 액션 미호출(로그인 모달)", () => {
-    render(
+    renderFeed(
       <CommentLikeButton
         {...props}
         initialCount={1}

@@ -1,5 +1,6 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { screen, fireEvent, act } from "@testing-library/react";
+import { renderFeed } from "@/test/render-feed";
 
 const { toggleCommentReactionAction } = vi.hoisted(() => ({
   toggleCommentReactionAction: vi.fn().mockResolvedValue(undefined),
@@ -24,7 +25,7 @@ beforeEach(() => {
 
 describe("CommentReactions", () => {
   test("기존 리액션 칩 렌더(aria-pressed·aria-label·카운트)", () => {
-    render(
+    renderFeed(
       <CommentReactions
         {...props}
         initialReactions={[{ emoji: "👍", count: 3, reacted: true }]}
@@ -36,7 +37,7 @@ describe("CommentReactions", () => {
   });
 
   test("피커 토글: aria-expanded + 메뉴 5종", () => {
-    render(<CommentReactions {...props} initialReactions={[]} />);
+    renderFeed(<CommentReactions {...props} initialReactions={[]} />);
     const trigger = screen.getByRole("button", { name: "이모지 반응 추가" });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(trigger);
@@ -47,7 +48,7 @@ describe("CommentReactions", () => {
 
   test("낙관 토글 + 디바운스 후 액션 1회 호출", () => {
     vi.useFakeTimers();
-    render(
+    renderFeed(
       <CommentReactions
         {...props}
         initialReactions={[{ emoji: "👍", count: 2, reacted: false }]}
@@ -72,7 +73,7 @@ describe("CommentReactions", () => {
   });
 
   test("비참여자: 클릭 시 액션 미호출(로그인 모달)", () => {
-    render(
+    renderFeed(
       <CommentReactions
         {...props}
         canParticipate={false}
@@ -86,7 +87,7 @@ describe("CommentReactions", () => {
   test("액션 실패(429 등) 시 낙관 토글 롤백", async () => {
     vi.useFakeTimers();
     toggleCommentReactionAction.mockRejectedValueOnce(new Error("429"));
-    render(
+    renderFeed(
       <CommentReactions
         {...props}
         initialReactions={[{ emoji: "👍", count: 2, reacted: false }]}
@@ -104,5 +105,24 @@ describe("CommentReactions", () => {
     const reverted = screen.getByRole("button", { name: "최고 반응 2개" });
     expect(reverted).toHaveAttribute("aria-pressed", "false");
     vi.useRealTimers();
+  });
+});
+
+describe("CommentReactions 피커 키보드(ARIA menu)", () => {
+  test("방향키·Home/End로 항목 이동(순환)", () => {
+    renderFeed(<CommentReactions {...props} initialReactions={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: "이모지 반응 추가" }));
+    const items = screen.getAllByRole("menuitemcheckbox");
+    expect(document.activeElement).toBe(items[0]);
+    fireEvent.keyDown(items[0], { key: "ArrowRight" });
+    expect(document.activeElement).toBe(items[1]);
+    fireEvent.keyDown(items[1], { key: "End" });
+    expect(document.activeElement).toBe(items[items.length - 1]);
+    fireEvent.keyDown(items[items.length - 1], { key: "ArrowRight" });
+    expect(document.activeElement).toBe(items[0]);
+    fireEvent.keyDown(items[0], { key: "ArrowLeft" });
+    expect(document.activeElement).toBe(items[items.length - 1]);
+    fireEvent.keyDown(items[items.length - 1], { key: "Home" });
+    expect(document.activeElement).toBe(items[0]);
   });
 });

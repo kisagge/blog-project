@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { CommentNode } from "@/lib/comments";
-import LoginRequiredModal from "../login-required-modal";
+import { useLoginPrompt } from "../login-prompt";
 import { addCommentAction, type AddCommentResult } from "./comment-actions";
 import {
   draftKey,
@@ -46,7 +46,7 @@ export default function CommentForm({
     return r;
   }, undefined);
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const modal = useRef<HTMLDialogElement>(null);
+  const promptLogin = useLoginPrompt();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 마운트: 저장된 초안 조용히 복원(댓글은 짧아 배너 없이 프리필).
@@ -82,16 +82,13 @@ export default function CommentForm({
 
   if (!canParticipate) {
     return (
-      <>
-        <button
-          type="button"
-          onClick={() => modal.current?.showModal()}
-          className="w-full rounded-lg border border-black/15 p-3 text-left text-sm text-zinc-500 dark:border-white/20"
-        >
-          {placeholder}
-        </button>
-        <LoginRequiredModal ref={modal} />
-      </>
+      <button
+        type="button"
+        onClick={promptLogin}
+        className="w-full rounded-lg border border-black/15 p-3 text-left text-sm text-zinc-500 dark:border-white/20"
+      >
+        {placeholder}
+      </button>
     );
   }
 

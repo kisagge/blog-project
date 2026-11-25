@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useServerEvent } from "@/app/ui/use-server-event";
 
 // 헤더 알림 벨. 초기 미읽음 수는 SSR에서 받고(prop), 이후 SSE로 실시간 갱신.
-// EventSource는 동일 출처 쿠키를 자동 전송 → 서버 라우트에서 세션 인증. 끊기면 자동 재연결.
+// SSE 연결은 관리자 내비와 공유(useServerEvent) — 서버 라우트가 쿠키로 세션 인증, 끊기면 자동 재연결.
 // 알림 센터(/notifications)에선 미읽음이 0으로 처리돼 종 배지가 무의미하므로,
 // 회원에게는 종 대신 **알림 설정 톱니바퀴**(/account/notifications)를 노출(관리자는 설정 페이지 없음 → 종 유지).
 export default function NotificationBell({
@@ -17,14 +18,10 @@ export default function NotificationBell({
   const [unread, setUnread] = useState(initialUnread);
   const pathname = usePathname();
 
-  useEffect(() => {
-    const es = new EventSource("/api/events");
-    es.addEventListener("unread", (e) => {
-      const n = Number((e as MessageEvent).data);
-      if (Number.isFinite(n)) setUnread(n);
-    });
-    return () => es.close();
-  }, []);
+  useServerEvent("unread", (data) => {
+    const n = Number(data);
+    if (Number.isFinite(n)) setUnread(n);
+  });
 
   if (isMember && pathname === "/notifications") {
     return (
