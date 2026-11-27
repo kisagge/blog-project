@@ -1,5 +1,5 @@
 import { getAuditPage } from "@/lib/audit";
-import Pager, { parsePage } from "@/app/admin/pager";
+import Pager, { parsePage } from "@/app/ui/pager";
 import KstTime from "@/app/ui/kst-time";
 
 export const metadata = { title: "기록 · 관리자" };

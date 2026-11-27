@@ -52,8 +52,8 @@ describe("notifications", () => {
     expect(await m.countUnread(authorId)).toBe(2);
     await m.markAllRead(authorId);
     expect(await m.countUnread(authorId)).toBe(0);
-    const list = await m.listNotifications(authorId);
-    expect(list).toHaveLength(2);
+    const { items } = await m.listNotificationsPage(authorId, 1);
+    expect(items).toHaveLength(2);
   });
 
   test("createNotification·markAllRead가 SSE 버스로 unread를 publish", async () => {
@@ -479,5 +479,33 @@ describe("notification prefs", () => {
     });
     expect(n?.body).toContain("팔로워A");
     expect(n?.url).toBe("/u/someone");
+  });
+});
+
+describe("listNotificationsPage", () => {
+  test("최신순 페이지 나눔 + 전체 개수(이전 알림도 볼 수 있게)", async () => {
+    const u = await prisma.user.create({
+      data: { email: "paging@x.com", nickname: "페이지", passwordHash: "-" },
+    });
+    const base = Date.UTC(2026, 10, 1);
+    await prisma.notification.createMany({
+      data: Array.from({ length: 35 }, (_, i) => ({
+        userId: u.id,
+        body: `알림 ${i + 1}`,
+        createdAt: new Date(base + i * 60_000),
+      })),
+    });
+    const p1 = await m.listNotificationsPage(u.id, 1);
+    expect(p1.total).toBe(35);
+    expect(p1.pageSize).toBe(m.NOTIFICATION_PAGE_SIZE);
+    expect(p1.items[0].body).toBe("알림 35");
+    expect(p1.items).toHaveLength(m.NOTIFICATION_PAGE_SIZE);
+    const p2 = await m.listNotificationsPage(u.id, 2);
+    expect(p2.items.map((n) => n.body)).toEqual(
+      Array.from(
+        { length: 35 - m.NOTIFICATION_PAGE_SIZE },
+        (_, i) => `알림 ${35 - m.NOTIFICATION_PAGE_SIZE - i}`,
+      ),
+    );
   });
 });

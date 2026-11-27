@@ -2,6 +2,16 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.117.0] - 2026-11-27
+
+### Added
+
+- **알림 센터 페이지 넘기기**: 최근 30개만 보이던 알림을 30개씩 페이지로 나눠 이전 알림까지 열람(`/notifications?page=`). 범위를 넘은 페이지는 첫 페이지로
+
+### Changed
+
+- 페이지 이동(`Pager`)을 관리자 전용에서 공용 UI(`app/ui/pager`)로 옮기고 `<nav>`에 이름(`aria-label` — 한 화면의 여러 nav를 화면 낭독기가 구분)·이전/다음 `rel` 추가
+
 ## [0.116.0] - 2026-11-27
 
 ### Added

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAdminFeedsPage } from "@/lib/feeds";
 import { DeleteFeedButton } from "@/app/admin/delete-feed-button";
 import FeedVisibilityControl from "@/app/admin/feed-visibility-control";
-import Pager, { parsePage } from "@/app/admin/pager";
+import Pager, { parsePage } from "@/app/ui/pager";
 import { publishNowAction } from "@/app/admin/feed-actions";
 import { type Visibility } from "@/lib/visibility";
 import KstTime from "@/app/ui/kst-time";
