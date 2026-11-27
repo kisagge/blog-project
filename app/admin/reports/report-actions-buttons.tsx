@@ -9,7 +9,6 @@ import {
 type Props = {
   targetType: "comment" | "feed";
   targetId: string;
-  slug: string;
   kind: "pending" | "hidden";
 };
 
@@ -22,7 +21,6 @@ const DANGER_OUTLINE =
 export default function ReportActionButtons({
   targetType,
   targetId,
-  slug,
   kind,
 }: Props) {
   const what = targetType === "comment" ? "댓글" : "글";
@@ -35,7 +33,7 @@ export default function ReportActionButtons({
         title={`${what} 숨김을 해제할까요?`}
         desc="다시 공개 화면에 표시됩니다."
         confirmLabel="숨김 해제"
-        onConfirm={() => unhideTargetAction(targetType, targetId, slug)}
+        onConfirm={() => unhideTargetAction(targetType, targetId)}
       />
     );
   }
@@ -49,7 +47,7 @@ export default function ReportActionButtons({
         desc="공개 화면(목록·상세·프로필)에서 가려집니다. 신고는 처리됨으로 바뀌고, 언제든 숨김 해제할 수 있습니다."
         confirmLabel="숨김"
         confirmClassName="bg-red-600"
-        onConfirm={() => hideTargetAction(targetType, targetId, slug)}
+        onConfirm={() => hideTargetAction(targetType, targetId)}
       />
       <ConfirmDialog
         triggerLabel="기각"
@@ -57,7 +55,7 @@ export default function ReportActionButtons({
         title="신고를 기각할까요?"
         desc="콘텐츠는 그대로 두고 신고만 기각 처리합니다."
         confirmLabel="기각"
-        onConfirm={() => dismissReportsAction(targetType, targetId, slug)}
+        onConfirm={() => dismissReportsAction(targetType, targetId)}
       />
     </>
   );

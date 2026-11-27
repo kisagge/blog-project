@@ -64,7 +64,6 @@ export default async function AdminReportsPage() {
                   <ReportActionButtons
                     targetType={q.targetType}
                     targetId={q.targetId}
-                    slug={q.slug}
                     kind="pending"
                   />
                 </div>

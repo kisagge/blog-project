@@ -509,3 +509,38 @@ describe("listNotificationsPage", () => {
     );
   });
 });
+
+describe("notifyContentModeration", () => {
+  test("숨김·해제 안내와 이동 링크(숨긴 글은 열 수 없어 링크 없음)", async () => {
+    const u = await prisma.user.create({
+      data: { email: "mod@x.com", nickname: "모더", passwordHash: "-" },
+    });
+    await m.notifyContentModeration({
+      userId: u.id,
+      targetType: "comment",
+      targetId: "c9",
+      slug: "s",
+      hidden: true,
+    });
+    await m.notifyContentModeration({
+      userId: u.id,
+      targetType: "feed",
+      targetId: "f9",
+      slug: "s",
+      hidden: true,
+    });
+    await m.notifyContentModeration({
+      userId: u.id,
+      targetType: "feed",
+      targetId: "f9",
+      slug: "s",
+      hidden: false,
+    });
+    const { items } = await m.listNotificationsPage(u.id, 1);
+    expect(items.map((n) => [n.body, n.url]).reverse()).toEqual([
+      ["회원님의 댓글이 신고 검토 후 가려졌습니다.", "/feed/s?c=c9"],
+      ["회원님의 글이 신고 검토 후 가려졌습니다.", null],
+      ["회원님의 글이 다시 공개되었습니다.", "/feed/s"],
+    ]);
+  });
+});

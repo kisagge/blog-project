@@ -176,6 +176,7 @@ DB 로직은 prisma 호출을 mock하면 동어반복이 되므로, **임시 SQL
 - **신고 적재**: `Report(targetType,targetId,reporterId,reason,detail,status)`에 `@@unique([targetType,targetId,reporterId])`로 **회원당 대상 1회**. 서버에서 본인·관리자 콘텐츠·이미 숨김 대상을 거부하고, SQLite는 `createMany.skipDuplicates`를 지원하지 않아 **unique 충돌(P2002) catch로 중복 dedupe**. 새 대상의 첫 신고에만 예약 관리자에게 인앱+푸시 알림(브리게이딩 스팸 완화).
 - **복구 가능한 숨김**: 사용자 삭제(`deletedAt`)와 별개의 `hiddenAt`(Comment·Feed)으로 모더레이션 숨김을 표현. 숨김 시 해당 대상의 pending 신고를 `resolved`로. 숨김 콘텐츠는 **목록(searchFeeds)·프로필(listMemberPosts·getCommentsByUser)·상세(관리자만 열람)·댓글 트리(본문 비움)** 모든 소비처에서 가려지고, 관리자가 언제든 복구.
 - **관리자 큐**(`/admin/reports`): "대기 중"/"가려진 콘텐츠" **하위 탭**으로 분리. 대상별로 신고를 묶어 신고 수·사유·미리보기를 보여주고 숨김/기각, 가려진 콘텐츠 목록에서 숨김 해제. 미처리 수는 관리자 내비 배지로 — **SSE(`reports` 채널)로 새 신고·처리 시 새로고침 없이 라이브 갱신**.
+- **작성자 알림·직접 숨김**: 숨김·숨김 해제 시 회원 작성자에게 인앱 알림(댓글은 글의 해당 댓글 위치로, 숨긴 글은 작성자도 열 수 없어 링크 없음 — 관리자·탈퇴 회원 콘텐츠는 생략). 신고가 없어도 관리자가 회원 글 상세에서 바로 숨김/해제(같은 처리). 처리 액션은 대상 종류·id만 받고 **글 주소·작성자는 DB에서**(`findReportTarget`) 읽어, 서버 액션 인자를 조작해 다른 경로를 재검증하거나 엉뚱한 회원에게 알림을 보내지 못하게 한다.
 
 ### 4.13 관리자 통계 대시보드
 

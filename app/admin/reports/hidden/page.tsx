@@ -54,7 +54,6 @@ export default async function AdminHiddenReportsPage() {
                   <ReportActionButtons
                     targetType={h.targetType}
                     targetId={h.targetId}
-                    slug={h.slug}
                     kind="hidden"
                   />
                 </div>
