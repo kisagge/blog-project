@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal";
+import { rssCache } from "@/lib/rss";
 import { SeriesSchema, fieldErrors } from "@/lib/validation";
 import {
   createSeries,
@@ -20,6 +21,7 @@ function revalidateSeries() {
   revalidatePath("/admin/series");
   revalidatePath("/series", "layout");
   revalidatePath("/feed", "layout"); // 글 상세 시리즈 박스
+  rssCache.clear(); // 시리즈 RSS
 }
 
 function toInput(formData: FormData) {

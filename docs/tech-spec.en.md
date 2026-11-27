@@ -308,6 +308,19 @@ Saves the pre-save version so an admin post can be recovered if overwritten by m
 - **Line-ending normalization (found during verification)**: browsers submit textarea values with **CRLF**, so comparing against bodies saved via other paths (LF) made every line look changed. Both `bodyChanged` and the diff now treat CRLF/LF and a missing trailing newline as identical (avoiding spurious revisions and edit dates).
 - **Admin landmark**: the admin layout had no `main` landmark; page content is now wrapped in `<main>`. Because several revisions can share a title, list link names include time and length so they're distinguishable in a links list.
 
+### 4.27 Response caching & SQLite tuning
+
+Measured, repeated computation and needless writes were cut (one container, so an in-process cache is enough).
+
+- **Shared TTL cache (`lib/ttl-cache.ts`)**: expiry + size cap (LRU), in-flight Promise sharing (concurrent requests compute once), failures are not stored.
+- **RSS**: the finished XML is cached for 5 minutes + `Cache-Control: public, max-age=300`; converting 20 posts from markdown to HTML used to run per request (local measurement 89ms → 3ms). Saving/deleting a post, visibility or series changes and scheduled publishing clear it immediately; the maintenance check runs before the cache.
+- **OG images**: output depends only on (title, subtitle), so PNGs are cached per key (104ms → 3ms) + `max-age=3600`; the post OG reads only the visibility fields, not the body.
+- **Lazy editor preview**: `MarkdownContent` (KaTeX + highlighting, ~600KB) loads via `next/dynamic` only when the preview tab opens.
+- **SQLite `synchronous=NORMAL`**: the recommended setting with WAL. The default FULL fsyncs every commit, and since better-sqlite3 is synchronous the main thread stalled meanwhile.
+- **Redundant indexes dropped**: three plain indexes equal to a unique index's prefix (View, FeedReaction, CommentReaction); `EXPLAIN QUERY PLAN` confirms the unique indexes serve as covering indexes.
+- **Duplicate lookups removed**: lookups called by both generateMetadata and the page (series/tag by slug, public profile, visible-series check) are wrapped in React `cache()` — once per request.
+- **Orphan upload cleanup**: instead of loading every post and revision body into memory, it picks only candidate files past the grace period and checks each with one SQL `instr` query.
+
 ## 5. Outcomes
 
 - Runtime image **2.05GB → 876MB (−57%)**, first deploy pull **10m32s → 37s**

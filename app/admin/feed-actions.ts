@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
+import { rssCache } from "@/lib/rss";
 import type { FormState } from "@/lib/form-state";
 import {
   FeedFormSchema,
@@ -34,6 +35,7 @@ function revalidateFeed() {
   revalidatePath("/feed", "layout"); // 목록 + 모든 상세
   revalidatePath("/series", "layout"); // 시리즈 목록·페이지(배정 변동 반영)
   revalidatePath("/admin");
+  rssCache.clear(); // RSS(메모리 캐시)도 바로 반영
 }
 
 export async function createFeed(

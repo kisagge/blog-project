@@ -13,14 +13,15 @@ import { uploadImage } from "@/app/admin/upload-action";
 import { ABOUT_MAX_LENGTH } from "@/lib/validation";
 
 describe("AboutEditor", () => {
-  test("초기값을 라벨 연결된 textarea에 채우고, 미리보기 탭은 공개 렌더러로 표시", () => {
+  test("초기값을 라벨 연결된 textarea에 채우고, 미리보기 탭은 공개 렌더러로 표시", async () => {
     render(<AboutEditor initial={"## 안녕하세요\n\n소개 글"} />);
     const ta = screen.getByLabelText("소개 본문 (마크다운)");
     expect(ta).toHaveValue("## 안녕하세요\n\n소개 글");
 
     fireEvent.click(screen.getByRole("tab", { name: "미리보기" }));
+    // 미리보기 렌더러는 지연 로드(편집기 첫 로드에 KaTeX·하이라이트를 받지 않음)
     expect(
-      screen.getByRole("heading", { level: 2, name: "안녕하세요" }),
+      await screen.findByRole("heading", { level: 2, name: "안녕하세요" }),
     ).toBeInTheDocument();
     expect(document.getElementById("about-panel-write")).toHaveAttribute(
       "hidden",

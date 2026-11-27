@@ -51,3 +51,24 @@ describe("rss.xml", () => {
     expect(xml).toContain('src="https://by-jang-blog.xyz/uploads/p.png"');
   });
 });
+
+describe("rss.xml 캐시", () => {
+  test("TTL 동안 같은 응답을 재사용(본문 변환 반복 방지), 캐시 헤더, 글 변경 시 비우면 바로 반영", async () => {
+    const { rssCache } = await import("@/lib/rss");
+    rssCache.clear();
+    const first = await GET();
+    expect(first.headers.get("Cache-Control")).toBe("public, max-age=300");
+    await prisma.feed.create({
+      data: {
+        slug: "rss-new",
+        title: "새글RSS",
+        content: "x",
+        visibility: "public",
+        status: "published",
+      },
+    });
+    expect(await (await GET()).text()).not.toContain("새글RSS"); // 캐시
+    rssCache.clear(); // 관리자 글 저장·예약 발행 시 호출
+    expect(await (await GET()).text()).toContain("새글RSS");
+  });
+});

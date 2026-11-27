@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { SITE_NAME, SITE_ORIGIN } from "@/lib/share";
+import { createTtlCache } from "@/lib/ttl-cache";
 
 const SITE_HOST = new URL(SITE_ORIGIN).host;
 
@@ -20,9 +21,29 @@ function loadFont(): Promise<Buffer> {
   return fontPromise;
 }
 
+// 렌더 결과(PNG) 캐시. 출력은 (제목, 부제)로만 정해지는데, 카카오·슬랙·X 크롤러가 공유될 때마다 와서
+// 매번 satori+resvg로 다시 그리면 CPU·메모리 순간 부담이 크다. 제목이 바뀌면 키가 달라져 바로 새로 그림.
+const pngCache = createTtlCache<ArrayBuffer>({ ttlMs: 6 * 3600_000, max: 100 });
+const CACHE_SECONDS = 3600; // 크롤러·CDN 쪽 캐시(제목 수정이 최대 1시간 늦게 반영될 수 있음)
+
 export async function ogImage(
   title: string,
   subtitle = SITE_NAME,
+): Promise<Response> {
+  const png = await pngCache.getOrSet(`${subtitle}\n${title}`, async () =>
+    (await renderOg(title, subtitle)).arrayBuffer(),
+  );
+  return new Response(png, {
+    headers: {
+      "Content-Type": OG_CONTENT_TYPE,
+      "Cache-Control": `public, max-age=${CACHE_SECONDS}`,
+    },
+  });
+}
+
+async function renderOg(
+  title: string,
+  subtitle: string,
 ): Promise<ImageResponse> {
   const font = await loadFont();
   const text = title.length > 70 ? `${title.slice(0, 70)}…` : title;

@@ -1,4 +1,4 @@
-import { getFeedBySlug } from "@/lib/feeds";
+import { prisma } from "@/lib/prisma";
 import { ogImage, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/og";
 import { getPublicEnabled } from "@/lib/site-config";
 
@@ -14,8 +14,12 @@ export default async function Image({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  // 공개 판정에 필요한 필드만(본문 등 전체 행은 불필요).
   const [feed, open] = await Promise.all([
-    getFeedBySlug(slug),
+    prisma.feed.findUnique({
+      where: { slug },
+      select: { title: true, visibility: true, status: true, hiddenAt: true },
+    }),
     getPublicEnabled(),
   ]);
   // 점검 중엔 페이지가 막혀 있으니 제목도 노출하지 않는다(기본 카드).

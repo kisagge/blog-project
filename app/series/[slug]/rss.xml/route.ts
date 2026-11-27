@@ -1,7 +1,7 @@
 import { getSeriesBySlug, getSeriesPosts } from "@/lib/series";
 import { SITE_ORIGIN } from "@/lib/share";
 import { prisma } from "@/lib/prisma";
-import { renderRssFeed } from "@/lib/rss";
+import { renderRssFeed, rssCache, rssResponse } from "@/lib/rss";
 import { markdownToFeedHtml } from "@/lib/rss-content";
 import { getPublicEnabled, maintenanceResponse } from "@/lib/site-config";
 import { postedAt } from "@/lib/feed-dates";
@@ -15,12 +15,21 @@ export async function GET(
 ) {
   if (!(await getPublicEnabled())) return maintenanceResponse();
   const { slug } = await params;
+  const xml = await rssCache.getOrSet(`series:${slug}`, () =>
+    buildSeriesRss(slug),
+  );
+  return xml === null
+    ? new Response("Not found", { status: 404 })
+    : rssResponse(xml);
+}
+
+async function buildSeriesRss(slug: string): Promise<string | null> {
   const series = await getSeriesBySlug(slug);
-  if (!series) return new Response("Not found", { status: 404 });
+  if (!series) return null;
 
   // 글 RSS와 동일한 public 필터(anon). 공개 글 0개 시리즈는 존재 자체 은닉(시리즈 페이지와 일관).
   const posts = await getSeriesPosts(series.id, "anon");
-  if (posts.length === 0) return new Response("Not found", { status: 404 });
+  if (posts.length === 0) return null;
 
   // 목록 select엔 본문이 없어 이미 가시성 필터를 통과한 id로만 본문을 1쿼리 조회.
   const bodies = new Map(
@@ -32,7 +41,7 @@ export async function GET(
     ).map((b) => [b.id, b.content]),
   );
 
-  const xml = renderRssFeed({
+  return renderRssFeed({
     title: `${series.title} · BY Playground`,
     link: `${SITE_ORIGIN}/series/${series.slug}`,
     description: series.description ?? `${series.title} 연재`,
@@ -49,9 +58,5 @@ export async function GET(
         ),
       })),
     ),
-  });
-
-  return new Response(xml, {
-    headers: { "Content-Type": "application/rss+xml; charset=utf-8" },
   });
 }

@@ -14,14 +14,15 @@ import { uploadPostImage } from "@/app/account/posts/image-action";
 beforeEach(() => localStorage.clear());
 
 describe("PostEditor 미리보기", () => {
-  test("미리보기 탭이 본문 마크다운을 렌더하고 작성 패널은 숨김", () => {
+  test("미리보기 탭이 본문 마크다운을 렌더하고 작성 패널은 숨김", async () => {
     render(<PostEditor />);
     const ta = screen.getByLabelText("본문 (마크다운)");
     fireEvent.change(ta, { target: { value: "# 미리보기제목" } });
 
     fireEvent.click(screen.getByRole("tab", { name: "미리보기" }));
+    // 미리보기 렌더러는 지연 로드(편집기 첫 로드에 KaTeX·하이라이트를 받지 않음)
     expect(
-      screen.getByRole("heading", { level: 1, name: "미리보기제목" }),
+      await screen.findByRole("heading", { level: 1, name: "미리보기제목" }),
     ).toBeInTheDocument();
     // textarea를 담은 작성 패널은 hidden(폼 제출 위해 마운트는 유지)
     expect(document.getElementById("post-panel-write")).toHaveAttribute(

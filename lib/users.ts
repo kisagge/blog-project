@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { uploadNameFromUrl } from "@/lib/save-image";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_PAGE_SIZE, pageWindow } from "@/lib/pagination";
@@ -107,7 +108,7 @@ export type MemberProfile = {
 };
 
 // 공개 프로필용 단건. 회원(role:"member")만 — 예약 admin/없는 id는 null(→ 라우트 404).
-export async function getMemberProfile(
+async function getMemberProfileUncached(
   id: string,
 ): Promise<MemberProfile | null> {
   const u = await prisma.user.findFirst({
@@ -297,3 +298,6 @@ export async function verifyMemberPassword(
   if (!u || u.role !== "member") return false;
   return verifyPassword(password, u.passwordHash);
 }
+
+// 공개 프로필 조회 — 같은 요청 안(generateMetadata + 페이지 등)의 중복 조회를 1회로(React cache).
+export const getMemberProfile = cache(getMemberProfileUncached);

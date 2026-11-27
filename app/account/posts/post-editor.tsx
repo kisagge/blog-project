@@ -8,7 +8,7 @@ import {
   imageMarkdown,
   IMAGE_ALT_HINT,
 } from "@/lib/textarea";
-import MarkdownContent from "@/app/markdown-content";
+import MarkdownPreview from "@/app/markdown-preview";
 import MarkdownHelp from "./markdown-help";
 import DraftRestoreBanner from "@/app/draft-restore-banner";
 import { draftKey } from "@/lib/draft-store";
@@ -227,7 +227,7 @@ export default function PostEditor({
             (contentEmpty ? (
               <p className="text-zinc-500">미리볼 내용이 없습니다.</p>
             ) : (
-              <MarkdownContent content={content} />
+              <MarkdownPreview content={content} />
             ))}
         </div>
 

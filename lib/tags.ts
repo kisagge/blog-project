@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { ViewerRole } from "@/lib/visibility";
 import { authorScopeWhere, visibleFeedWhere } from "@/lib/feed-access";
@@ -84,7 +85,7 @@ export async function getTagsWithCounts(
 }
 
 // 슬러그 → 태그(표시명). 없으면 null. 태그 전용 라우트 제목용.
-export async function getTagBySlug(
+async function getTagBySlugUncached(
   slug: string,
 ): Promise<{ name: string; slug: string } | null> {
   return prisma.tag.findFirst({
@@ -129,3 +130,6 @@ export async function setFeedTags(
     }
   });
 }
+
+// 태그 slug 조회 — 같은 요청 안(generateMetadata + 페이지 등)의 중복 조회를 1회로(React cache).
+export const getTagBySlug = cache(getTagBySlugUncached);
