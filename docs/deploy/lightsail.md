@@ -119,6 +119,18 @@ sudo certbot --nginx -d your-domain.com    # Let's Encrypt 발급 + 자동 갱�
 
 > `/uploads` location을 추가했다면 **반드시 `nginx -t && systemctl reload nginx`**. 빠지면 업로드 이미지가 404.
 
+**요청 본문 크기·동시 연결 (필수)** — nginx 기본값은 본문 **1MB**라 앱 한도(이미지 5MB, 서버 액션 6MB)보다 작아 1MB 넘는 사진 업로드가 nginx에서 413으로 막힌다. 실시간 연결(SSE)은 연결당 nginx 연결 2개(클라이언트·앱)를 쓰므로 기본 `worker_connections 768`이면 동시 접속 약 380명에서 한계.
+
+```bash
+echo 'client_max_body_size 8m;' | sudo tee /etc/nginx/conf.d/byjang-upload.conf   # http 블록에 포함(conf.d/*.conf)
+sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak-$(date +%F)
+sudo sed -i 's/worker_connections 768;/worker_connections 2048;/' /etc/nginx/nginx.conf
+sudo nginx -t && sudo systemctl reload nginx
+sudo nginx -T 2>/dev/null | grep -nE "client_max_body_size|worker_connections"   # 확인
+```
+
+> 앱도 실시간 연결을 **IP당 20개·전체 500개**로 제한한다(`lib/sse.ts`, 넘으면 429) — 요청 수 제한만으로는 열어 둔 연결 수를 막지 못하기 때문.
+
 ### 6-1. HTTP/2 활성화 (필수)
 
 certbot이 만드는 443 블록은 `listen 443 ssl;`뿐이라 **HTTP/1.1로 서빙**된다. 글 상세는 SSE 연결 2개(알림 `/api/events`·실시간 댓글 `/api/feed-events`)를 유지하므로, HTTP/1.1에선 브라우저의 **호스트당 6연결 한도**에 글 탭 3개 정도면 닿아 다음 탭·요청이 "Loading"에서 멈춘다. HTTP/2는 연결 하나에 요청을 다중화해 이 한도가 사실상 사라진다(앱↔nginx 구간은 `proxy_http_version 1.1` 그대로 — 로컬 연결이라 무관).

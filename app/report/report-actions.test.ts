@@ -7,6 +7,11 @@ vi.mock("@/lib/reports", () => ({
 }));
 vi.mock("@/lib/notifications", () => ({ notifyAdminReport: vi.fn() }));
 vi.mock("@/lib/events", () => ({ publishReports: vi.fn() }));
+vi.mock("@/lib/dal", () => ({ getViewerRole: vi.fn(async () => "member") }));
+vi.mock("@/lib/feed-access", () => ({
+  getReadableFeed: vi.fn(async () => ({ id: "f1", slug: "s" })),
+  getReadableCommentFeed: vi.fn(async () => ({ id: "f1", slug: "s" })),
+}));
 
 import { submitReportAction } from "@/app/report/report-actions";
 import { getCommentActor } from "@/lib/comment-actor";
@@ -65,5 +70,27 @@ describe("submitReportAction", () => {
     ).toEqual({
       error: TOO_MANY_REQUESTS,
     });
+  });
+});
+
+describe("신고 대상 검증(서버 액션 인자는 임의 값일 수 있음)", () => {
+  test("허용되지 않은 대상 종류는 신고를 만들지 않음(관리자 알림 남발·처리 불가 신고 방지)", async () => {
+    gca.mockResolvedValue({ userId: "u-type", nickname: "n", role: "member" });
+    const r = await submitReportAction(
+      { targetType: "x1" as never, targetId: "f1" },
+      formData({ reason: "spam" }),
+    );
+    expect(r).toEqual({ error: "신고할 수 없는 대상입니다." });
+    expect(cr).not.toHaveBeenCalled();
+  });
+
+  test("신고자가 볼 수 없는 대상(비공개·숨김·다른 글의 댓글 등)은 거부", async () => {
+    const { getReadableCommentFeed } = await import("@/lib/feed-access");
+    vi.mocked(getReadableCommentFeed).mockResolvedValueOnce(null);
+    gca.mockResolvedValue({ userId: "u-read", nickname: "n", role: "member" });
+    expect(
+      await submitReportAction(ARGS, formData({ reason: "spam" })),
+    ).toEqual({ error: "신고할 수 없는 대상입니다." });
+    expect(cr).not.toHaveBeenCalled();
   });
 });
