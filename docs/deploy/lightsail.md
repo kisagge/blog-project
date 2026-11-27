@@ -154,8 +154,8 @@ curl -sI --http2 https://your-domain.com -o /dev/null -w '%{http_version}\n'   #
   - **`compose.yaml` 자동 동기화**: 배포마다 레포의 `compose.yaml`을 받아 `docker compose config`로 검증한 뒤, 서버 파일과 다르면 `compose.yaml.bak-<시각>`으로 백업하고 **diff를 배포 로그에 남긴 뒤** 교체한다(같으면 그대로, 검증 실패면 아무것도 바꾸지 않고 중단). 서버에서 compose를 직접 고치면 다음 배포에 레포 버전으로 되돌아가므로 **변경은 레포에서** 할 것. 레포 compose에는 healthcheck, `UPLOAD_DIR=/data/uploads`(볼륨), 로그 회전(`json-file` 10MB×3)이 들어 있다. 서버 `.env`의 `UPLOAD_DIR`이 상대 경로(`.env.example` 그대로)여도 compose의 `environment`가 우선한다.
 - **수동 업데이트(특정 커밋)**: `cd /srv/byjang && DEPLOY_SHA=<sha> sh -c "$(curl -fsSL https://raw.githubusercontent.com/kisagge/blog-project/main/scripts/deploy-remote.sh)"` — 또는 GitHub에서 Deploy 워크플로 수동 실행(main 최신).
 - **롤백**: 위 수동 업데이트를 이전 커밋 sha로 실행(배포 전 백업도 함께 남음). 스키마를 되돌려야 하면 배포 직전 백업(`data/backups/prod-<시각>.db.gz`)으로 7-1 복원 절차의 서버 교체 단계를 따른다.
-- **DB 백업**: 매일 04:00 KST `DB Backup` 워크플로가 서버 로컬 백업(`/srv/byjang/data/backups`, 14일 회전)을 만들고, **암호화한 사본을 GitHub 아티팩트로 90일 보관**(오프사이트 — 아래 7-1). 즉석 수동 백업: `cp /srv/byjang/data/prod.db /srv/byjang/data/prod.db.$(date +%F)`.
-- **보존 정리**: 앱이 하루 1회(배포 후 10분 뒤 첫 실행) 오래된 조회 기록(180일)·알림(읽음 90일·안 읽음 1년)·감사 로그(1년)·재설정 코드(1일)를 지운다. 확인: `docker compose logs web | grep retention` → `[retention] views=… notifications=… auditLogs=… resetCodes=…`. 기간은 `lib/retention.ts`의 `RETENTION_DAYS`.
+- **DB 백업**: 매일 04:00 KST `DB Backup` 워크플로가 서버 로컬 백업(`/srv/byjang/data/backups`, 14일 회전)을 만들고, **암호화한 사본을 GitHub 아티팩트로 90일 보관**(오프사이트 — 아래 7-1). 업로드 이미지(`data/uploads`)도 같은 공개키로 암호화한 묶음을 별도 아티팩트(`uploads-backup-…`)로 함께 보관. 즉석 수동 백업: `cp /srv/byjang/data/prod.db /srv/byjang/data/prod.db.$(date +%F)`.
+- **보존 정리**: 앱이 하루 1회(배포 후 10분 뒤 첫 실행) 오래된 조회 기록(180일)·알림(읽음 90일·안 읽음 1년)·감사 로그(1년)·재설정 코드(1일)를 지운다. 확인: `docker compose logs web | grep retention` → `[retention] views=… notifications=… auditLogs=… resetCodes=… orphanUploads=…`. 기간은 `lib/retention.ts`의 `RETENTION_DAYS`. 같은 실행에서 **어디에서도 참조하지 않고 30일 지난 업로드 파일**(작성 취소·본문에서 뺀 이미지)도 지운다(`lib/upload-cleanup.ts`).
 
 ### 7-1. 오프사이트 백업 (암호화 아티팩트)
 
@@ -181,6 +181,11 @@ gh run download <run-id> -D restore/          # restore/db-backup-prod-YYYYMMDD-
 age -d -i ~/byjang-backup-key.txt -o prod.db.gz restore/*/prod-*.db.gz.age
 gunzip prod.db.gz && sqlite3 prod.db 'PRAGMA integrity_check;'   # → ok
 # 서버 교체: docker compose stop web → /srv/byjang/data/prod.db 덮어쓰기(+ -wal/-shm 삭제) → docker compose start web
+
+# 업로드 이미지(같은 실행의 uploads-backup-… 아티팩트)
+age -d -i ~/byjang-backup-key.txt -o uploads.tar.gz restore/uploads-*/uploads-*.tar.gz.age
+tar -tzf uploads.tar.gz | head                                    # uploads/<uuid>.png …
+# 서버 교체: tar -xzf uploads.tar.gz -C /srv/byjang/data   (→ /srv/byjang/data/uploads/)
 ```
 
 - 정기 점검: 분기마다 한 번 위 복원 절차로 최신 사본이 열리는지(`integrity_check` = ok) 확인 권장.

@@ -2,7 +2,7 @@ name: DB Backup
 
 # 매일 04:00 KST(19:00 UTC) + 수동 실행. 실행 중인 web 컨테이너에서 로컬 백업 스크립트 호출.
 # 기존 배포와 동일한 SSH 시크릿 재사용(새 크레덴셜 없음). 백업은 $DEPLOY_DIR/data/backups에 적재.
-# 오프사이트: 최신 백업을 runner로 가져와 age 공개키(BACKUP_AGE_RECIPIENT)로 암호화한 뒤
+# 오프사이트: 최신 DB 백업 + 업로드 이미지 묶음을 runner로 가져와 age 공개키(BACKUP_AGE_RECIPIENT)로 암호화한 뒤
 # 워크플로 아티팩트(90일)로 보관 — 인스턴스 유실 대비. 저장소가 공개라 아티팩트는 누구나 받을 수 있으므로
 # 반드시 암호화하며, CI엔 공개키만 있어 복호화 불가(개인키는 운영자만 보관). 복원: docs/deploy/lightsail.md.
 on:
@@ -65,9 +65,21 @@ jobs:
           $SSH "cat $BACKUPS/$NAME" > "$NAME"
           gzip -t "$NAME"  # 손상·잘림 검사(평문 단계에서만 가능)
           age -r "$AGE_RECIPIENT" -o "$NAME.age" "$NAME"
-          rm -f "$NAME" ~/.ssh/backup_key  # 평문·키는 runner에 남기지 않음
+          # 업로드 이미지(DB엔 경로만 있음 — 인스턴스를 잃으면 본문·아바타 이미지가 사라진다).
+          # 서버에서 tar로 묶어 스트리밍 → 목록 검사 → 같은 공개키로 암호화. 폴더가 없으면 빈 묶음.
+          # 묶기가 실패해도(권한 등) DB 사본은 보관되도록 경고만 남긴다.
+          UPLOADS="uploads-${NAME#prod-}"; UPLOADS="${UPLOADS%.db.gz}.tar.gz"
+          if $SSH "cd $DEPLOY_DIR/data && if [ -d uploads ]; then tar -czf - uploads; else tar -czf - --files-from /dev/null; fi" > "$UPLOADS" \
+            && tar -tzf "$UPLOADS" > uploads.list; then  # 목록이 읽혀야(손상·잘림 아님) 보관
+            echo "업로드 파일 $(grep -vc '/$' uploads.list || true)개"
+            age -r "$AGE_RECIPIENT" -o "$UPLOADS.age" "$UPLOADS"
+            echo "UPLOADS=$UPLOADS" >> "$GITHUB_ENV"
+          else
+            echo "::warning::업로드 이미지 묶기 실패 — DB 사본만 보관"
+          fi
+          rm -f "$NAME" "$UPLOADS" uploads.list ~/.ssh/backup_key  # 평문·키는 runner에 남기지 않음
           echo "NAME=$NAME" >> "$GITHUB_ENV"
-          ls -l "$NAME.age"
+          ls -l ./*.age
 
       - name: 암호화 사본을 아티팩트로 보관
         if: steps.offsite.outputs.enabled == 'true'
@@ -75,5 +87,14 @@ jobs:
         with:
           name: db-backup-${{ env.NAME }}
           path: ${{ env.NAME }}.age
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: 업로드 이미지 묶음을 아티팩트로 보관
+        if: steps.offsite.outputs.enabled == 'true' && env.UPLOADS != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: uploads-backup-${{ env.UPLOADS }}
+          path: ${{ env.UPLOADS }}.age
           retention-days: 90
           if-no-files-found: error
