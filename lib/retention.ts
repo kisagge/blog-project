@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { startBackgroundTask, stopBackgroundTask } from "@/lib/background-task";
 import { DAY_MS, kstDayOf } from "@/lib/kst";
+import { pruneOrphanUploads } from "@/lib/upload-cleanup";
 
 // 계속 쌓이기만 하는 기록의 보존 기간(일). 단일 SQLite·512MB 인스턴스라 무한 증가를 막는다.
 // - 조회 기록: 통계·읽기 지표는 최대 30일만 읽고 중복 판정은 당일만 본다 → 넉넉히 180일.
@@ -64,8 +65,10 @@ export async function pruneOldRecords(
 
 async function pruneAndLog(): Promise<void> {
   const r = await pruneOldRecords();
+  // 어디에서도 참조하지 않는 오래된 업로드 파일(작성 취소·본문에서 뺀 이미지) 정리.
+  const u = await pruneOrphanUploads();
   console.log(
-    `[retention] views=${r.views} notifications=${r.notifications} auditLogs=${r.auditLogs} resetCodes=${r.resetCodes}`,
+    `[retention] views=${r.views} notifications=${r.notifications} auditLogs=${r.auditLogs} resetCodes=${r.resetCodes} orphanUploads=${u.deleted}`,
   );
 }
 
