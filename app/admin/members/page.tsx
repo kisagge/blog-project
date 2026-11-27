@@ -4,7 +4,7 @@ import {
   WithdrawMemberButton,
 } from "@/app/admin/block-user-button";
 import MemberTabs from "@/app/admin/member-tabs";
-import Pager, { parsePage } from "@/app/admin/pager";
+import Pager, { parsePage } from "@/app/ui/pager";
 
 export const metadata = { title: "회원 · 관리자" };
 

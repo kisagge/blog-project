@@ -1,18 +1,29 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  listNotifications,
+  listNotificationsPage,
   notificationRecipientId,
 } from "@/lib/notifications";
+import Pager, { parsePage } from "@/app/ui/pager";
 import MarkRead from "./mark-read";
 import KstTime from "@/app/ui/kst-time";
 
 export const metadata = { title: "알림" };
 
-export default async function NotificationsPage() {
+export default async function NotificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const recipientId = await notificationRecipientId();
   if (!recipientId) redirect("/signin");
-  const items = await listNotifications(recipientId);
+  const page = parsePage((await searchParams).page);
+  const { items, total, pageSize } = await listNotificationsPage(
+    recipientId,
+    page,
+  );
+  // 범위를 넘은 페이지(알림이 정리돼 줄어든 경우 등)는 첫 페이지로.
+  if (items.length === 0 && page > 1) redirect("/notifications");
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
@@ -34,6 +45,13 @@ export default async function NotificationsPage() {
           ))}
         </ul>
       )}
+      <Pager
+        page={page}
+        total={total}
+        pageSize={pageSize}
+        basePath="/notifications"
+        label="알림 페이지"
+      />
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { getSession } from "@/lib/dal";
 import { ensureAdminUser, findAdminUserId } from "@/lib/admin-user";
 import { publishUnread } from "@/lib/events";
 import { commentPermalink } from "@/lib/share";
+import { pageWindow } from "@/lib/pagination";
 
 // 회원 알림 환경설정(종류별 on/off). off면 해당 이벤트는 인앱·푸시 모두 미생성.
 export type NotificationPrefs = {
@@ -82,12 +83,25 @@ async function createNotifications(
     publishUnread(userId, countMap.get(userId) ?? 0);
 }
 
-export async function listNotifications(userId: string, take = 30) {
-  return prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take,
-  });
+export const NOTIFICATION_PAGE_SIZE = 30;
+
+// 알림 센터 한 페이지(최신순) + 전체 개수. 이전 알림도 페이지를 넘겨 볼 수 있다(보존 기간은 lib/retention).
+export async function listNotificationsPage(
+  userId: string,
+  page: number,
+  pageSize = NOTIFICATION_PAGE_SIZE,
+) {
+  const { skip, take } = pageWindow(page, pageSize);
+  const [items, total] = await Promise.all([
+    prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+    }),
+    prisma.notification.count({ where: { userId } }),
+  ]);
+  return { items, total, pageSize };
 }
 
 export async function countUnread(userId: string): Promise<number> {
