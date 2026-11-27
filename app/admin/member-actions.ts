@@ -5,6 +5,8 @@ import { verifySession } from "@/lib/dal";
 import { approveUser, blockUser, unblockUser, rejectUser } from "@/lib/users";
 import { logAudit } from "@/lib/audit";
 import { withdrawMember } from "@/lib/withdrawal";
+import { sendSignupResult } from "@/lib/mailer";
+import { swallow } from "@/lib/log";
 
 // 관리자 회원 액션: 가입 승인·거절, 차단·해제.
 
@@ -17,10 +19,25 @@ async function memberLabel(id: string): Promise<string> {
   return u?.nickname ?? id.slice(0, 8);
 }
 
+// 승인·거절 결과를 신청자에게 메일로(best-effort — 메일 실패가 처리를 되돌리지 않게).
+async function mailSignupResult(id: string, result: "approved" | "rejected") {
+  const u = await prisma.user.findUnique({
+    where: { id },
+    select: { email: true, nickname: true },
+  });
+  if (!u) return;
+  try {
+    await sendSignupResult(u.email, u.nickname, result);
+  } catch (e) {
+    swallow("member:signup-mail")(e);
+  }
+}
+
 export async function approveUserAction(formData: FormData) {
   await verifySession();
   const id = String(formData.get("id") ?? "");
   await approveUser(id);
+  await mailSignupResult(id, "approved");
   await logAudit({
     action: "member.approve",
     targetType: "member",
@@ -35,6 +52,7 @@ export async function rejectUserAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const reason = String(formData.get("reason") ?? "");
   await rejectUser(id, reason);
+  await mailSignupResult(id, "rejected"); // 사유는 신청자에게 보내지 않음(관리자 참고용)
   await logAudit({
     action: "member.reject",
     targetType: "member",

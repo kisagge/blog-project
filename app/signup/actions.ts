@@ -2,6 +2,8 @@
 import { SignupSchema, fieldErrors } from "@/lib/validation";
 import { createPendingUser } from "@/lib/users";
 import { guardPublicForm } from "@/lib/form-guard";
+import { notifyAdminSignup } from "@/lib/notifications";
+import { swallow } from "@/lib/log";
 import { submittedValues, type FormState } from "@/lib/form-state";
 
 export type SignupState = FormState;
@@ -23,5 +25,11 @@ export async function signup(
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values };
   const res = await createPendingUser(parsed.data);
   if (!res.ok) return { error: res.error, values };
+  // 관리자에게 새 신청 알림(best-effort — 알림 실패가 가입 접수를 막지 않게).
+  try {
+    await notifyAdminSignup(parsed.data.nickname.trim());
+  } catch (e) {
+    swallow("signup:notify-admin")(e);
+  }
   return { done: true };
 }

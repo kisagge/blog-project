@@ -201,6 +201,15 @@ export async function notifyCommentMention(args: {
 }
 
 // 새 신고 접수 → 예약 관리자에게 인앱 알림 + 푸시. 신고 큐로 딥링크.
+// 새 가입 신청 → 관리자에게(승인 대기 목록으로). 인앱 + 웹 푸시.
+export async function notifyAdminSignup(nickname: string) {
+  const adminId = (await ensureAdminUser()).id;
+  const body = `새 가입 신청: ${nickname}`;
+  const url = "/admin/members/pending";
+  await createNotification(adminId, body, url);
+  await sendToUser(adminId, { title: "새 가입 신청", body, url });
+}
+
 export async function notifyAdminReport(args: {
   targetType: "comment" | "feed";
 }) {

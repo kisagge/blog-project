@@ -5,6 +5,7 @@ vi.mock("@/lib/client-ip", () => ({
   getClientIp: vi.fn(async () => "1.2.3.4"),
 }));
 vi.mock("@/lib/users", () => ({ createPendingUser: vi.fn() }));
+vi.mock("@/lib/notifications", () => ({ notifyAdminSignup: vi.fn() }));
 
 import { signup } from "@/app/signup/actions";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -78,5 +79,22 @@ describe("signup action", () => {
       error: TOO_MANY_REQUESTS,
       ...KEPT,
     });
+  });
+});
+
+describe("관리자 새 가입 알림", () => {
+  test("접수되면 관리자에게 알림, 실패하면 알리지 않음, 알림 실패는 가입을 막지 않음", async () => {
+    const { notifyAdminSignup } = await import("@/lib/notifications");
+    const n = vi.mocked(notifyAdminSignup);
+    n.mockClear();
+    vt.mockResolvedValue(true);
+    gci.mockResolvedValue("9.9.9.9");
+    cpu.mockResolvedValue({ ok: false, error: "x" });
+    await signup(undefined, formData(VALID));
+    expect(n).not.toHaveBeenCalled();
+    cpu.mockResolvedValue({ ok: true });
+    n.mockRejectedValueOnce(new Error("push down"));
+    expect(await signup(undefined, formData(VALID))).toEqual({ done: true });
+    expect(n).toHaveBeenCalledWith("닉");
   });
 });

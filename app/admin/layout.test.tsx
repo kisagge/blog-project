@@ -7,6 +7,7 @@ vi.mock("@/app/actions/auth", () => ({ logout: vi.fn() }));
 vi.mock("@/lib/reports", () => ({
   countPendingReportTargets: vi.fn(async () => 0),
 }));
+vi.mock("@/lib/users", () => ({ countUsersByStatus: vi.fn(async () => 0) }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/admin" }));
 
 // AdminNav가 신고 수 실시간 갱신에 EventSource를 쓴다(jsdom 미구현) → 테스트용 대역.

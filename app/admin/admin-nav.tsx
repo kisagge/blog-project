@@ -19,8 +19,10 @@ const TABS = [
 
 export default function AdminNav({
   pendingReports = 0,
+  pendingMembers = 0,
 }: {
   pendingReports?: number;
+  pendingMembers?: number; // 가입 대기(승인 처리 시 레이아웃 재검증으로 갱신)
 }) {
   const pathname = usePathname();
   // 미처리 신고 수를 SSE로 라이브 갱신(초기값은 서버 prop). 헤더 알림 벨과 연결 1개 공유.
@@ -29,19 +31,25 @@ export default function AdminNav({
     const n = Number(data);
     if (Number.isFinite(n)) setReports(n);
   });
+  // 탭별 배지: 숫자 + 화면 낭독기용 설명(링크 이름에 포함 — 일반 span엔 aria-label을 쓸 수 없음).
+  const badges: Record<string, { count: number; label: string }> = {
+    "/admin/members": { count: pendingMembers, label: "가입 대기" },
+    "/admin/reports": { count: reports, label: "미처리 신고" },
+  };
 
   return (
-    <nav className="flex gap-4 text-sm">
+    <nav aria-label="관리자 메뉴" className="flex gap-4 text-sm">
       {TABS.map((tab) => {
         const active =
           tab.href === "/admin"
             ? pathname === "/admin"
             : pathname.startsWith(tab.href);
-        const badge = tab.href === "/admin/reports" && reports > 0;
+        const badge = badges[tab.href];
         return (
           <Link
             key={tab.href}
             href={tab.href}
+            aria-current={active ? "page" : undefined}
             className={
               active
                 ? "font-semibold"
@@ -49,13 +57,19 @@ export default function AdminNav({
             }
           >
             {tab.label}
-            {badge && (
-              <span
-                aria-label={`미처리 신고 ${reports}건`}
-                className="ml-1 inline-flex min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white"
-              >
-                {reports}
-              </span>
+            {badge && badge.count > 0 && (
+              <>
+                <span
+                  aria-hidden
+                  className="ml-1 inline-flex min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white"
+                >
+                  {badge.count}
+                </span>
+                <span className="sr-only">
+                  {" "}
+                  ({badge.label} {badge.count}건)
+                </span>
+              </>
             )}
           </Link>
         );
