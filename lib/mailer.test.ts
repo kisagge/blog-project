@@ -7,7 +7,7 @@ const { sendMail, createTransport } = vi.hoisted(() => {
 });
 vi.mock("nodemailer", () => ({ default: { createTransport } }));
 
-import { sendPasswordResetCode } from "@/lib/mailer";
+import { sendPasswordResetCode, sendSignupResult } from "@/lib/mailer";
 
 const hadHost = process.env.SMTP_HOST;
 beforeEach(() => {
@@ -42,5 +42,26 @@ describe("mailer", () => {
     // HTML 본문도 함께 전송(브랜드 템플릿) — 코드 포함.
     expect(arg.html).toContain("654321");
     expect(arg.html).toContain("<!doctype html>");
+  });
+});
+
+describe("sendSignupResult", () => {
+  test("SMTP 설정 → 승인·거절 메일 전송", async () => {
+    process.env.SMTP_HOST = "smtp.example.com";
+    await sendSignupResult("a@x.com", "닉", "approved");
+    await sendSignupResult("b@x.com", "닉", "rejected");
+    expect(sendMail.mock.calls.map((c) => c[0].to)).toEqual([
+      "a@x.com",
+      "b@x.com",
+    ]);
+  });
+
+  test("SMTP 미설정 → 콘솔 폴백", async () => {
+    delete process.env.SMTP_HOST;
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    await sendSignupResult("a@x.com", "닉", "approved");
+    expect(sendMail).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalled();
+    log.mockRestore();
   });
 });

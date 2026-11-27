@@ -1,6 +1,11 @@
 import "server-only";
 import nodemailer from "nodemailer";
-import { passwordResetEmail } from "@/lib/email-template";
+import {
+  passwordResetEmail,
+  signupApprovedEmail,
+  signupRejectedEmail,
+  type Mail,
+} from "@/lib/email-template";
 import { SITE_NAME } from "@/lib/share";
 
 const FROM = process.env.SMTP_FROM ?? `${SITE_NAME} <no-reply@byjang.local>`;
@@ -19,12 +24,29 @@ function transport() {
   });
 }
 
-export async function sendPasswordResetCode(email: string, code: string) {
-  const { subject, text, html } = passwordResetEmail(code);
+// 전송. SMTP 미설정이면 콘솔에 남기고 끝(fallbackLog — 로컬 개발에서 내용 확인용).
+async function send(to: string, mail: Mail, fallbackLog: string) {
   const t = transport();
   if (!t) {
-    console.log(`[mailer] SMTP 미설정 — ${email} 재설정 코드: ${code}`);
+    console.log(`[mailer] SMTP 미설정 — ${to} ${fallbackLog}`);
     return;
   }
-  await t.sendMail({ from: FROM, to: email, subject, text, html });
+  await t.sendMail({ from: FROM, to, ...mail });
+}
+
+export async function sendPasswordResetCode(email: string, code: string) {
+  await send(email, passwordResetEmail(code), `재설정 코드: ${code}`);
+}
+
+// 가입 승인·거절 결과 안내.
+export async function sendSignupResult(
+  email: string,
+  nickname: string,
+  result: "approved" | "rejected",
+) {
+  const mail =
+    result === "approved"
+      ? signupApprovedEmail(nickname)
+      : signupRejectedEmail(nickname);
+  await send(email, mail, mail.subject);
 }
