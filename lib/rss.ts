@@ -1,3 +1,4 @@
+import { createTtlCache } from "@/lib/ttl-cache";
 // RSS 2.0 피드 생성 공용(순수). 글 RSS(/rss.xml)·시리즈 RSS(/series/[slug]/rss.xml) 공유.
 // server-only 아님 — DB 접근 없이 문자열만 다루는 순수 함수라 테스트 용이.
 
@@ -62,4 +63,22 @@ export function renderRssFeed(opts: {
 ${items}
   </channel>
 </rss>`;
+}
+
+// 완성된 RSS XML 캐시(5분). 피드 리더·봇이 주기적으로 긁어 가는데 매번 글 20개를 마크다운→HTML로
+// 변환하면 이벤트 루프를 막는다. 관리자 글 저장·삭제·예약 발행 때 clear()로 바로 반영.
+export const RSS_TTL_SECONDS = 300;
+// null = 피드 없음(공개 글 0개 시리즈 등 → 404).
+export const rssCache = createTtlCache<string | null>({
+  ttlMs: RSS_TTL_SECONDS * 1000,
+  max: 100, // 전체 피드 + 시리즈별 피드
+});
+
+export function rssResponse(xml: string): Response {
+  return new Response(xml, {
+    headers: {
+      "Content-Type": "application/rss+xml; charset=utf-8",
+      "Cache-Control": `public, max-age=${RSS_TTL_SECONDS}`,
+    },
+  });
 }

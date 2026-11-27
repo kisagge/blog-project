@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { rssCache } from "@/lib/rss";
 import { kstWallClockToUtc } from "@/lib/kst";
 import { startBackgroundTask, stopBackgroundTask } from "@/lib/background-task";
 
@@ -10,6 +11,7 @@ export async function publishDueFeeds(now: Date = new Date()): Promise<number> {
     where: { status: "draft", scheduledAt: { lte: now } },
     data: { status: "published", publishedAt: now, scheduledAt: null },
   });
+  if (res.count > 0) rssCache.clear(); // 새로 발행된 글을 RSS에 바로 반영
   return res.count;
 }
 

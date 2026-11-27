@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_ORIGIN } from "@/lib/share";
-import { renderRssFeed } from "@/lib/rss";
+import { renderRssFeed, rssCache, rssResponse } from "@/lib/rss";
 import { markdownToFeedHtml } from "@/lib/rss-content";
 import { getPublicEnabled, maintenanceResponse } from "@/lib/site-config";
 import { postedAt } from "@/lib/feed-dates";
@@ -11,7 +11,12 @@ import { FEED_LATEST_ORDER } from "@/lib/feeds";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  // 점검 모드는 캐시보다 먼저(점검 중엔 캐시된 피드도 내보내지 않음).
   if (!(await getPublicEnabled())) return maintenanceResponse();
+  return rssResponse((await rssCache.getOrSet("site", buildSiteRss))!);
+}
+
+async function buildSiteRss(): Promise<string> {
   const feeds = await prisma.feed.findMany({
     // 신고로 가려진 글 제외(모더레이션 일관성).
     where: visibleFeedWhere("anon"),
@@ -28,7 +33,7 @@ export async function GET() {
     },
   });
 
-  const xml = renderRssFeed({
+  return renderRssFeed({
     title: SITE_NAME,
     link: SITE_ORIGIN,
     description: SITE_DESCRIPTION,
@@ -42,9 +47,5 @@ export async function GET() {
         contentHtml: await markdownToFeedHtml(f.content, SITE_ORIGIN),
       })),
     ),
-  });
-
-  return new Response(xml, {
-    headers: { "Content-Type": "application/rss+xml; charset=utf-8" },
   });
 }

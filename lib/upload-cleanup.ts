@@ -12,37 +12,20 @@ export const ORPHAN_GRACE_DAYS = 30;
 
 // 업로드 이름 형식(uuid.확장자). 이 형식이 아닌 파일(.gitkeep 등)은 건드리지 않는다.
 const NAME_RE = /^[0-9a-f-]{36}\.(?:jpg|png|webp)$/;
-const REF_RE = /\/uploads\/([0-9a-f-]{36}\.(?:jpg|png|webp))/g;
-
-// 업로드 URL이 들어갈 수 있는 모든 텍스트에서 참조 중인 파일 이름을 모은다.
-// 수정 이력도 포함(되돌리기에 필요).
-async function referencedNames(): Promise<Set<string>> {
-  const [feeds, revisions, users, comments, series, site] = await Promise.all([
-    prisma.feed.findMany({ select: { content: true, summary: true } }),
-    prisma.feedRevision.findMany({ select: { content: true, summary: true } }),
-    prisma.user.findMany({
-      where: { avatarUrl: { not: null } },
-      select: { avatarUrl: true },
-    }),
-    prisma.comment.findMany({
-      where: { content: { contains: "/uploads/" } },
-      select: { content: true },
-    }),
-    prisma.series.findMany({ select: { description: true } }),
-    prisma.siteConfig.findMany({ select: { aboutContent: true } }),
-  ]);
-  const texts = [
-    ...feeds.flatMap((f) => [f.content, f.summary]),
-    ...revisions.flatMap((r) => [r.content, r.summary]),
-    ...users.map((u) => u.avatarUrl),
-    ...comments.map((c) => c.content),
-    ...series.map((s) => s.description),
-    ...site.map((s) => s.aboutContent),
-  ];
-  const names = new Set<string>();
-  for (const t of texts)
-    for (const m of t?.matchAll(REF_RE) ?? []) names.add(m[1]);
-  return names;
+// 이 파일을 참조하는 텍스트가 하나라도 있는지(글 본문·요약, 수정 이력 — 되돌리기에 필요, 아바타, 댓글,
+// 시리즈 설명, 소개). 후보 파일마다 SQL 한 번 — 모든 본문을 메모리에 올리지 않는다.
+async function isReferenced(name: string): Promise<boolean> {
+  const needle = `/uploads/${name}`;
+  const [row] = await prisma.$queryRaw<{ ref: number | bigint }[]>`
+    SELECT (
+      EXISTS (SELECT 1 FROM "Feed" WHERE instr("content", ${needle}) > 0 OR instr(IFNULL("summary", ''), ${needle}) > 0)
+      OR EXISTS (SELECT 1 FROM "FeedRevision" WHERE instr("content", ${needle}) > 0 OR instr(IFNULL("summary", ''), ${needle}) > 0)
+      OR EXISTS (SELECT 1 FROM "User" WHERE instr(IFNULL("avatarUrl", ''), ${needle}) > 0)
+      OR EXISTS (SELECT 1 FROM "Comment" WHERE instr("content", ${needle}) > 0)
+      OR EXISTS (SELECT 1 FROM "Series" WHERE instr(IFNULL("description", ''), ${needle}) > 0)
+      OR EXISTS (SELECT 1 FROM "SiteConfig" WHERE instr("aboutContent", ${needle}) > 0)
+    ) AS ref`;
+  return Number(row?.ref ?? 0) === 1;
 }
 
 export async function pruneOrphanUploads(
@@ -55,13 +38,13 @@ export async function pruneOrphanUploads(
   } catch {
     return { deleted: 0 }; // 업로드 폴더가 아직 없음
   }
-  const referenced = await referencedNames();
+  // 유예 기간이 지난 파일만 후보 → 후보가 없으면 DB를 보지 않는다.
   const cutoff = now.getTime() - ORPHAN_GRACE_DAYS * DAY_MS;
   let deleted = 0;
   for (const name of files) {
-    if (referenced.has(name)) continue;
     const path = join(dir, name);
     if ((await stat(path)).mtimeMs >= cutoff) continue;
+    if (await isReferenced(name)) continue;
     await unlink(path);
     await prisma.upload.deleteMany({ where: { name } });
     deleted++;

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { ViewerRole } from "@/lib/visibility";
 import { FEED_LIST_SELECT } from "@/lib/feeds";
@@ -38,7 +39,7 @@ export async function getSeriesById(id: string): Promise<SeriesSummary | null> {
   });
 }
 
-export async function getSeriesBySlug(
+async function getSeriesBySlugUncached(
   slug: string,
 ): Promise<SeriesSummary | null> {
   return prisma.series.findUnique({
@@ -48,7 +49,7 @@ export async function getSeriesBySlug(
 }
 
 // 내비·홈의 "시리즈" 진입 링크 노출 여부: 뷰어가 볼 수 있는 시리즈 글이 하나라도 있는지(빈 페이지로 보내지 않게).
-export async function hasVisibleSeries(role: ViewerRole): Promise<boolean> {
+async function hasVisibleSeriesUncached(role: ViewerRole): Promise<boolean> {
   const one = await prisma.feed.findFirst({
     where: { ...visibleFeedWhere(role), seriesId: { not: null } },
     select: { id: true },
@@ -229,3 +230,9 @@ export async function reorderSeries(
     ),
   );
 }
+
+// 시리즈 slug 조회 — 같은 요청 안(generateMetadata + 페이지 등)의 중복 조회를 1회로(React cache).
+export const getSeriesBySlug = cache(getSeriesBySlugUncached);
+
+// 가시 시리즈 존재 여부(레이아웃 내비 + 홈) — 같은 요청 안(generateMetadata + 페이지 등)의 중복 조회를 1회로(React cache).
+export const hasVisibleSeries = cache(hasVisibleSeriesUncached);

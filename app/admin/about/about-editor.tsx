@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
-import MarkdownContent from "@/app/markdown-content";
+import MarkdownPreview from "@/app/markdown-preview";
 import MarkdownHelp from "@/app/account/posts/markdown-help";
 import { uploadImage } from "@/app/admin/upload-action";
 import { saveAboutAction, type AboutFormState } from "@/app/admin/site-actions";
@@ -120,7 +120,7 @@ export default function AboutEditor({ initial }: { initial: string }) {
       >
         {tab === "preview" &&
           (content.trim() ? (
-            <MarkdownContent content={content} />
+            <MarkdownPreview content={content} />
           ) : (
             <p className="text-zinc-500">미리볼 내용이 없습니다.</p>
           ))}

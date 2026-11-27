@@ -194,7 +194,6 @@ model View {
   createdAt  DateTime @default(now())
 
   @@unique([entityType, entityId, visitorId, day])
-  @@index([entityType, entityId])
   @@index([entityType, day]) // countTodayVisitors(entityType="site", day) 커버
 }
 
@@ -273,7 +272,6 @@ model CommentReaction {
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([commentId, userId, emoji]) // 같은 회원이 같은 댓글에 같은 이모지 1회
-  @@index([commentId])                  // 댓글별 집계
 }
 
 model Like {
@@ -298,7 +296,6 @@ model FeedReaction {
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([feedId, userId, emoji]) // 같은 회원이 같은 글에 같은 이모지 1회
-  @@index([feedId])                  // 글별 집계
 }
 
 // 북마크(개인 저장). 좋아요와 동형이나 공개 카운트·실시간 없는 개인용. createdAt=저장 시각.
