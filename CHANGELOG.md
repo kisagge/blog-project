@@ -7,7 +7,7 @@
 ### Added
 
 - **업로드 이미지 오프사이트 백업**: 매일 백업 워크플로가 서버의 `data/uploads`를 묶어 DB와 같은 공개키로 암호화한 아티팩트(`uploads-backup-…`, 90일)로 보관 — 지금까지는 DB만 백업돼 인스턴스를 잃으면 본문·아바타 이미지가 모두 사라졌음. 묶기가 실패해도 DB 사본은 보관. 복원 절차 `docs/deploy/lightsail.md` 7-1
-- **고아 업로드 정리**: 하루 1회 보존 정리에서 어디에서도 참조하지 않고 30일 지난 업로드 파일(작성 취소·본문에서 뺀 이미지)과 소유 기록 삭제(`lib/upload-cleanup.ts`, 로그 `orphanUploads=`)
+- **고아 업로드 정리**: 하루 1회 보존 정리에서 어디에서도 참조하지 않고 30일 지난 업로드 파일(작성 취소·본문에서 뺀 이미지)과 소유 기록 삭제(`lib/upload-cleanup.ts`, 로그 `orphanUploads=`) ([#255](https://github.com/kisagge/blog-project/pull/255))
 
 ## [0.114.0] - 2026-11-25
 
