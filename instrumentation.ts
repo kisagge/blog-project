@@ -4,6 +4,13 @@ import type { Instrumentation } from "next";
 // 외부 cron(GitHub/호스트)·CRON_SECRET 없이 동작하게 한다.
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return; // edge 런타임 제외
+  // 운영에서 비밀값이 비었거나 예시값이면 기동을 멈춘다 — 배포 헬스 대기가 실패로 잡아낸다.
+  if (process.env.NODE_ENV === "production") {
+    const { productionSecretProblems } = await import("@/lib/env-check");
+    const problems = productionSecretProblems(process.env);
+    if (problems.length > 0)
+      throw new Error(`[env-check] ${problems.join(" / ")}`);
+  }
   const { startPublishScheduler } = await import("@/lib/scheduled");
   startPublishScheduler();
   const { startRetentionScheduler } = await import("@/lib/retention");

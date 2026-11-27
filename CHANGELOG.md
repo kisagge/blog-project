@@ -2,6 +2,23 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.118.1] - 2026-11-27
+
+### Security
+
+- 사이트 방문 기록에 요청 제한이 없어 쿠키 없이 반복 호출하면 방문 기록이 무한히 쌓이던 문제(디스크 증가·방문자 통계 오염) → 모든 조회·방문 기록에 IP당 한도
+- 실시간 연결(SSE) 동시 연결 상한 없음 → IP당 20·전체 500(넘으면 429). 요청 수 제한은 열려 있는 연결 수를 막지 못했음
+- 신고 대상 종류를 검증하지 않아 임의 문자열로 관리자 알림을 반복 유발하고 처리할 수 없는 신고가 배지에 남던 문제 → 종류 검증 + 신고자가 볼 수 있는 대상만
+- 운영 부팅 시 비밀값 점검: `SESSION_SECRET`이 없거나 32자 미만·예시값, `ADMIN_PASSWORD`가 없거나 예시값이면 기동 중단(배포 헬스 대기가 잡아냄) ([#259](https://github.com/kisagge/blog-project/pull/259))
+
+### Performance
+
+- 첫 방문마다 페이지 전체가 두 번 렌더되던 문제: 방문자 쿠키를 서버 액션에서 발급하면 Next가 현재 페이지를 다시 렌더 → 조회·방문 기록을 Route Handler(`/api/view`)로, 사이트 방문은 브라우저당 하루 1번만 전송 ([#259](https://github.com/kisagge/blog-project/pull/259))
+
+### Changed
+
+- 배포 문서: nginx `client_max_body_size 8m`(기본 1MB라 1MB 넘는 사진 업로드가 413), `worker_connections 2048` — 운영 서버에 적용 완료 ([#259](https://github.com/kisagge/blog-project/pull/259))
+
 ## [0.118.0] - 2026-11-27
 
 ### Added

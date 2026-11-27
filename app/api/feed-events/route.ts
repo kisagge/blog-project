@@ -3,6 +3,7 @@ import { getViewerRole } from "@/lib/dal";
 import { canReadFeed } from "@/lib/feed-access";
 import { subscribeFeed } from "@/lib/events";
 import { sseEvent, sseResponse } from "@/lib/sse";
+import { clientIpKey } from "@/lib/form-guard";
 
 // SSE: 특정 글의 피드 이벤트(댓글 생성·수정·삭제·좋아요·리액션 + 글 좋아요·리액션)를 실시간 전달.
 // 접근은 글 상세와 동일하게 게이트.
@@ -22,7 +23,10 @@ export async function GET(req: Request) {
   if (!canReadFeed(feed, await getViewerRole()))
     return new Response("Forbidden", { status: 403 });
 
-  return sseResponse(req.signal, (send) => [
-    subscribeFeed(feedId, (ev) => send(sseEvent(ev))),
-  ]);
+  // 공개 글은 비로그인도 구독 → IP당 동시 연결 상한(lib/sse).
+  return sseResponse(
+    req.signal,
+    (send) => [subscribeFeed(feedId, (ev) => send(sseEvent(ev)))],
+    { key: await clientIpKey() },
+  );
 }

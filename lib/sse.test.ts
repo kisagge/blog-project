@@ -76,3 +76,37 @@ describe("sseResponse", () => {
     expect(unsub).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("sseResponse 동시 연결 상한", () => {
+  test("같은 키(IP)는 perKey개까지, 넘으면 429 — 연결이 끝나면 자리 반납", async () => {
+    const acs = [new AbortController(), new AbortController()];
+    const ok = acs.map((ac) =>
+      sseResponse(ac.signal, () => [], { key: "1.1.1.1", perKey: 2 }),
+    );
+    expect(ok.map((r) => r.status)).toEqual([200, 200]);
+    const over = sseResponse(new AbortController().signal, () => [], {
+      key: "1.1.1.1",
+      perKey: 2,
+    });
+    expect(over.status).toBe(429);
+    expect(over.headers.get("Retry-After")).toBeTruthy();
+    // 다른 IP는 영향 없음
+    const other = new AbortController();
+    expect(
+      sseResponse(other.signal, () => [], { key: "2.2.2.2", perKey: 2 }).status,
+    ).toBe(200);
+    acs[0].abort(); // 한 연결 종료 → 자리 반납
+    acs[0].abort(); // 중복 종료 신호에도 한 번만 반납
+    const again = new AbortController();
+    expect(
+      sseResponse(again.signal, () => [], { key: "1.1.1.1", perKey: 2 }).status,
+    ).toBe(200);
+    expect(
+      sseResponse(new AbortController().signal, () => [], {
+        key: "1.1.1.1",
+        perKey: 2,
+      }).status,
+    ).toBe(429);
+    for (const ac of [acs[1], other, again]) ac.abort();
+  });
+});

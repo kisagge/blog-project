@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { trackViewAction } from "@/app/actions/views";
+import { sendView } from "@/app/send-view";
 
 // 상세 페이지 마운트 시 1회만 조회 트래킹(StrictMode 중복 호출은 ref로 가드).
 export default function ViewTracker({
@@ -14,7 +14,7 @@ export default function ViewTracker({
   useEffect(() => {
     if (done.current) return;
     done.current = true;
-    void trackViewAction(type, id);
+    sendView({ type, id });
   }, [type, id]);
   return null;
 }
