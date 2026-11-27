@@ -22,6 +22,7 @@ import ViewTracker from "@/app/view-tracker";
 import ReadTracker from "@/app/feed/read-tracker";
 import ShareBar from "@/app/share-bar";
 import ReportButton from "@/app/report/report-button";
+import AdminModerationButton from "@/app/feed/admin-moderation-button";
 import DeletePostButton from "@/app/account/posts/delete-post-button";
 import { absoluteUrl, firstContentImage, toAbsolute } from "@/lib/share";
 import { buildFeedJsonLd, jsonLdHtml } from "@/lib/structured-data";
@@ -204,6 +205,13 @@ export default async function FeedDetailPage({
       {canReportFeed && (
         <div className="mt-4 text-right text-xs text-zinc-500">
           <ReportButton targetType="feed" targetId={feed.id} />
+        </div>
+      )}
+      {/* 관리자: 회원 글 바로 숨김/해제(관리자 글은 비공개 전환으로 관리) */}
+      {role === "admin" && feed.authorId && (
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs text-zinc-500">
+          {feed.hiddenAt && <span>신고 등으로 가려진 글입니다.</span>}
+          <AdminModerationButton feedId={feed.id} hidden={!!feed.hiddenAt} />
         </div>
       )}
       <PrevNextNav prev={prev} next={next} />

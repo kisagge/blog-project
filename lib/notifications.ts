@@ -215,6 +215,28 @@ export async function notifyCommentMention(args: {
 }
 
 // 새 신고 접수 → 예약 관리자에게 인앱 알림 + 푸시. 신고 큐로 딥링크.
+// 신고 처리 결과 → 회원 작성자에게. 숨긴 글은 작성자도 열 수 없어 링크 없음,
+// 댓글은 글에서 해당 댓글 위치로(가려진 댓글 자리 표시).
+export async function notifyContentModeration(args: {
+  userId: string;
+  targetType: "comment" | "feed";
+  targetId: string;
+  slug: string;
+  hidden: boolean;
+}) {
+  const what = args.targetType === "comment" ? "댓글이" : "글이";
+  const body = args.hidden
+    ? `회원님의 ${what} 신고 검토 후 가려졌습니다.`
+    : `회원님의 ${what} 다시 공개되었습니다.`;
+  const url =
+    args.targetType === "comment"
+      ? `/feed/${args.slug}?c=${args.targetId}`
+      : args.hidden
+        ? null
+        : `/feed/${args.slug}`;
+  await createNotification(args.userId, body, url ?? undefined);
+}
+
 // 새 가입 신청 → 관리자에게(승인 대기 목록으로). 인앱 + 웹 푸시.
 export async function notifyAdminSignup(nickname: string) {
   const adminId = (await ensureAdminUser()).id;

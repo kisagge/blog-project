@@ -251,3 +251,19 @@ describe("queue · 모더레이션 전이", () => {
     expect(await m.countHiddenTargets()).toBe(before + 2);
   });
 });
+
+describe("hideTarget/unhideTarget — 대상 정보 반환(작성자 알림·화면 갱신용, DB 값)", () => {
+  test("회원 댓글: 작성자 id·글 slug", async () => {
+    const info = await m.hideTarget("comment", commentId);
+    expect(info).toMatchObject({ targetType: "comment", authorId: author });
+    expect(typeof info?.slug).toBe("string");
+    expect(await m.unhideTarget("comment", commentId)).toMatchObject({
+      authorId: author,
+    });
+  });
+
+  test("없는 대상은 null(쓰기 없음)", async () => {
+    expect(await m.hideTarget("feed", "no-such-id")).toBeNull();
+    expect(await m.unhideTarget("comment", "no-such-id")).toBeNull();
+  });
+});

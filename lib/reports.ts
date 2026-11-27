@@ -136,6 +136,29 @@ function feedTarget(f: FeedTarget) {
   };
 }
 
+export type ReportTarget =
+  ReturnType<typeof commentTarget> | ReturnType<typeof feedTarget>;
+
+// 신고 대상 1건의 요약(글 slug·회원 작성자 id는 DB 값). 없으면 null.
+// 숨김 처리 후 화면 갱신·작성자 알림이 클라이언트가 보낸 값을 쓰지 않게 한다.
+export async function findReportTarget(
+  targetType: ReportTargetType,
+  targetId: string,
+): Promise<ReportTarget | null> {
+  if (targetType === "comment") {
+    const c = await prisma.comment.findUnique({
+      where: { id: targetId },
+      select: COMMENT_TARGET_SELECT,
+    });
+    return c ? commentTarget(c) : null;
+  }
+  const f = await prisma.feed.findUnique({
+    where: { id: targetId },
+    select: FEED_TARGET_SELECT,
+  });
+  return f ? feedTarget(f) : null;
+}
+
 // 대상 숨김 시각 설정/해제(PrismaPromise 반환 — $transaction 안에서도 사용).
 function setTargetHidden(
   targetType: ReportTargetType,
@@ -234,7 +257,9 @@ export async function listReportQueue(): Promise<ReportQueueItem[]> {
 export async function hideTarget(
   targetType: ReportTargetType,
   targetId: string,
-): Promise<void> {
+): Promise<ReportTarget | null> {
+  const target = await findReportTarget(targetType, targetId);
+  if (!target) return null;
   const now = new Date();
   await prisma.$transaction([
     setTargetHidden(targetType, targetId, now),
@@ -243,14 +268,18 @@ export async function hideTarget(
       data: { status: "resolved", resolvedAt: now },
     }),
   ]);
+  return target;
 }
 
 // 숨김 해제(되돌리기). 신고 상태는 유지(이미 resolved).
 export async function unhideTarget(
   targetType: ReportTargetType,
   targetId: string,
-): Promise<void> {
+): Promise<ReportTarget | null> {
+  const target = await findReportTarget(targetType, targetId);
+  if (!target) return null;
   await setTargetHidden(targetType, targetId, null);
+  return target;
 }
 
 // 신고 기각(숨김 없이 pending → dismissed).

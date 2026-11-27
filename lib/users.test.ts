@@ -329,3 +329,34 @@ describe("예약 관리자 계정 보호", () => {
     });
   });
 });
+
+describe("listUsersPage 검색", () => {
+  test("닉네임·이메일 부분 일치(대소문자 무관), 빈 검색어는 전체", async () => {
+    const prisma = (await import("@/lib/prisma")).prisma;
+    await prisma.user.createMany({
+      data: [
+        {
+          email: "Findme@x.com",
+          nickname: "검색대상",
+          passwordHash: "-",
+          status: "approved",
+        },
+        {
+          email: "other1@x.com",
+          nickname: "다른사람",
+          passwordHash: "-",
+          status: "approved",
+        },
+      ],
+    });
+    const byNick = await m.listUsersPage(["approved"], 1, 20, "검색");
+    expect(byNick.items.map((u) => u.nickname)).toEqual(["검색대상"]);
+    expect(byNick.total).toBe(1);
+    const byEmail = await m.listUsersPage(["approved"], 1, 20, "findme");
+    expect(byEmail.items.map((u) => u.email)).toEqual([
+      "findme@x.com".replace("findme", "Findme"),
+    ]);
+    const all = await m.listUsersPage(["approved"], 1, 20, "  ");
+    expect(all.total).toBeGreaterThan(1);
+  });
+});

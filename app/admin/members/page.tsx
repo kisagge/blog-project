@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { INPUT_CLASS } from "@/lib/ui";
 import { countUsersByStatus, listUsersPage } from "@/lib/users";
 import {
   BlockUserButton,
@@ -11,11 +13,14 @@ export const metadata = { title: "회원 · 관리자" };
 export default async function AdminMembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 }) {
-  const page = parsePage((await searchParams).page);
-  const [members, pendingCount] = await Promise.all([
-    listUsersPage(["approved", "blocked"], page),
+  const sp = await searchParams;
+  const page = parsePage(sp.page);
+  const q = (sp.q ?? "").trim();
+  const [members, memberCount, pendingCount] = await Promise.all([
+    listUsersPage(["approved", "blocked"], page, undefined, q),
+    countUsersByStatus(["approved", "blocked"]),
     countUsersByStatus("pending"),
   ]);
 
@@ -25,11 +30,43 @@ export default async function AdminMembersPage({
       <MemberTabs
         active="members"
         pendingCount={pendingCount}
-        memberCount={members.total}
+        memberCount={memberCount}
       />
 
+      {/* 닉네임·이메일 검색(GET — 주소에 남아 페이지 이동에도 유지) */}
+      <form
+        role="search"
+        action="/admin/members"
+        className="mb-4 flex items-center gap-2 text-sm"
+      >
+        <label htmlFor="member-q" className="sr-only">
+          회원 검색
+        </label>
+        <input
+          id="member-q"
+          name="q"
+          type="search"
+          defaultValue={q}
+          placeholder="닉네임·이메일"
+          className={`${INPUT_CLASS} min-w-0 flex-1 py-1.5`}
+        />
+        <button
+          type="submit"
+          className="rounded border border-black/15 px-3 py-1.5 dark:border-white/20"
+        >
+          검색
+        </button>
+        {q && (
+          <Link href="/admin/members" className="text-zinc-500 hover:underline">
+            초기화
+          </Link>
+        )}
+      </form>
+
       {members.items.length === 0 ? (
-        <p className="text-sm text-zinc-500">승인된 회원이 없습니다.</p>
+        <p className="text-sm text-zinc-500">
+          {q ? `‘${q}’에 해당하는 회원이 없습니다.` : "승인된 회원이 없습니다."}
+        </p>
       ) : (
         <ul className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.1]">
           {members.items.map((u) => (
@@ -69,6 +106,7 @@ export default async function AdminMembersPage({
         total={members.total}
         pageSize={members.pageSize}
         basePath="/admin/members"
+        query={q ? `q=${encodeURIComponent(q)}` : ""}
       />
     </section>
   );

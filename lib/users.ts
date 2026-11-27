@@ -250,15 +250,21 @@ export async function countUsersByStatus(status: UserStatus | UserStatus[]) {
 }
 
 // 관리자용: 상태별 페이지 단위(기본 20). 목록 + 전체 개수 반환.
+// q: 닉네임·이메일 부분 일치 검색(대소문자 무관 — SQLite LIKE). 비우면 전체.
 export async function listUsersPage(
   status: UserStatus | UserStatus[],
   page: number,
   pageSize = ADMIN_PAGE_SIZE,
+  q = "",
 ) {
   const { skip, take } = pageWindow(page, pageSize);
+  const term = q.trim();
   const where = {
     status: Array.isArray(status) ? { in: status } : status,
     role: "member" as const,
+    ...(term && {
+      OR: [{ nickname: { contains: term } }, { email: { contains: term } }],
+    }),
   };
   const [items, total] = await Promise.all([
     prisma.user.findMany({

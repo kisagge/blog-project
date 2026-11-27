@@ -2,6 +2,18 @@
 
 이 프로젝트의 주요 변경을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따르며, 버전은 [유의적 버전](https://semver.org/lang/ko/)(pre-1.0: feat=minor, fix/chore=patch)을 사용합니다. 세부 커밋 이력은 git 로그를 참고하세요. 0.55.0 이후 항목의 링크는 해당 변경의 PR입니다.
 
+## [0.118.0] - 2026-11-27
+
+### Added
+
+- **관리자 회원 검색**: 회원 관리에서 닉네임·이메일 부분 일치 검색(대소문자 무관, 페이지 이동에도 유지)
+- **숨김 처리 작성자 알림**: 신고 처리로 댓글·글을 숨기거나 해제하면 회원 작성자에게 알림(댓글은 해당 위치 링크, 숨긴 글은 링크 없음)
+- **관리자 직접 숨김**: 신고가 없어도 회원 글 상세에서 바로 숨김/숨김 해제 ([#258](https://github.com/kisagge/blog-project/pull/258))
+
+### Security
+
+- 신고 처리 액션이 클라이언트가 보낸 글 주소(slug)로 화면을 재검증하던 것 → 대상 종류·id만 받고 글 주소·작성자는 DB에서 조회 ([#258](https://github.com/kisagge/blog-project/pull/258))
+
 ## [0.117.0] - 2026-11-27
 
 ### Added
